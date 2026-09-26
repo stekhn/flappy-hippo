@@ -1,0 +1,17 @@
+<!-- Flappy Hippo app mark: the hippo's face, squared off. Mirrors the head drawn in
+     src/game/render/hippo.ts. Rendered to PNG by scripts/make-icons.ts. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
+  <rect width="24" height="24" rx="5.5" fill="#006aff"/>
+  <g>
+    <circle cx="7.9" cy="7.4" r="1.9" fill="#93a1b5"/>
+    <circle cx="16.1" cy="7.4" r="1.9" fill="#93a1b5"/>
+    <circle cx="7.9" cy="7.6" r="0.9" fill="#e8a2b0"/>
+    <circle cx="16.1" cy="7.6" r="0.9" fill="#e8a2b0"/>
+    <ellipse cx="12" cy="12.6" rx="7" ry="5.9" fill="#93a1b5"/>
+    <ellipse cx="12" cy="15.6" rx="5.1" ry="3.5" fill="#b6c1d1"/>
+    <ellipse cx="9.9" cy="15.1" rx="0.85" ry="1.1" fill="#3e4753"/>
+    <ellipse cx="14.1" cy="15.1" rx="0.85" ry="1.1" fill="#3e4753"/>
+    <circle cx="9.5" cy="10.5" r="1.25" fill="#3e4753"/>
+    <circle cx="14.5" cy="10.5" r="1.25" fill="#3e4753"/>
+  </g>
+</svg>

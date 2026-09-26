@@ -1,0 +1,264 @@
+@import 'tailwindcss';
+
+/* Dark mode is driven by a data-theme attribute on <html>. JS resolves the user's preference
+   (system / light / dark) to a concrete light|dark and sets the attribute (see ThemeProvider +
+   the inline boot script in index.html). So the dark: variant and the token overrides below both
+   key off [data-theme="dark"]. */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+/* --------------------------------------------------------------------------------------------
+   One palette for both worlds. The --game-* values are read back by src/game/palette.ts to paint
+   the canvas, and re-exported as Tailwind tokens below for the DOM chrome, so the buttons above
+   the scene can never drift away from the scene itself.
+   -------------------------------------------------------------------------------------------- */
+:root {
+  --game-brand: #006aff;
+  --game-brand-strong: #0053c7;
+  --game-pipe-edge: #00479f;
+  --game-sky: #e5f0ff;
+  --game-sky-low: #f2f7ff;
+  --game-city-far: #d9e8fe;
+  --game-city-near: #c6dcfd;
+  --game-ground: #dee2e6;
+  --game-text: #1f2430;
+  --game-muted: #5a6478;
+  --game-gold: #e8930c;
+  --game-surface: rgb(255 255 255 / 0.82);
+  --game-surface-solid: #fbfcfe;
+  --game-line: rgb(31 36 48 / 0.12);
+  --game-shadow: rgb(18 30 56 / 0.18);
+  /* Behind the board on displays too large to fill — a shade deeper than the sky. */
+  --game-frame: #cfdef4;
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --game-brand: #5b9dff;
+  --game-brand-strong: #7db0ff;
+  --game-pipe-edge: #1f4f9e;
+  --game-sky: #111a26;
+  --game-sky-low: #1b2735;
+  --game-city-far: #1b2533;
+  --game-city-near: #26313f;
+  --game-ground: #2c3646;
+  --game-text: #dde3ec;
+  --game-muted: #9aa7ba;
+  --game-gold: #ffc65c;
+  --game-surface: rgb(20 29 41 / 0.82);
+  --game-surface-solid: #16202d;
+  --game-line: rgb(221 227 236 / 0.14);
+  --game-shadow: rgb(0 0 0 / 0.5);
+  --game-frame: #080d14;
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+}
+
+@theme inline {
+  --color-brand: var(--game-brand);
+  --color-brand-strong: var(--game-brand-strong);
+  --color-sky: var(--game-sky);
+  --color-frame: var(--game-frame);
+  --color-ink: var(--game-text);
+  --color-muted: var(--game-muted);
+  --color-gold: var(--game-gold);
+  --color-surface: var(--game-surface);
+  --color-surface-solid: var(--game-surface-solid);
+  --color-line: var(--game-line);
+  --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* --------------------------------------------------------------------------------------------
+   Page shell. The game owns the whole viewport: no document scrolling, no pull-to-refresh, no
+   text selection or callout menus from a long press, and no double-tap zoom stealing a flap.
+   -------------------------------------------------------------------------------------------- */
+html,
+body,
+#root {
+  height: 100%;
+}
+
+html {
+  /* dvh keeps the field the right height while a mobile browser's toolbars slide in and out. */
+  height: 100dvh;
+  overflow: hidden;
+  overscroll-behavior: none;
+  background: var(--game-frame);
+}
+
+body {
+  @apply bg-frame text-ink font-sans antialiased;
+  margin: 0;
+  overflow: hidden;
+  overscroll-behavior: none;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  user-select: none;
+}
+
+@layer base {
+  button:not(:disabled),
+  [role='button']:not([aria-disabled='true']) {
+    cursor: pointer;
+  }
+
+  /* Every control the thumb can reach is at least 44px tall — Apple's and Google's floor. */
+  button {
+    min-height: 44px;
+    touch-action: manipulation;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--game-brand);
+    outline-offset: 2px;
+  }
+}
+
+/* The board fills a phone edge to edge. Where it cannot (a desktop window, a tablet), it stops
+   growing at MAX_ZOOM and presents itself as a card on the page instead — the runtime flags that
+   on the canvas, and the wrapper picks it up so the overlays are clipped to the same corners. */
+.board:has(> canvas[data-framed='true']) {
+  border-radius: 1rem;
+  overflow: hidden;
+  box-shadow: 0 24px 60px -24px var(--game-shadow);
+}
+
+/* --------------------------------------------------------------------------------------------
+   Building blocks
+   -------------------------------------------------------------------------------------------- */
+
+/* The frosted card the scene shows through, used by every overlay and sheet. */
+@utility card {
+  @apply rounded-2xl border border-line bg-surface;
+  backdrop-filter: blur(14px) saturate(1.3);
+  -webkit-backdrop-filter: blur(14px) saturate(1.3);
+  box-shadow: 0 18px 40px -20px var(--game-shadow);
+}
+
+/* The bottom sheet: the same frosted family as the cards, but opaque enough to read a form on. */
+@utility sheet {
+  @apply rounded-2xl border border-line;
+  background: color-mix(in srgb, var(--game-surface-solid) 95%, transparent);
+  backdrop-filter: blur(18px) saturate(1.2);
+  -webkit-backdrop-filter: blur(18px) saturate(1.2);
+  box-shadow: 0 -18px 50px -20px var(--game-shadow);
+}
+
+@utility btn-base {
+  @apply inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-base
+    font-semibold transition-[background-color,transform,opacity] outline-none
+    active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50;
+}
+
+@utility btn-primary {
+  @apply btn-base bg-brand text-white;
+  box-shadow: 0 8px 18px -10px var(--game-brand);
+}
+
+@utility btn-secondary {
+  @apply btn-base border border-line bg-surface text-ink;
+}
+
+@utility btn-ghost {
+  @apply btn-base text-muted hover:text-ink;
+}
+
+/* Round icon button for the HUD: fixed 44px tap target, frosted like the cards. */
+@utility icon-btn {
+  @apply inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-line
+    bg-surface text-ink transition-transform outline-none active:scale-90;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+/* HUD text sits straight on the scene, so it carries its own outline in the sky colour — legible
+   over a cloud, a pipe or the city alike, without a plate behind it. */
+@utility hud-text {
+  color: var(--game-brand);
+  text-shadow:
+    0 2px 0 var(--game-sky),
+    0 -2px 0 var(--game-sky),
+    2px 0 0 var(--game-sky),
+    -2px 0 0 var(--game-sky),
+    2px 2px 0 var(--game-sky),
+    -2px 2px 0 var(--game-sky),
+    2px -2px 0 var(--game-sky),
+    -2px -2px 0 var(--game-sky),
+    0 6px 14px var(--game-shadow);
+}
+
+/* Numbers that should line up in a column (scores, stats). */
+@utility tnum {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Keeps content clear of the notch, the home indicator and rounded corners. */
+@utility safe-inset {
+  padding-top: max(0.75rem, env(safe-area-inset-top));
+  padding-right: max(0.75rem, env(safe-area-inset-right));
+  padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+  padding-left: max(0.75rem, env(safe-area-inset-left));
+}
+
+/* --------------------------------------------------------------------------------------------
+   Motion. Overlays scale in the way the canvas cards used to; anyone who asked their system for
+   less motion gets a plain fade instead.
+   -------------------------------------------------------------------------------------------- */
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(12%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-pop {
+  animation: pop-in 160ms cubic-bezier(0.2, 0.9, 0.3, 1) both;
+}
+
+.animate-rise {
+  animation: rise-in 220ms cubic-bezier(0.2, 0.9, 0.3, 1) both;
+}
+
+.animate-fade {
+  animation: fade-in 160ms ease both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-pop,
+  .animate-rise,
+  .animate-fade {
+    animation: fade-in 120ms ease both;
+  }
+
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+  }
+}

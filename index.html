@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+    <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+    <!-- viewport-fit=cover lets the game paint behind the notch; the UI keeps clear of it via
+         env(safe-area-inset-*). No user scaling: a double tap must flap, not zoom. -->
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no, maximum-scale=1"
+    />
+    <meta name="description" content="Flappy Hippo — lass das Nilpferd fliegen und weiche den Hindernissen aus. Offline spielbar, ohne Konto und ohne Werbung." />
+    <meta name="theme-color" content="#e5f0ff" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#101720" media="(prefers-color-scheme: dark)" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Flappy Hippo" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <title>Flappy Hippo</title>
+    <script>
+      // Resolve the theme before first paint to avoid a flash. Mirrors src/theme.ts.
+      (function () {
+        try {
+          var t = localStorage.getItem('flappy-hippo.theme');
+          var dark =
+            t === 'dark' ||
+            ((t === 'system' || t === null) && matchMedia('(prefers-color-scheme: dark)').matches);
+          document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+        } catch (e) {
+          /* leave the default (light) */
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
