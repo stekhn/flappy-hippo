@@ -14,8 +14,8 @@ export function PauseCard({ score, onResume, onRestart, onGiveUp }: PauseCardPro
       <h2 id="pause-title" className="t-heading">
         Pause
       </h2>
-      <p className="t-hint mt-2">
-        Aktueller Stand <span className="t-number text-ink text-lg">{score}</span>
+      <p className="mt-2">
+        Aktueller Stand <span className="t-number text-lg">{score}</span>
       </p>
 
       <button type="button" className="btn-primary mt-5 w-full" onClick={onResume}>

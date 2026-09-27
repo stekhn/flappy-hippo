@@ -205,17 +205,28 @@ export function IconHome(props: IconProps) {
 /** The hippo's face from the app icon, for the title card. Mirrors assets/icon.svg. */
 export function HippoMark(props: IconProps) {
   return (
-    <svg viewBox="4 4.5 16 15.5" width="64" height="62" aria-hidden="true" focusable="false" {...props}>
-      <circle cx="7.9" cy="7.4" r="1.9" fill="#93a1b5" />
-      <circle cx="16.1" cy="7.4" r="1.9" fill="#93a1b5" />
-      <circle cx="7.9" cy="7.6" r="0.9" fill="#e8a2b0" />
-      <circle cx="16.1" cy="7.6" r="0.9" fill="#e8a2b0" />
-      <ellipse cx="12" cy="12.6" rx="7" ry="5.9" fill="#93a1b5" />
-      <ellipse cx="12" cy="15.6" rx="5.1" ry="3.5" fill="#b6c1d1" />
-      <ellipse cx="9.9" cy="15.1" rx="0.85" ry="1.1" fill="#3e4753" />
-      <ellipse cx="14.1" cy="15.1" rx="0.85" ry="1.1" fill="#3e4753" />
-      <circle cx="9.5" cy="10.5" r="1.25" fill="#3e4753" />
-      <circle cx="14.5" cy="10.5" r="1.25" fill="#3e4753" />
+    <svg
+      viewBox="4 4.5 16 15.5"
+      width="64"
+      height="62"
+      aria-hidden="true"
+      focusable="false"
+      {...props}
+    >
+      <g stroke="#5c6774" strokeWidth="0.45">
+        <circle cx="7.9" cy="7.4" r="1.9" fill="#93a1b5" />
+        <circle cx="16.1" cy="7.4" r="1.9" fill="#93a1b5" />
+        <circle cx="7.9" cy="7.6" r="0.9" fill="#e8a2b0" stroke="none" />
+        <circle cx="16.1" cy="7.6" r="0.9" fill="#e8a2b0" stroke="none" />
+        <ellipse cx="12" cy="12.6" rx="7" ry="5.9" fill="#93a1b5" />
+        <ellipse cx="12" cy="15.6" rx="5.1" ry="3.5" fill="#b6c1d1" />
+        <ellipse cx="9.9" cy="15.1" rx="0.85" ry="1.1" fill="#3e4753" stroke="none" />
+        <ellipse cx="14.1" cy="15.1" rx="0.85" ry="1.1" fill="#3e4753" stroke="none" />
+        <circle cx="9.5" cy="10.4" r="1.5" fill="#ffffff" />
+        <circle cx="14.5" cy="10.4" r="1.5" fill="#ffffff" />
+        <circle cx="9.8" cy="10.6" r="0.7" fill="#3e4753" stroke="none" />
+        <circle cx="14.2" cy="10.6" r="0.7" fill="#3e4753" stroke="none" />
+      </g>
     </svg>
   )
 }

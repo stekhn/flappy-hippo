@@ -51,8 +51,6 @@ export function resolvePalette(dark: boolean): Palette {
 }
 
 /** Particle colours, keyed by the tint the simulation asked for. */
-export function tintColor(p: Palette, tint: 'melon' | 'bubble' | 'dust'): string {
-  if (tint === 'melon') return p.melon
-  if (tint === 'bubble') return p.bubble
-  return p.hippoDark
+export function tintColor(p: Palette, tint: 'melon' | 'bubble'): string {
+  return tint === 'melon' ? p.melon : p.bubble
 }

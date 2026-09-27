@@ -231,3 +231,16 @@ test('a shield only spawns once a few pipes are cleared and none is held', () =>
     mock.restoreAll()
   }
 })
+
+test('knocked out, the hippo stays exactly where it was hit', () => {
+  const state = running()
+  state.pipes = [{ x: world.hippoX - 4, gapY: 0, half: 10, passed: true }]
+  state.hippoY = 100
+  state.velocity = 0
+  step(state)
+  assert.equal(state.phase, 'over')
+  const restingAt = state.hippoY
+  for (let i = 0; i < 120; i++) step(state, 1 / 60, 2000 + i * 16)
+  assert.equal(state.hippoY, restingAt)
+  assert.equal(state.particles.length, 0, 'no dust on a crash')
+})

@@ -23,15 +23,13 @@ export function StartCard({
   onStart,
   onOpenMenu,
 }: StartCardProps) {
-  const current = DIFFICULTIES.find((d) => d.id === difficulty) ?? DIFFICULTIES[1]
-
   return (
-    <CardShell align="end" onBackdropTap={onStart} labelledBy="start-title">
+    <CardShell onBackdropTap={onStart} labelledBy="start-title">
       <HippoMark className="animate-wobble mx-auto -mt-1 mb-1" />
       <h1 id="start-title" className="t-title text-brand">
         Flappy Hippo
       </h1>
-      <p className="t-hint mt-2">
+      <p className="mt-2">
         {touch ? 'Tippen lässt das Nilpferd fliegen.' : 'Klick oder Leertaste lässt das Nilpferd fliegen.'}
       </p>
 
@@ -39,17 +37,16 @@ export function StartCard({
         <Segmented
           label="Schwierigkeit"
           value={difficulty}
-          options={DIFFICULTIES.map((d) => ({ value: d.id, label: d.label, hint: d.hint }))}
+          options={DIFFICULTIES.map((d) => ({ value: d.id, label: d.label }))}
           onChange={onDifficulty}
         />
-        <p className="t-hint mt-2">{current.hint}</p>
       </div>
 
       {best > 0 && (
         <p className="t-label text-gold mt-4 flex items-center justify-center gap-1.5">
           <IconTrophy width={18} height={18} />
           <span>
-            Rekord <span className="t-number text-ink">{best}</span>
+            Rekord <span className="t-number">{best}</span>
           </span>
         </p>
       )}

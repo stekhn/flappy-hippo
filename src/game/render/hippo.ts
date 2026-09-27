@@ -8,7 +8,12 @@ export interface HippoPose {
   tilt: number
   /** 0..1 through one wing beat. */
   flap: number
-  eyesClosed: boolean
+  /** Knocked out: wings and ears droop, legs dangle, eyes shut. */
+  defeated: boolean
+  /** How far the head nods forward around the neck, in radians. 0 in flight. */
+  headNod: number
+  /** How far the head hangs below its normal place, in world units. 0 in flight. */
+  headDrop: number
   shielded: boolean
   /** 0..1 of the invulnerability window left after a shield popped. */
   sparkle: number
@@ -20,7 +25,12 @@ export function drawHippo(
   pose: HippoPose,
   now: number,
 ): void {
-  const flick = Math.sin(pose.flap * Math.PI)
+  const flick = pose.defeated ? 0 : Math.sin(pose.flap * Math.PI)
+  // In defeat everything that was held up hangs down. The wing's rest angle is 0.5 and a
+  // downstroke swings it negative, so "limp" is further that way than any flap goes.
+  const wingAngle = pose.defeated ? -1.15 : 0.5 - flick * 1.2
+  const earDroop = pose.defeated ? 0.6 : 0
+  const kick = pose.defeated ? 0.35 : (flick - 0.5) * 0.5
 
   ctx.save()
   ctx.translate(pose.x, pose.y)
@@ -30,33 +40,37 @@ export function drawHippo(
   ctx.lineWidth = OUTLINE
   ctx.strokeStyle = p.hippoDark
 
-  const kick = (flick - 0.5) * 0.5
   ctx.fillStyle = p.hippoDark
   drawLeg(ctx, -12, 6, kick)
-  drawLeg(ctx, 0, 7, -kick)
+  drawLeg(ctx, 0, 7, pose.defeated ? kick : -kick)
 
   drawShadedEllipse(ctx, p, -6, 0, 17, 12, -2.4, -3.2)
 
   ctx.save()
   ctx.translate(-10, -4)
-  ctx.rotate(0.5 - flick * 1.2)
+  ctx.rotate(wingAngle)
   ctx.fillStyle = p.wing
   drawWing(ctx)
   ctx.restore()
 
+  // The head is one group hung from the neck, so a nod turns ears, snout and eyes together.
+  ctx.save()
+  ctx.translate(4, -2 + pose.headDrop)
+  ctx.rotate(pose.headNod)
+
   // Drawn before the head, so only the ear's grey tip peeks out
   ctx.save()
-  ctx.translate(14.7, -11)
-  ctx.rotate(-0.08 + flick * 0.8)
+  ctx.translate(10.7, -9)
+  ctx.rotate(-0.08 + flick * 0.8 - earDroop)
   ctx.fillStyle = p.hippoBody
   drawEllipse(ctx, 0, 0, 2.6, 3.8, true)
   ctx.restore()
 
-  drawShadedEllipse(ctx, p, 10, -3, 11, 9, -1.8, -2.6)
+  drawShadedEllipse(ctx, p, 6, -1, 11, 9, -1.8, -2.6)
 
   ctx.save()
-  ctx.translate(8, -11)
-  ctx.rotate(-0.06 - flick * 0.8)
+  ctx.translate(4, -9)
+  ctx.rotate(-0.06 - flick * 0.8 - earDroop)
   ctx.fillStyle = p.hippoBody
   drawEllipse(ctx, 0, 0, 3, 4, true)
   ctx.fillStyle = p.hippoEar
@@ -64,19 +78,21 @@ export function drawHippo(
   ctx.restore()
 
   ctx.fillStyle = p.hippoLight
-  drawEllipse(ctx, 16, 1, 8, 6, true)
+  drawEllipse(ctx, 12, 3, 8, 6, true)
   ctx.fillStyle = p.hippoDark
-  drawEllipse(ctx, 19, -2, 1.3, 1.3)
-  drawEllipse(ctx, 14.6, -2.15, 1.3, 1.3)
+  drawEllipse(ctx, 15, 0, 1.3, 1.3)
+  drawEllipse(ctx, 10.6, -0.15, 1.3, 1.3)
 
-  ctx.fillStyle = pose.eyesClosed ? p.hippoBody : '#ffffff'
-  drawEllipse(ctx, 11.4, -6.9, 2.2, 2.2, true)
-  drawEllipse(ctx, 16.6, -7.5, 2.2, 2.2, true)
-  if (!pose.eyesClosed) {
+  // Eyes shut in defeat: the lids are just the body colour over the whites.
+  ctx.fillStyle = pose.defeated ? p.hippoBody : '#ffffff'
+  drawEllipse(ctx, 7.4, -4.9, 2.2, 2.2, true)
+  drawEllipse(ctx, 12.6, -5.5, 2.2, 2.2, true)
+  if (!pose.defeated) {
     ctx.fillStyle = p.hippoDark
-    drawEllipse(ctx, 12.1, -6.9, 1, 1)
-    drawEllipse(ctx, 17.3, -7.5, 1, 1)
+    drawEllipse(ctx, 8.1, -4.9, 1, 1)
+    drawEllipse(ctx, 13.3, -5.5, 1, 1)
   }
+  ctx.restore()
 
   ctx.restore()
 

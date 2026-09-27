@@ -44,7 +44,8 @@
   --game-city-near: #c6dcfd;
   --game-ground: #dee2e6;
   --game-text: #1b2a44;
-  --game-muted: #5d6b85;
+  /* Secondary text is a tint of the sky's blue, never a grey — grey reads as disabled. */
+  --game-muted: #4f6a96;
   --game-gold: #e8930c;
   --game-gold-deep: #b86f00;
   /* Every modal — cards, sheet, toasts — shares this one frosted surface. */
@@ -70,7 +71,7 @@
   --game-city-near: #26313f;
   --game-ground: #2c3646;
   --game-text: #e3eaf5;
-  --game-muted: #9db0cc;
+  --game-muted: #a6bad9;
   --game-gold: #ffc65c;
   --game-gold-deep: #c98a1a;
   --game-glass: rgb(18 27 40 / 0.82);
@@ -146,10 +147,10 @@ body {
     touch-action: manipulation;
   }
 
+  /* The ring follows the element's own corners; it must never change its shape. */
   :focus-visible {
     outline: 3px solid var(--game-brand);
     outline-offset: 3px;
-    border-radius: 9999px;
   }
 }
 

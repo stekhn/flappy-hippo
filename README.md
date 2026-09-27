@@ -92,6 +92,8 @@ src/game/render/   Canvas-Zeichenroutinen (Nilpferd, Röhren, Kulisse, Effekte)
 src/components/    React-Oberfläche: HUD, Karten, Menü
 src/hooks/         Laufzeit-Anbindung, Einstellungen, Fortschritt, Installations-Prompt
 assets/            Icon-Quellen (SVG) für scripts/make-icons.ts
+dev/               Pose-Labor: `npm run dev`, dann /dev/poses.html — Kontaktbogen der Nilpferd-Posen
+docs/              der gerenderte Kontaktbogen (defeat-poses.png)
 ```
 
 ## Herkunft

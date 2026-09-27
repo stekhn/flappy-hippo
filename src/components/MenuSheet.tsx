@@ -4,6 +4,7 @@ import { ACHIEVEMENTS } from '../game/achievements.ts'
 import { DIFFICULTIES, difficultyById } from '../game/difficulty.ts'
 import type { DifficultyId } from '../game/difficulty.ts'
 import type { Progress } from '../game/storage.ts'
+import { useMediaQuery } from '../hooks/useMediaQuery.ts'
 import { isIos, isStandalone } from '../platform.ts'
 import type { Settings } from '../settings.ts'
 import { THEME_OPTIONS } from '../theme.ts'
@@ -36,7 +37,14 @@ interface MenuSheetProps {
   onResetProgress: () => void
 }
 
-/** The bottom sheet behind the menu button: settings, records, achievements and the how-to. */
+/** Wide and short — a phone on its side, a laptop — gets a dialog with a tab rail instead of a sheet. */
+const WIDE = '(min-width: 640px) and (orientation: landscape)'
+
+/**
+ * The menu behind the menu button: settings, records, achievements and the how-to. In portrait it
+ * is a bottom sheet with a tab bar; in landscape a centred dialog with the tabs down the left, so
+ * a short screen still shows a useful amount of content.
+ */
 export function MenuSheet({
   tab,
   settings,
@@ -87,73 +95,104 @@ export function MenuSheet({
     }
   }, [onClose])
 
+  const wide = useMediaQuery(WIDE)
+
+  const tabs = TABS.map(({ id, label, icon: Icon }) => (
+    <button
+      key={id}
+      type="button"
+      role="tab"
+      aria-selected={tab === id}
+      onClick={() => onTab(id)}
+      className={`t-label flex items-center gap-2 rounded-2xl text-[0.9375rem] transition-[background-color,color,box-shadow] duration-100 ${
+        wide ? 'w-full justify-start px-3 py-2.5' : 'flex-1 flex-col gap-0.5 px-1 py-2'
+      } ${tab === id ? 'bg-brand text-white shadow-[0_3px_0_var(--game-brand-deep)]' : 'text-muted'}`}
+    >
+      <Icon width={22} height={22} />
+      {label}
+    </button>
+  ))
+
+  const content = (
+    <div
+      role="tabpanel"
+      aria-label={TABS.find((t) => t.id === tab)?.label}
+      className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pt-4 pb-1"
+    >
+      {tab === 'settings' && (
+        <SettingsTab
+          settings={settings}
+          theme={theme}
+          canInstall={canInstall}
+          onSetting={onSetting}
+          onTheme={onTheme}
+          onInstall={onInstall}
+          onResetProgress={onResetProgress}
+        />
+      )}
+      {tab === 'scores' && <ScoresTab progress={progress} />}
+      {tab === 'awards' && <AwardsTab progress={progress} />}
+      {tab === 'help' && <HelpTab />}
+    </div>
+  )
+
+  const close = (
+    <button type="button" className="icon-btn h-10 w-10" onClick={onClose} aria-label="Menü schließen">
+      <IconClose width={20} height={20} />
+    </button>
+  )
+
   return (
     <div
-      className="animate-fade absolute inset-0 z-20 flex items-end justify-center bg-black/30"
+      className={`safe-inset animate-fade absolute inset-0 z-20 flex justify-center bg-black/30 ${
+        wide ? 'items-center' : 'items-end !p-0'
+      }`}
       onPointerDown={onClose}
     >
-      <div
-        ref={panel}
-        tabIndex={-1}
-        role="dialog"
-        aria-modal="true"
-        aria-label="Menü"
-        className="glass animate-rise flex max-h-[88dvh] w-full max-w-[30rem] flex-col rounded-t-[1.75rem] border-b-0 outline-none"
-        style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}
-        onPointerDown={(event) => event.stopPropagation()}
-      >
-        {/* Its own row, so the close button never sits on top of the last tab. */}
-        <div className="relative flex h-12 shrink-0 items-center justify-center px-2 pt-2">
-          <div className="bg-ink/20 h-1.5 w-12 rounded-full" aria-hidden="true" />
-          <button
-            type="button"
-            className="icon-btn absolute right-3 h-10 w-10"
-            onClick={onClose}
-            aria-label="Menü schließen"
-          >
-            <IconClose width={20} height={20} />
-          </button>
-        </div>
-
-        <div role="tablist" aria-label="Bereiche" className="flex gap-1 px-3 pt-1">
-          {TABS.map(({ id, label, icon: Icon }) => (
-            <button
-              key={id}
-              type="button"
-              role="tab"
-              aria-selected={tab === id}
-              onClick={() => onTab(id)}
-              className={`t-label flex flex-1 flex-col items-center gap-0.5 rounded-2xl px-1 py-2 text-[0.9375rem] transition-[background-color,color,box-shadow] duration-100 ${
-                tab === id ? 'bg-brand text-white shadow-[0_3px_0_var(--game-brand-deep)]' : 'text-muted'
-              }`}
-            >
-              <Icon width={22} height={22} />
-              {label}
-            </button>
-          ))}
-        </div>
-
+      {wide ? (
         <div
-          role="tabpanel"
-          aria-label={TABS.find((t) => t.id === tab)?.label}
-          className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pt-4 pb-1"
+          ref={panel}
+          tabIndex={-1}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Menü"
+          className="glass animate-pop flex max-h-full w-full max-w-[44rem] rounded-[1.75rem] outline-none"
+          onPointerDown={(event) => event.stopPropagation()}
         >
-          {tab === 'settings' && (
-            <SettingsTab
-              settings={settings}
-              theme={theme}
-              canInstall={canInstall}
-              onSetting={onSetting}
-              onTheme={onTheme}
-              onInstall={onInstall}
-              onResetProgress={onResetProgress}
-            />
-          )}
-          {tab === 'scores' && <ScoresTab progress={progress} />}
-          {tab === 'awards' && <AwardsTab progress={progress} />}
-          {tab === 'help' && <HelpTab />}
+          <div
+            role="tablist"
+            aria-label="Bereiche"
+            aria-orientation="vertical"
+            className="flex w-44 shrink-0 flex-col gap-1 p-3"
+          >
+            <div className="mb-1 flex justify-start">{close}</div>
+            {tabs}
+          </div>
+          <div className="bg-glass-edge my-3 w-0.5 shrink-0" aria-hidden="true" />
+          {content}
         </div>
-      </div>
+      ) : (
+        <div
+          ref={panel}
+          tabIndex={-1}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Menü"
+          className="glass animate-rise flex max-h-[88dvh] w-full max-w-[30rem] flex-col rounded-t-[1.75rem] border-b-0 outline-none"
+          style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}
+          onPointerDown={(event) => event.stopPropagation()}
+        >
+          {/* Its own row, so the close button never sits on top of the last tab. */}
+          <div className="relative flex h-12 shrink-0 items-center justify-center px-2 pt-2">
+            <div className="bg-ink/20 h-1.5 w-12 rounded-full" aria-hidden="true" />
+            <div className="absolute right-3">{close}</div>
+          </div>
+          <div role="tablist" aria-label="Bereiche" className="flex gap-1 px-3 pt-1">
+            {tabs}
+          </div>
+          {content}
+        </div>
+      )}
     </div>
   )
 }
@@ -187,10 +226,9 @@ function SettingsTab({
         <Segmented
           label="Schwierigkeit"
           value={settings.difficulty}
-          options={DIFFICULTIES.map((d) => ({ value: d.id, label: d.label, hint: d.hint }))}
+          options={DIFFICULTIES.map((d) => ({ value: d.id, label: d.label }))}
           onChange={(value: DifficultyId) => onSetting('difficulty', value)}
         />
-        <p className="t-hint mt-2">{difficultyById(settings.difficulty).hint}</p>
       </Section>
 
       <Section title="Tag oder Nacht">
@@ -227,10 +265,10 @@ function SettingsTab({
       )}
       {!canInstall && isIos() && !isStandalone() && (
         <Section title="Installieren">
-          <p className="t-hint">
+          <p>
             Auf dem iPhone oder iPad: in Safari das{' '}
-            <span className="text-ink font-bold">Teilen</span>-Symbol antippen und{' '}
-            <span className="text-ink font-bold">„Zum Home-Bildschirm"</span> wählen. Das Spiel
+            <span className="text-brand font-bold">Teilen</span>-Symbol antippen und{' '}
+            <span className="text-brand font-bold">„Zum Home-Bildschirm"</span> wählen. Das Spiel
             startet dann bildschirmfüllend und läuft auch offline.
           </p>
         </Section>
@@ -291,7 +329,7 @@ function ScoresTab({ progress }: { progress: Progress }) {
 
       <Section title="Beste Runden">
         {scores.length === 0 ? (
-          <p className="t-hint">Noch keine Runde beendet.</p>
+          <p>Noch keine Runde beendet.</p>
         ) : (
           <ol className="tile divide-tile-edge divide-y-2 px-4">
             {scores.map((entry, index) => (
@@ -371,7 +409,7 @@ function AwardsTab({ progress }: { progress: Progress }) {
               </span>
               <span className="min-w-0 flex-1">
                 <span className="t-label block">{achievement.label}</span>
-                <span className="t-hint block text-[0.875rem]">{achievement.hint}</span>
+                <span className="block text-[0.875rem]">{achievement.hint}</span>
               </span>
               {unlocked && <IconCheck width={22} height={22} className="text-gold shrink-0" />}
             </li>
@@ -386,35 +424,35 @@ function HelpTab() {
   return (
     <>
       <Section title="So wird gespielt">
-        <ul className="t-hint space-y-2.5">
+        <ul className="space-y-2.5">
           <li>
-            <span className="text-ink font-bold">Tippen oder Leertaste</span> lässt das Nilpferd
+            <span className="text-brand font-bold">Tippen oder Leertaste</span> lässt das Nilpferd
             einmal mit den Flügeln schlagen. Nicht gedrückt halten — es fällt sonst trotzdem.
           </li>
           <li>
-            <span className="text-ink font-bold">Jedes Hindernis</span> gibt einen Punkt, jede
+            <span className="text-brand font-bold">Jedes Hindernis</span> gibt einen Punkt, jede
             Melone drei. Melonen hängen zwischen den Röhren: ein Umweg, der sich lohnen kann.
           </li>
           <li>
-            <span className="text-ink font-bold">Die Blase</span> in einer Lücke hält genau einen
+            <span className="text-brand font-bold">Die Blase</span> in einer Lücke hält genau einen
             Treffer aus. Danach bleibt das Nilpferd kurz unverwundbar.
           </li>
           <li>
-            <span className="text-ink font-bold">Die Decke</span> ist eine Grenze, kein Ende — nur
+            <span className="text-brand font-bold">Die Decke</span> ist eine Grenze, kein Ende — nur
             Boden und Röhren sind gefährlich.
           </li>
         </ul>
       </Section>
 
       <Section title="Tastatur">
-        <dl className="t-hint space-y-2">
+        <dl className="space-y-2">
           <Shortcut keys="Leertaste, ↑" action="Fliegen, Runde starten, neue Runde" />
           <Shortcut keys="P, Esc" action="Pause und weiter (mit Countdown)" />
         </dl>
       </Section>
 
       <Section title="Über das Spiel">
-        <p className="t-hint">
+        <p>
           Flappy Hippo läuft komplett im Browser. Einmal geladen, funktioniert es auch offline, und
           alle Rekorde bleiben auf diesem Gerät.
         </p>

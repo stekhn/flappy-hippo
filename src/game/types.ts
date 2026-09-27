@@ -37,7 +37,7 @@ export interface Rocket {
 }
 
 /** Which palette colour a particle borrows — resolved at draw time, so a theme swap re-tints them. */
-export type Tint = 'melon' | 'bubble' | 'dust'
+export type Tint = 'melon' | 'bubble'
 
 export interface Particle {
   x: number

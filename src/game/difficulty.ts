@@ -9,7 +9,6 @@ type Ramped = readonly [from: number, to: number]
 export interface Difficulty {
   id: DifficultyId
   label: string
-  hint: string
   /** Scroll speed in world units per second. */
   speed: Ramped
   /** Distance between pipe centres, in world units. */
@@ -24,7 +23,6 @@ export const DIFFICULTIES: Difficulty[] = [
   {
     id: 'easy',
     label: 'Leicht',
-    hint: 'Weite Lücken, viel Zeit',
     speed: [128, 172],
     spacing: [218, 252],
     gap: [152, 128],
@@ -33,7 +31,6 @@ export const DIFFICULTIES: Difficulty[] = [
   {
     id: 'normal',
     label: 'Normal',
-    hint: 'Das klassische Nilpferd',
     speed: [150, 235],
     spacing: [205, 250],
     gap: [132, 102],
@@ -42,7 +39,6 @@ export const DIFFICULTIES: Difficulty[] = [
   {
     id: 'hard',
     label: 'Schwer',
-    hint: 'Enge Lücken, volle Fahrt',
     speed: [178, 292],
     spacing: [196, 248],
     gap: [114, 88],

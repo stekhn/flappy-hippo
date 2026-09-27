@@ -4,7 +4,7 @@ import { medalFor, nextMedal } from '../game/medals.ts'
 import type { Snapshot } from '../game/runtime.ts'
 import { canShare } from '../platform.ts'
 import { CardShell } from './CardShell.tsx'
-import { IconChart, IconMelon, IconRestart, IconShare, IconStar, IconTrophy } from './icons.tsx'
+import { IconChart, IconMelon, IconRestart, IconShare, IconTrophy } from './icons.tsx'
 import type { MenuTab } from './MenuSheet.tsx'
 
 interface OverCardProps {
@@ -29,6 +29,10 @@ async function shareScore(snapshot: Snapshot): Promise<void> {
   }
 }
 
+/**
+ * The round's result. One number is the hero — this round's score — and everything else is a
+ * chip underneath it: the record (gold when it just fell), the melons, the next medal.
+ */
 export function OverCard({ snapshot, touch, onRestart, onOpenMenu }: OverCardProps) {
   const medal = medalFor(snapshot.score)
   const next = nextMedal(snapshot.score)
@@ -55,31 +59,37 @@ export function OverCard({ snapshot, touch, onRestart, onOpenMenu }: OverCardPro
         </div>
       )}
 
-      <dl className="mt-5 grid grid-cols-2 gap-2 text-left">
-        <Stat icon={<IconStar width={18} height={18} className="text-brand" />} label="Punkte">
-          {snapshot.score}
-        </Stat>
-        <Stat
-          icon={<IconTrophy width={18} height={18} className="text-gold" />}
-          label={snapshot.newBest ? 'Neuer Rekord' : 'Rekord'}
-          highlight={snapshot.newBest}
+      <p className="mt-4">
+        <span
+          className={`t-number block text-[4rem] ${snapshot.newBest ? 'text-gold' : 'text-brand'}`}
         >
-          {snapshot.best}
-        </Stat>
-      </dl>
+          {snapshot.score}
+        </span>
+        <span className="t-label block">{snapshot.score === 1 ? 'Punkt' : 'Punkte'}</span>
+      </p>
 
-      {snapshot.melons > 0 && (
-        <p className="t-hint mt-3 flex items-center justify-center gap-1.5">
-          <IconMelon width={18} height={18} />
-          <span className="t-number text-ink text-base">{snapshot.melons}</span>
-          {snapshot.melons === 1 ? 'Melone eingesammelt' : 'Melonen eingesammelt'}
-        </p>
-      )}
+      <ul className="mt-3 flex flex-wrap justify-center gap-2">
+        <Chip icon={<IconTrophy width={18} height={18} />} gold={snapshot.newBest ? 'filled' : 'text'}>
+          {snapshot.newBest ? (
+            'Neuer Rekord'
+          ) : (
+            <>
+              Rekord <span className="t-number">{snapshot.best}</span>
+            </>
+          )}
+        </Chip>
+        {snapshot.melons > 0 && (
+          <Chip icon={<IconMelon width={18} height={18} className="text-brand" />}>
+            <span className="t-number">{snapshot.melons}</span>{' '}
+            {snapshot.melons === 1 ? 'Melone' : 'Melonen'}
+          </Chip>
+        )}
+      </ul>
 
-      {next && !snapshot.newBest && (
-        <p className="t-hint mt-3">
-          Noch <span className="t-number text-ink text-base">{next.from - snapshot.score}</span>{' '}
-          Punkte bis {next.label}
+      {next && (
+        <p className="mt-3">
+          Noch <span className="t-number text-base">{next.from - snapshot.score}</span> Punkte bis{' '}
+          {next.label}
         </p>
       )}
 
@@ -104,24 +114,38 @@ export function OverCard({ snapshot, touch, onRestart, onOpenMenu }: OverCardPro
   )
 }
 
-function Stat({
+/**
+ * A small figure with an icon on the tile surface. A record is always gold, icon and text alike;
+ * when it is the news of the round the whole chip fills gold.
+ */
+function Chip({
   icon,
-  label,
-  highlight = false,
+  gold,
   children,
 }: {
   icon: ReactNode
-  label: string
-  highlight?: boolean
+  gold?: 'text' | 'filled'
   children: ReactNode
 }) {
   return (
-    <div className="tile px-4 py-3">
-      <dt className="t-hint flex items-center gap-1.5 text-[0.875rem]">
-        {icon}
-        {label}
-      </dt>
-      <dd className={`t-number mt-1 text-[1.75rem] ${highlight ? 'text-gold' : ''}`}>{children}</dd>
-    </div>
+    <li
+      className="t-label flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[0.9375rem]"
+      style={
+        gold === 'filled'
+          ? {
+              background: 'color-mix(in srgb, var(--game-gold) 20%, transparent)',
+              border: '2px solid var(--game-gold)',
+              color: 'var(--game-gold-deep)',
+            }
+          : {
+              background: 'var(--game-tile)',
+              border: '2px solid var(--game-tile-edge)',
+              color: gold ? 'var(--game-gold-deep)' : undefined,
+            }
+      }
+    >
+      {icon}
+      <span>{children}</span>
+    </li>
   )
 }

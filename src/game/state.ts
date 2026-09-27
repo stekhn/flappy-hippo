@@ -250,6 +250,7 @@ export function advance(
   events: GameEvent[],
 ): void {
   state.particles = stepParticles(state.particles, dt)
+  // Knocked out, the hippo stays exactly where it was hit; only the sky reacts.
   if (state.phase !== 'running') return
 
   const tuning = tuningFor(difficulty, state.score, world)
@@ -304,6 +305,5 @@ export function advance(
     events.push({ type: 'shield-pop' })
     return
   }
-  burst(state, world.hippoX, state.hippoY, 14, 'dust', 80, 0.6)
   gameOver(state, now, events)
 }
