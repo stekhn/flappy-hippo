@@ -34,6 +34,7 @@ export interface Pot {
   spin: number
   /** Went past the hippo without hitting it. */
   passed: boolean
+  /** Broken, on the wall or on the bubble: only its balcony is left to draw. */
   smashed: boolean
   seed: number
 }

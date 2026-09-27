@@ -248,7 +248,7 @@ test('a falling pot knocks the hippo out, and a shield takes the hit instead', (
     } else {
       assert.equal(state.phase, 'running')
       assert.equal(state.charges, 0)
-      assert.equal(state.pots.length, 0)
+      assert.ok(state.pots.every((pot) => pot.smashed))
       assert.ok(events.some((event) => event.type === 'shield-pop'))
       assert.ok(events.some((event) => event.type === 'smash'))
     }

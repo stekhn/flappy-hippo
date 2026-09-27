@@ -1,15 +1,26 @@
-import { OUTLINE } from '../constants.ts'
+import { BRICK_HEIGHT, BRICK_WIDTH, OUTLINE } from '../constants.ts'
+import { mix } from '../palette.ts'
 import type { Palette, Pot } from '../types.ts'
 
+/** The balcony a pot stands on: a brick parapet hanging from the top edge, a stone cap, a slab. */
+const BALCONY_WIDTH = 46
+const PARAPET_HEIGHT = 20
+const CAP_HEIGHT = 3
+const SLAB_HEIGHT = 3.5
+
 /**
- * Flower pots: they rest on the top edge, wobbling, then drop and tumble. Terracotta is the
- * bench's wood and the plant the street's greens, so they belong to the world they fall into.
+ * Flower pots and the balconies they come off. A balcony is a bit of the same brickwork as the
+ * street wall, hanging from the top edge; the pot stands on its cap, wobbles, then tips off and
+ * tumbles. The balcony stays and scrolls by, pot or no pot. Terracotta is the bench's wood and
+ * the plant the street's greens, so they belong to the world they fall into.
  */
 export function drawPots(ctx: CanvasRenderingContext2D, p: Palette, pots: Pot[]): void {
   ctx.save()
   ctx.lineJoin = 'round'
   ctx.lineCap = 'round'
+  for (const pot of pots) drawBalcony(ctx, p, Math.round(pot.x))
   for (const pot of pots) {
+    if (pot.smashed) continue
     ctx.save()
     ctx.translate(Math.round(pot.x), pot.y)
     ctx.rotate(pot.spin)
@@ -19,18 +30,73 @@ export function drawPots(ctx: CanvasRenderingContext2D, p: Palette, pots: Pot[])
   ctx.restore()
 }
 
+function drawBalcony(ctx: CanvasRenderingContext2D, p: Palette, x: number): void {
+  const left = x - BALCONY_WIDTH / 2
+  // The parapet: the wall's bricks, bevelled the same way
+  ctx.fillStyle = p.ground
+  ctx.fillRect(left, 0, BALCONY_WIDTH, PARAPET_HEIGHT)
+  const joints = new Path2D()
+  const edges = new Path2D()
+  for (let row = 0; row * BRICK_HEIGHT < PARAPET_HEIGHT; row++) {
+    const y = row * BRICK_HEIGHT + 0.5
+    if (row > 0) {
+      joints.moveTo(left, y)
+      joints.lineTo(left + BALCONY_WIDTH, y)
+      edges.moveTo(left, y + 1)
+      edges.lineTo(left + BALCONY_WIDTH, y + 1)
+    }
+    const shift = (row % 2) * (BRICK_WIDTH / 2)
+    for (let bx = left + shift - BRICK_WIDTH + 3; bx < left + BALCONY_WIDTH; bx += BRICK_WIDTH) {
+      if (bx <= left) continue
+      joints.moveTo(bx + 0.5, y)
+      joints.lineTo(bx + 0.5, Math.min(y + BRICK_HEIGHT, PARAPET_HEIGHT))
+      edges.moveTo(bx + 1.5, y + 1)
+      edges.lineTo(bx + 1.5, Math.min(y + BRICK_HEIGHT, PARAPET_HEIGHT))
+    }
+  }
+  ctx.lineWidth = 1
+  ctx.strokeStyle = p.groundLine
+  ctx.stroke(joints)
+  ctx.strokeStyle = p.groundHighlight
+  ctx.stroke(edges)
+  // The cap the pot stands on, a touch wider and lighter, and the slab under everything
+  ctx.lineWidth = OUTLINE
+  ctx.strokeStyle = p.groundLine
+  ctx.fillStyle = mix(p.ground, '#ffffff', 0.28)
+  ctx.beginPath()
+  ctx.roundRect(left - 2, PARAPET_HEIGHT, BALCONY_WIDTH + 4, CAP_HEIGHT, 0.8)
+  ctx.fill()
+  ctx.stroke()
+  ctx.fillStyle = p.ground
+  ctx.beginPath()
+  ctx.roundRect(left + 3, PARAPET_HEIGHT + CAP_HEIGHT, BALCONY_WIDTH - 6, SLAB_HEIGHT, [0, 0, 1.5, 1.5])
+  ctx.fill()
+  ctx.stroke()
+  // The outer edges of the parapet
+  ctx.beginPath()
+  ctx.moveTo(left, 0)
+  ctx.lineTo(left, PARAPET_HEIGHT)
+  ctx.moveTo(left + BALCONY_WIDTH, 0)
+  ctx.lineTo(left + BALCONY_WIDTH, PARAPET_HEIGHT)
+  ctx.stroke()
+}
+
 function drawPot(ctx: CanvasRenderingContext2D, p: Palette): void {
-  // The plant: three leaves up out of the soil, the shaded ones first
+  // Soil above the rim, then the plant out of it: three leaves and one small flower
+  ctx.fillStyle = mix(p.wood, '#000000', 0.55)
+  ctx.beginPath()
+  ctx.ellipse(0, -8.3, 6.4, 1.6, 0, 0, Math.PI * 2)
+  ctx.fill()
   ctx.lineWidth = 2
   for (const [color, leaves] of [
     [
       p.grassShade,
       [
-        [-2, -8, -7, -14],
-        [3, -8, 7, -13],
+        [-2, -8, -7.5, -14],
+        [3, -8, 7, -13.5],
       ],
     ],
-    [p.grassLit, [[0, -8, -1, -16]]],
+    [p.grassLit, [[0, -8, -1, -16.5]]],
   ] as const) {
     ctx.strokeStyle = color
     ctx.beginPath()
@@ -40,6 +106,17 @@ function drawPot(ctx: CanvasRenderingContext2D, p: Palette): void {
     }
     ctx.stroke()
   }
+  ctx.fillStyle = p.flower
+  for (let k = 0; k < 5; k++) {
+    const a = (k / 5) * Math.PI * 2
+    ctx.beginPath()
+    ctx.arc(-1 + Math.cos(a) * 1.7, -16.5 + Math.sin(a) * 1.7, 1, 0, Math.PI * 2)
+    ctx.fill()
+  }
+  ctx.fillStyle = p.flowerCenter
+  ctx.beginPath()
+  ctx.arc(-1, -16.5, 0.9, 0, Math.PI * 2)
+  ctx.fill()
   // The pot: a tapered body under a wider rim, lit from the left like everything else
   ctx.lineWidth = OUTLINE
   ctx.strokeStyle = p.hippoDark
@@ -60,6 +137,14 @@ function drawPot(ctx: CanvasRenderingContext2D, p: Palette): void {
   ctx.quadraticCurveTo(3.5, 9.2, 2, 9.2)
   ctx.closePath()
   ctx.fill()
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.18)'
+  ctx.beginPath()
+  ctx.moveTo(-5, -3)
+  ctx.lineTo(-3, -3)
+  ctx.lineTo(-2.2, 7)
+  ctx.lineTo(-4, 6.5)
+  ctx.closePath()
+  ctx.fill()
   ctx.fillStyle = p.wood
   ctx.beginPath()
   ctx.roundRect(-8, -8.5, 16, 5, 1.4)
@@ -67,4 +152,6 @@ function drawPot(ctx: CanvasRenderingContext2D, p: Palette): void {
   ctx.stroke()
   ctx.fillStyle = 'rgba(255, 255, 255, 0.22)'
   ctx.fillRect(-6, -7.3, 6, 1.2)
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.12)'
+  ctx.fillRect(2, -7.3, 5, 3)
 }

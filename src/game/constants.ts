@@ -100,8 +100,8 @@ export const POT_GRAVITY = 520
 export const POT_MAX_FALL = 300
 /** How far above or below the last gap a pot comes down as it passes the hippo, as a share of the jump. */
 export const POT_AIM = 0.6
-/** Where a pot rests before it drops: on the top edge, in full view, wobbling. */
-export const POT_REST_Y = 16
+/** Where a pot's centre is while it stands on its balcony's cap (see render/pots.ts). */
+export const POT_REST_Y = 13.4
 /** Pipe slots between two pots, at least. */
 export const POT_SPACING = 2
 

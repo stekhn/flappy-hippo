@@ -441,8 +441,8 @@ function HelpTab() {
           </li>
           <li>
             <span className="text-brand font-bold">Ab {STAGE_POTS} Punkten</span> fallen Blumentöpfe
-            vom oberen Rand. Ein Topf wackelt erst, dann fällt er: unten durch oder oben drüber. Ab{' '}
-            {STAGE_MOVERS} Punkten wandern manche Röhren auf und ab, zu erkennen an ihrer Schiene.
+            von den Balkonen. Ein Topf wackelt erst, dann fällt er: unten durch oder oben drüber. Ab{' '}
+            {STAGE_MOVERS} Punkten wandern manche Röhren auf und ab, zu erkennen an der Baustelle davor.
           </li>
         </ul>
       </Section>

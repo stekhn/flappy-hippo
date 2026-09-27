@@ -686,22 +686,24 @@ function drawCat(ctx: CanvasRenderingContext2D, p: Palette, x: number, base: num
 }
 
 /**
- * A small yellow dog standing, in the bench's wood with a red collar and a tag, tail wagging.
- * Every so often it lifts a hind leg against nothing in particular. Faces right.
+ * A small yellow dog standing, in the bench's wood: a capsule of a body on four short legs, a
+ * round head with a floppy ear, a red collar with a tag, tail up and wagging. Every so often it
+ * lifts a hind leg against nothing in particular. Faces right.
  */
 function drawDog(ctx: CanvasRenderingContext2D, p: Palette, x: number, base: number, age: number, seed: number): void {
   const coat = p.wood
   const light = mix(p.wood, '#ffffff', 0.45)
-  const dark = mix(p.wood, p.hippoDark, 0.35)
+  const shade = mix(p.wood, p.hippoDark, 0.16)
+  const dark = mix(p.wood, p.hippoDark, 0.32)
   const pee = routine(age, 6, 0.33, seed)
   const peeing = pee > 0
   const wag = Math.sin(age * 6 + seed * 9) * (peeing ? 0.5 : 1.4)
   ctx.lineWidth = OUTLINE
   ctx.strokeStyle = p.hippoDark
-  // Tail up, wagging
+  // Tail up, wagging, outlined by stroking it twice
   const tail = new Path2D()
-  tail.moveTo(x - 6.5, base - 9.5)
-  tail.quadraticCurveTo(x - 9.5 + wag, base - 12, x - 9 + wag, base - 15)
+  tail.moveTo(x - 7, base - 10.5)
+  tail.quadraticCurveTo(x - 10 + wag, base - 12.5, x - 9.5 + wag, base - 16)
   ctx.lineWidth = 2.2 + OUTLINE * 2
   ctx.stroke(tail)
   ctx.lineWidth = 2.2
@@ -709,42 +711,35 @@ function drawDog(ctx: CanvasRenderingContext2D, p: Palette, x: number, base: num
   ctx.stroke(tail)
   ctx.lineWidth = OUTLINE
   ctx.strokeStyle = p.hippoDark
-  // The far legs, in shade
-  ctx.fillStyle = dark
-  for (const lx of [x - 6.2, x + 3]) {
+  // Legs: the far pair a shade darker, then the body, then the near pair over it
+  const leg = (lx: number, color: string): void => {
+    ctx.fillStyle = color
     ctx.beginPath()
-    ctx.roundRect(lx, base - 8, 2.4, 8, 1)
+    ctx.roundRect(lx, base - 8, 2.8, 8, [1, 1, 1.4, 1.4])
     ctx.fill()
     ctx.stroke()
   }
-  // Body, with a lighter belly
+  leg(x - 4.2, shade)
+  leg(x + 2.4, shade)
   ctx.fillStyle = coat
   ctx.beginPath()
-  ctx.ellipse(x, base - 9.5, 8, 4.6, 0, 0, Math.PI * 2)
+  ctx.roundRect(x - 8.5, base - 14.5, 17, 9, 4.5)
   ctx.fill()
   ctx.stroke()
   ctx.fillStyle = light
   ctx.beginPath()
-  ctx.ellipse(x + 0.5, base - 7.5, 5.5, 2.1, 0, 0, Math.PI * 2)
+  ctx.ellipse(x + 0.5, base - 7.6, 5.5, 1.9, 0, 0, Math.PI * 2)
   ctx.fill()
-  // The near legs: the hind one lifts
-  ctx.fillStyle = coat
-  ctx.beginPath()
-  ctx.roundRect(x + 4.6, base - 8, 2.4, 8, 1)
-  ctx.fill()
-  ctx.stroke()
+  leg(x + 4.6, coat)
   ctx.save()
   if (peeing) {
-    ctx.translate(x - 3.2, base - 8)
+    ctx.translate(x - 5.4, base - 8)
     ctx.rotate(1.45 + Math.sin(pee * Math.PI * 4) * 0.05)
-    ctx.translate(-1.2, 0)
+    ctx.translate(-1.4, 0)
+    leg(0, coat)
   } else {
-    ctx.translate(x - 4.4, base - 8)
+    leg(x - 6.8, coat)
   }
-  ctx.beginPath()
-  ctx.roundRect(0, 0, 2.4, 7.5, 1)
-  ctx.fill()
-  ctx.stroke()
   ctx.restore()
   if (peeing) {
     const stream = mix(p.gold, '#ffffff', 0.35)
@@ -752,54 +747,58 @@ function drawDog(ctx: CanvasRenderingContext2D, p: Palette, x: number, base: num
     ctx.lineWidth = 1
     ctx.globalAlpha = 0.9
     ctx.beginPath()
-    ctx.moveTo(x - 2.5, base - 6)
-    ctx.quadraticCurveTo(x - 7, base - 6.5, x - 9.5, base - 0.6)
+    ctx.moveTo(x - 3.5, base - 6.5)
+    ctx.quadraticCurveTo(x - 8, base - 7, x - 10.5, base - 0.6)
     ctx.stroke()
     ctx.fillStyle = stream
     ctx.globalAlpha = 0.55
     ctx.beginPath()
-    ctx.ellipse(x - 10, base - 0.4, 1.5 + pee * 2.5, 0.7, 0, 0, Math.PI * 2)
+    ctx.ellipse(x - 11, base - 0.4, 1.5 + pee * 2.5, 0.7, 0, 0, Math.PI * 2)
     ctx.fill()
     ctx.globalAlpha = 1
     ctx.lineWidth = OUTLINE
     ctx.strokeStyle = p.hippoDark
   }
-  // The head, the muzzle, then the ear over the head
-  ctx.fillStyle = coat
-  ctx.beginPath()
-  ctx.ellipse(x + 8.4, base - 14, 4, 3.7, 0, 0, Math.PI * 2)
-  ctx.fill()
-  ctx.stroke()
-  ctx.fillStyle = light
-  ctx.beginPath()
-  ctx.ellipse(x + 11, base - 12.8, 2.8, 2, 0, 0, Math.PI * 2)
-  ctx.fill()
-  ctx.stroke()
-  ctx.fillStyle = dark
-  ctx.beginPath()
-  ctx.ellipse(x + 6.2, base - 13.2, 1.6, 3.2, 0.5, 0, Math.PI * 2)
-  ctx.fill()
-  ctx.stroke()
-  drawEye(ctx, p.wing, p.hippoDark, x + 9.2, base - 15.2, 1.05)
-  ctx.fillStyle = p.hippoDark
-  ctx.beginPath()
-  ctx.ellipse(x + 13.3, base - 13.4, 1.1, 0.85, 0, 0, Math.PI * 2)
-  ctx.fill()
-  // A red collar round the neck, in front, with a tag hanging from it
-  ctx.save()
-  ctx.translate(x + 6.4, base - 10.6)
-  ctx.rotate(-0.55)
+  // Collar behind the head, the head, the muzzle with its nose, the eye, the ear over the head
   ctx.fillStyle = p.melonFlesh
   ctx.beginPath()
-  ctx.roundRect(-2.4, -1, 4.8, 2, 0.8)
+  ctx.roundRect(x + 5.4, base - 14.2, 2.6, 5, 1)
   ctx.fill()
   ctx.stroke()
   ctx.fillStyle = p.gold
   ctx.beginPath()
-  ctx.arc(0.6, 1.9, 1, 0, Math.PI * 2)
+  ctx.arc(x + 6.7, base - 8.8, 1, 0, Math.PI * 2)
   ctx.fill()
   ctx.stroke()
-  ctx.restore()
+  ctx.fillStyle = coat
+  ctx.beginPath()
+  ctx.arc(x + 9.2, base - 15.2, 4.4, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.stroke()
+  ctx.fillStyle = light
+  ctx.beginPath()
+  ctx.ellipse(x + 11.8, base - 13.4, 2.9, 2.2, 0, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.stroke()
+  ctx.fillStyle = p.hippoDark
+  ctx.beginPath()
+  ctx.ellipse(x + 13.8, base - 14.3, 1.1, 0.85, 0, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.lineWidth = 0.8
+  ctx.beginPath()
+  ctx.arc(x + 12.2, base - 12.6, 1.2, Math.PI * 0.15, Math.PI * 0.75)
+  ctx.stroke()
+  ctx.lineWidth = OUTLINE
+  drawEye(ctx, p.wing, p.hippoDark, x + 10.2, base - 16.6, 1.05)
+  ctx.fillStyle = dark
+  ctx.beginPath()
+  ctx.moveTo(x + 8, base - 19.2)
+  ctx.quadraticCurveTo(x + 4.6, base - 18.4, x + 5, base - 13)
+  ctx.quadraticCurveTo(x + 5.3, base - 11, x + 7.2, base - 12)
+  ctx.quadraticCurveTo(x + 8.8, base - 14.5, x + 8, base - 19.2)
+  ctx.closePath()
+  ctx.fill()
+  ctx.stroke()
 }
 
 /** One of the hippo's eyes, small: white, outlined, a dark pupil a touch off centre. */

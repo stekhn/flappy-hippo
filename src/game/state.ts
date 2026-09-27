@@ -201,11 +201,10 @@ function spawnPot(state: GameState, world: World, pipe: Pipe, tuning: Tuning, pi
   })
 }
 
-/** Shards in the pot's colour, and the pot is gone. */
+/** Shards in the pot's colour, and the pot is gone; its balcony stays until it has scrolled off. */
 function smash(state: GameState, pot: Pot, y: number, events: GameEvent[]): void {
   burst(state, pot.x, y, 8, 'pot', 90, 1)
   pot.smashed = true
-  state.pots = state.pots.filter((other) => other !== pot)
   events.push({ type: 'smash' })
 }
 
@@ -219,6 +218,7 @@ function stepPots(state: GameState, dt: number, dx: number, world: World, tuning
   const reach = HIPPO_RADIUS + POT_RADIUS
   for (const pot of state.pots) {
     pot.x -= dx
+    if (pot.smashed) continue
     if (!pot.falling) {
       pot.spin = Math.sin(state.elapsed * 14 + pot.seed) * 0.12
       if (pot.x - world.hippoX <= tuning.speed * pot.lead) pot.falling = true
@@ -240,7 +240,7 @@ function stepPots(state: GameState, dt: number, dx: number, world: World, tuning
     const ddy = pot.y - state.hippoY
     if (ddx * ddx + ddy * ddy < reach * reach) struck = pot
   }
-  state.pots = state.pots.filter((pot) => pot.x > -POT_RADIUS * 3)
+  state.pots = state.pots.filter((pot) => pot.x > -60)
   return struck
 }
 

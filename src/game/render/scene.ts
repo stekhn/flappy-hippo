@@ -13,6 +13,7 @@ import { drawHippo } from './hippo.ts'
 import { drawPickups } from './pickups.ts'
 import { drawPipes } from './pipes.ts'
 import { drawPots } from './pots.ts'
+import { drawRoadworks } from './roadworks.ts'
 import type { LayerCache } from './layers.ts'
 import type { SkyMotion } from './scenery.ts'
 import { drawGround, drawScenery, drawSky } from './scenery.ts'
@@ -45,7 +46,8 @@ export function drawScene(
   drawPipes(ctx, p, state.pipes, world)
   drawPickups(ctx, p, state.pickups, now)
   drawGround(ctx, p, world, state.scrolled, state.round, now, cache)
-  // Pots land on the wall, so they go over it
+  // On the street, so over the wall: the road works before a moving pipe, and the pots
+  drawRoadworks(ctx, p, state.pipes, world)
   drawPots(ctx, p, state.pots)
   if (effects) drawParticles(ctx, p, state.particles)
   // In front of the world, behind the hippo: the party never hides the hero

@@ -9,7 +9,7 @@ auf dem Handy als App installieren und funktioniert danach auch offline.
 
 - **Eine Steuerung**: tippen, klicken oder Leertaste. Mehr braucht es nicht.
 - **Drei Schwierigkeitsstufen**, die mit steigender Punktzahl schneller und enger werden. Ab 100
-  Punkten fallen Blumentöpfe vom oberen Rand, ab 200 wandern manche Röhren auf und ab. Beides
+  Punkten fallen Blumentöpfe von den Balkonen, ab 200 wandern manche Röhren auf und ab. Beides
   kündigt sich an und lässt sich mit Können umfliegen: Sterben ist nie Zufall.
 - **Melonen und Schilde**: Melonen hängen zwischen den Röhren und bringen drei Punkte, die Blase
   hält genau einen Treffer aus.
