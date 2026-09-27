@@ -91,13 +91,14 @@ export function createSfx(initiallyMuted = false): Sfx {
 
   function hit(
     context: AudioContext,
-    opts: { duration: number; gain: number; cutoff: number; at?: number },
+    opts: { duration: number; gain: number; cutoff: number; at?: number; type?: BiquadFilterType; q?: number },
   ): void {
     const start = context.currentTime + (opts.at ?? 0)
     const source = context.createBufferSource()
     source.buffer = noiseBuffer(context)
     const filter = context.createBiquadFilter()
-    filter.type = 'lowpass'
+    filter.type = opts.type ?? 'lowpass'
+    if (opts.q !== undefined) filter.Q.value = opts.q
     filter.frequency.setValueAtTime(opts.cutoff, start)
     filter.frequency.exponentialRampToValueAtTime(Math.max(opts.cutoff * 0.2, 120), start + opts.duration)
     const gain = context.createGain()
@@ -144,8 +145,23 @@ export function createSfx(initiallyMuted = false): Sfx {
           hit(context, { duration: 0.12, gain: 0.08, cutoff: 3200 })
           return
         case 'crash':
-          tone(context, { type: 'sawtooth', from: 220, to: 60, duration: 0.42, gain: 0.2 })
-          hit(context, { duration: 0.34, gain: 0.18, cutoff: 1200 })
+          // Glass going: a thud, a bright burst of noise, and shards ringing off at random
+          // pitches, a few of them landing late.
+          tone(context, { type: 'sine', from: 150, to: 45, duration: 0.2, gain: 0.3 })
+          hit(context, { duration: 0.12, gain: 0.12, cutoff: 900 })
+          hit(context, { duration: 0.38, gain: 0.3, cutoff: 5200, type: 'bandpass', q: 0.8 })
+          for (let i = 0; i < 9; i++) {
+            const late = i >= 6
+            const from = 2200 + Math.random() * 6800
+            tone(context, {
+              type: 'sine',
+              from,
+              to: from * 0.96,
+              duration: 0.05 + Math.random() * 0.1,
+              gain: late ? 0.035 : 0.07,
+              at: late ? 0.26 + Math.random() * 0.2 : Math.random() * 0.14,
+            })
+          }
           return
         case 'milestone':
           ;[784, 988, 1175, 1568].forEach((f, i) =>

@@ -2,6 +2,9 @@ import { HIPPO_DRAW_SCALE, HIPPO_OUTLINE, HIPPO_RADIUS, INNER_LINE } from '../co
 import type { Palette } from '../types.ts'
 import { drawEllipse, drawShadedEllipse } from './shapes.ts'
 
+/** The bubble's radius: the drawn hippo, snout and feet included, with a little air around it. */
+const BUBBLE_RADIUS = HIPPO_RADIUS + 13
+
 export interface HippoPose {
   x: number
   y: number
@@ -113,7 +116,7 @@ export function drawHippo(
 
 /** A soft violet halo behind a shielded hippo: "this one can take a hit", visible at a glance. */
 function drawGlow(ctx: CanvasRenderingContext2D, p: Palette, pose: HippoPose): void {
-  const r = (HIPPO_RADIUS + 9) * 1.9
+  const r = BUBBLE_RADIUS * 1.9
   const glow = ctx.createRadialGradient(pose.x, pose.y, HIPPO_RADIUS, pose.x, pose.y, r)
   glow.addColorStop(0, p.bubble)
   glow.addColorStop(1, 'rgba(124, 77, 255, 0)')
@@ -127,7 +130,7 @@ function drawGlow(ctx: CanvasRenderingContext2D, p: Palette, pose: HippoPose): v
 /** The bubble breaking: a ring that flashes out and fades, with a few splinters along it. */
 function drawCrack(ctx: CanvasRenderingContext2D, p: Palette, pose: HippoPose): void {
   const t = pose.pop
-  const r = HIPPO_RADIUS + 9 + t * 22
+  const r = BUBBLE_RADIUS + t * 22
   ctx.save()
   ctx.translate(pose.x, pose.y)
   ctx.globalAlpha = (1 - t) * 0.9
@@ -158,7 +161,7 @@ function drawBubble(
   // Grows in with a little overshoot when just picked up (ease-out-back).
   const t = Math.min(Math.max(pose.shieldIn, 0), 1) - 1
   const grow = 1 + 2.70158 * t * t * t + 1.70158 * t * t
-  const r = (HIPPO_RADIUS + 9 + Math.sin(now / 320) * 1.2) * Math.max(grow, 0.05)
+  const r = (BUBBLE_RADIUS + Math.sin(now / 320) * 1.2) * Math.max(grow, 0.05)
   ctx.save()
   ctx.translate(pose.x, pose.y)
   const skin = ctx.createRadialGradient(0, 0, r * 0.55, 0, 0, r)

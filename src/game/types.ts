@@ -153,7 +153,10 @@ export interface Palette {
   text: string
   brand: string
   gold: string
+  /** The melon's colour wherever it stands for melons: the counter, the glow, the points. */
   melon: string
+  /** The wedge's flesh and its juice. */
+  melonFlesh: string
   melonRind: string
   melonSeed: string
   bubble: string

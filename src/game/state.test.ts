@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict'
 import { mock, test } from 'node:test'
-import { FLAP_VELOCITY, HIPPO_RADIUS, MAX_SHIELDS, MELON_POINTS, PIPE_WIDTH } from './constants.ts'
+import { FLAP_VELOCITY, HIPPO_RADIUS, MAX_SHIELDS, MELON_POINTS, MELON_REACH, PIPE_WIDTH } from './constants.ts'
 import { difficultyById } from './difficulty.ts'
 import { advance, flap, hasCollision, initialState } from './state.ts'
-import type { GameEvent, GameState, Pipe } from './types.ts'
+import type { GameEvent, GameState, Pickup, Pipe } from './types.ts'
 import { fitWorld } from './world.ts'
 
 const world = fitWorld(390, 780)
@@ -139,13 +139,16 @@ test('shield pickups stack, one charge each', () => {
 /**
  * Runs the spawner for a while with the hippo out of harm's way: every pipe is recorded as it
  * appears, then widened and re-centred so the round keeps going and the survey stays honest.
+ * Every melon is recorded with the gap of the pipe it was spawned with.
  */
 function surveySpawns(frames: number) {
   const state = initialState({ world, difficulty: normal, best: 0 })
   state.phase = 'running'
   state.pipes = []
   const seen = new Set<Pipe>()
+  const seenPickups = new Set<Pickup>()
   const spawns: { at: number; gapY: number; half: number }[] = []
+  const melons: { y: number; gapY: number }[] = []
   for (let i = 0; i < frames; i++) {
     state.hippoY = world.groundY / 2
     state.velocity = 0
@@ -157,9 +160,23 @@ function surveySpawns(frames: number) {
       pipe.gapY = state.hippoY
       pipe.half = 150
     }
+    for (const pickup of state.pickups) {
+      if (seenPickups.has(pickup)) continue
+      seenPickups.add(pickup)
+      if (pickup.kind === 'melon') melons.push({ y: pickup.y, gapY: spawns[spawns.length - 1].gapY })
+    }
   }
-  return { state, spawns }
+  return { state, spawns, melons }
 }
+
+test('melons hang within reach of the gap they are spawned with', () => {
+  const { melons } = surveySpawns(3000)
+  assert.ok(melons.length >= 5, `melons seen: ${melons.length}`)
+  for (const { y, gapY } of melons) {
+    assert.ok(Math.abs(y - gapY) <= normal.jump[1] * MELON_REACH + 1e-9, `melon at ${y} for a gap at ${gapY}`)
+    assert.ok(y > 0 && y < world.groundY)
+  }
+})
 
 test('pipes keep spawning within the difficulty spacing range', () => {
   const { spawns } = surveySpawns(1200)

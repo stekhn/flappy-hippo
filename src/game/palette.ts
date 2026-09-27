@@ -52,7 +52,8 @@ export function resolvePalette(dark: boolean): Palette {
     text: cssVar('--game-text', dark ? '#dde3ec' : '#1f2430'),
     brand,
     gold: cssVar('--game-gold', '#f5a524'),
-    melon: cssVar('--game-melon', dark ? '#ff7a9a' : '#e8395f'),
+    melon: cssVar('--game-melon', dark ? '#7fe0a0' : '#178a48'),
+    melonFlesh: dark ? '#ff7a9a' : '#e8395f',
     melonRind: '#2f8a4a',
     melonSeed: 'rgba(38, 30, 34, 0.85)',
     // The shield is the one violet thing in the game, so it can never be mistaken for a pipe.
@@ -69,10 +70,17 @@ export function resolvePalette(dark: boolean): Palette {
 
 /** Particle colours, keyed by the tint the simulation asked for. */
 export function tintColor(p: Palette, tint: 'melon' | 'bubble'): string {
-  return tint === 'melon' ? p.melon : p.bubble
+  return tint === 'melon' ? p.melonFlesh : p.bubble
 }
 
 /** A colour between two hex colours, `t` of the way from `a` to `b`. For variants of one thing. */
+/** `hex` (#rrggbb) at opacity `a`; anything else is returned as it is. */
+export function alpha(hex: string, a: number): string {
+  if (!/^#[0-9a-f]{6}$/i.test(hex)) return hex
+  const n = parseInt(hex.slice(1), 16)
+  return `rgba(${n >> 16}, ${(n >> 8) & 255}, ${n & 255}, ${a})`
+}
+
 export function mix(a: string, b: string, t: number): string {
   if (!/^#[0-9a-f]{6}$/i.test(a) || !/^#[0-9a-f]{6}$/i.test(b)) return a
   const pa = parseInt(a.slice(1), 16)

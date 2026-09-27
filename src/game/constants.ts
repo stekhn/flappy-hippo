@@ -62,6 +62,8 @@ export const PICKUP_RADIUS = 11
 export const MELON_POINTS = 3
 /** Share of pipe slots that carry a melon, and the rarer shield. */
 export const MELON_CHANCE = 0.4
+/** How far above or below the last gap a melon may hang, as a share of the gap jump. */
+export const MELON_REACH = 0.75
 export const SHIELD_CHANCE = 0.07
 /** Pipes to clear before the first shield can appear. */
 export const SHIELD_EARLIEST_PIPE = 5

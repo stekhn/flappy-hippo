@@ -1,4 +1,5 @@
 import { OUTLINE, PICKUP_RADIUS } from '../constants.ts'
+import { alpha } from '../palette.ts'
 import type { Palette, Pickup } from '../types.ts'
 
 export function drawPickups(
@@ -22,9 +23,17 @@ export function drawPickups(
   }
 }
 
-/** A melon wedge: green rind, pink flesh, three pips. Rocking gently on its flat side. */
+/**
+ * A melon wedge: green rind, pink flesh, three pips. Rocking gently on its flat side, in a
+ * soft glow of the melon green, as the shield orb has its violet.
+ */
 function drawMelon(ctx: CanvasRenderingContext2D, p: Palette, tilt: number): void {
   const r = PICKUP_RADIUS
+  const glow = ctx.createRadialGradient(0, 0, r * 0.4, 0, 0, r * 1.8)
+  glow.addColorStop(0, alpha(p.melon, 0.3))
+  glow.addColorStop(1, alpha(p.melon, 0))
+  ctx.fillStyle = glow
+  ctx.fillRect(-r * 1.8, -r * 1.8, r * 3.6, r * 3.6)
   ctx.rotate(tilt)
   ctx.lineWidth = OUTLINE + 0.3
   ctx.strokeStyle = 'rgba(24, 58, 36, 0.7)'
@@ -36,7 +45,7 @@ function drawMelon(ctx: CanvasRenderingContext2D, p: Palette, tilt: number): voi
   ctx.fill()
   ctx.stroke()
 
-  ctx.fillStyle = p.melon
+  ctx.fillStyle = p.melonFlesh
   ctx.beginPath()
   ctx.arc(0, r * 0.45, r - 2.4, Math.PI, Math.PI * 2)
   ctx.closePath()

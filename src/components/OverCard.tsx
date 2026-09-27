@@ -81,7 +81,7 @@ export function OverCard({ snapshot, touch, onRestart, onOpenMenu }: OverCardPro
           )}
         </Stat>
         {snapshot.melons > 0 && (
-          <Stat icon={<IconMelon width={18} height={18} />} tone="brand">
+          <Stat icon={<IconMelon width={18} height={18} />} tone="melon">
             <span className="t-number">{snapshot.melons}</span>{' '}
             {snapshot.melons === 1 ? 'Melone' : 'Melonen'}
           </Stat>

@@ -10,6 +10,7 @@ import {
   MAX_FALL_SPEED,
   MAX_SHIELDS,
   MELON_CHANCE,
+  MELON_REACH,
   MELON_POINTS,
   OVER_TITLES,
   PICKUP_RADIUS,
@@ -117,13 +118,17 @@ function spawnPickup(state: GameState, world: World, pipe: Pipe, tuning: Tuning)
     return
   }
   if (Math.random() >= MELON_CHANCE) return
-  // Melons hang in the open water between two pipes at any height: worth points, worth a detour,
-  // and sometimes worth leaving alone.
+  // Melons hang in the open water between two pipes, within reach of the gap just passed (the
+  // next gap is never further than a jump from it either): worth points, worth a detour, and
+  // sometimes worth leaving alone. On a tall field a melon anywhere would mostly be out of reach.
   const margin = PICKUP_RADIUS + GAP_MARGIN
+  const reach = tuning.jump * MELON_REACH
+  const low = Math.max(margin, pipe.gapY - reach)
+  const high = Math.min(world.groundY - margin, pipe.gapY + reach)
   state.pickups.push({
     kind: 'melon',
     x: pipe.x + tuning.spacing / 2,
-    y: margin + Math.random() * Math.max(world.groundY - 2 * margin, 0),
+    y: low + Math.random() * Math.max(high - low, 0),
     taken: false,
     seed: Math.random() * Math.PI * 2,
   })
