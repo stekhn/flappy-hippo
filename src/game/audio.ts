@@ -49,7 +49,8 @@ export function createSfx(initiallyMuted = false): Sfx {
       master.connect(ctx.destination)
     }
     // iOS suspends the context whenever the app goes to the background.
-    if (ctx.state === 'suspended') void ctx.resume()
+    // The promise rejects if the context is closed before the resume lands (a dev remount).
+    if (ctx.state === 'suspended') ctx.resume().catch(() => {})
     return ctx
   }
 
@@ -113,8 +114,9 @@ export function createSfx(initiallyMuted = false): Sfx {
     },
     setMuted(next: boolean) {
       muted = next
+      // Unmuting never creates a context: that waits for the first tap or key (`unlock`).
       if (muted && ctx) void ctx.suspend()
-      else if (!muted) ensure()
+      else if (!muted && ctx) ensure()
     },
     play(cue: Cue) {
       const context = ensure()
@@ -173,7 +175,7 @@ export function createSfx(initiallyMuted = false): Sfx {
       }
     },
     dispose() {
-      void ctx?.close()
+      if (ctx) ctx.close().catch(() => {})
       ctx = null
       master = null
       noise = null

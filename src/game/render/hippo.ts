@@ -155,8 +155,9 @@ function drawBubble(
   pose: HippoPose,
   now: number,
 ): void {
-  // Grows in with a little overshoot when just picked up.
-  const grow = pose.shieldIn < 1 ? 1.15 - 0.15 * Math.cos(pose.shieldIn * Math.PI) - (1 - pose.shieldIn) * 1.15 : 1
+  // Grows in with a little overshoot when just picked up (ease-out-back).
+  const t = Math.min(Math.max(pose.shieldIn, 0), 1) - 1
+  const grow = 1 + 2.70158 * t * t * t + 1.70158 * t * t
   const r = (HIPPO_RADIUS + 9 + Math.sin(now / 320) * 1.2) * Math.max(grow, 0.05)
   ctx.save()
   ctx.translate(pose.x, pose.y)
@@ -175,7 +176,7 @@ function drawBubble(
   ctx.lineWidth = 2
   ctx.beginPath()
   const sheen = now / 900
-  ctx.arc(0, 0, r - 2.5, sheen, sheen + 0.7)
+  ctx.arc(0, 0, Math.max(r - 2.5, 0), sheen, sheen + 0.7)
   ctx.stroke()
   // Spare charges show as thin rings outside the bubble.
   ctx.strokeStyle = p.bubbleEdge
