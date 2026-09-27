@@ -107,7 +107,7 @@ export interface GameState {
   moversPassed: number
   /** Pipe slots since the last pot, so two never come in a row. */
   pipesSincePot: number
-  /** The stage the score has reached (0, then pots, then movers), and when it was reached. */
+  /** The stage the score has reached (0, then moving pipes, then pots), and when it was reached. */
   stage: number
   stageAt: number
   /** Distance travelled, in world units — pipes spawn on distance, not on a timer. */

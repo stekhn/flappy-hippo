@@ -70,7 +70,7 @@ export function StartCard({
       </div>
 
       {/* The stages were brought forward in code for testing: say so, or it ships that way. */}
-      {EARLY_STAGES && <p className="t-hint mt-3">{t.start.testMode(STAGE_POTS, STAGE_MOVERS)}</p>}
+      {EARLY_STAGES && <p className="t-hint mt-3">{t.start.testMode(STAGE_MOVERS, STAGE_POTS)}</p>}
     </CardShell>
   )
 }

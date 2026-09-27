@@ -44,7 +44,7 @@ export const en = {
     pause: 'Pause',
     openMenu: 'Open menu',
     fly: 'Fly',
-    notices: { 1: 'Watch out, flower pots!', 2: 'The pipes are moving!' } as Record<number, string>,
+    notices: { 1: 'The pipes are moving!', 2: 'Watch out, flower pots!' } as Record<number, string>,
   },
   canvas: { shield: 'Shield' },
   status: {
@@ -120,9 +120,13 @@ export const en = {
         { lead: 'The bubble', rest: 'in a gap takes exactly one hit. Afterwards the hippo is briefly invulnerable.' },
         { lead: 'The ceiling', rest: 'is a limit, not an end. Only the ground and the pipes are dangerous.' },
       ],
-      stages: (pots: number, movers: number) => ({
-        lead: `From ${pots} points`,
-        rest: `flower pots fall from the balconies. A pot wobbles first, then it drops: go under or over. From ${movers} points some pipes move up and down, marked by the road works in front of them.`,
+      stages: (movers: number, pots: number) => ({
+        lead: `From ${movers} points`,
+        rest: `some pipes move up and down, marked by the road works in front of them. From ${pots} points flower pots fall from the balconies: a pot wobbles first, then it drops, so go under or over.`,
+      }),
+      top: (score: number) => ({
+        lead: `Up to ${score} points`,
+        rest: 'the game keeps getting a little faster and tighter; from there on it holds.',
       }),
       keyboard: 'Keyboard',
       shortcuts: [

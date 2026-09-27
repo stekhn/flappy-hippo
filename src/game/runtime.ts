@@ -28,7 +28,7 @@ export interface Snapshot {
   round: number
   /** The difficulty this round runs on — what the share text and the over card should name. */
   difficulty: DifficultyId
-  /** The stage the round has reached: 0, 1 with the pots, 2 with the moving pipes. */
+  /** The stage the round has reached: 0, 1 with the moving pipes, 2 with the pots. */
   stage: number
 }
 

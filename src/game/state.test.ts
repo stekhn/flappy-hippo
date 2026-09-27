@@ -271,10 +271,10 @@ test('moving pipes keep their whole swing in the field and within the jump of th
 
 test('reaching a stage announces it once', () => {
   const state = running()
-  state.score = STAGE_POTS - 1
+  state.score = STAGE_MOVERS - 1
   state.pipes = [pipeAt(world.hippoX - PIPE_WIDTH + 1, state.hippoY, 80)]
   const events = step(state)
-  assert.equal(state.score, STAGE_POTS)
+  assert.equal(state.score, STAGE_MOVERS)
   assert.equal(state.stage, 1)
   assert.ok(events.some((event) => event.type === 'stage' && event.stage === 1))
   assert.ok(!step(state).some((event) => event.type === 'stage'))

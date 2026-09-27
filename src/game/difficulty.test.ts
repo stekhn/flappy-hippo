@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { STAGE_MOVERS, STAGE_POTS, STAGE_RAMP } from './constants.ts'
+import { STAGE_MOVERS, STAGE_POTS, TOP_SCORE } from './constants.ts'
 import { DIFFICULTIES, difficultyById, tuningFor } from './difficulty.ts'
 import { fitWorld } from './world.ts'
 
@@ -20,11 +20,20 @@ test('the ramp starts at the opening values and ends at the closing ones', () =>
   assert.equal(end.progress, 1)
 })
 
-test('the ramp does not overshoot past its end score', () => {
+test('after the opening ramp the long ramp keeps tightening, and holds from the top', () => {
   const hard = difficultyById('hard')
   const end = tuningFor(hard, hard.ramp, world)
-  const later = tuningFor(hard, hard.ramp * 2, world)
-  for (const key of ['speed', 'spacing', 'gap', 'jump', 'progress'] as const) assert.equal(later[key], end[key])
+  const later = tuningFor(hard, hard.ramp * 3, world)
+  const top = tuningFor(hard, TOP_SCORE, world)
+  const beyond = tuningFor(hard, TOP_SCORE * 4, world)
+  assert.equal(end.late, 0)
+  assert.ok(later.speed > end.speed && later.speed < top.speed)
+  assert.ok(later.gap < end.gap && later.gap > top.gap)
+  assert.equal(later.jump, end.jump)
+  // Pipes come a little more often at the top, not just faster
+  assert.ok(top.spacing / top.speed < end.spacing / end.speed)
+  assert.ok(top.speed < end.speed * 1.25 && top.gap > end.gap * 0.9)
+  assert.deepEqual(beyond, top)
 })
 
 test('the stages start at their scores, grow denser, and level off', () => {
@@ -33,11 +42,12 @@ test('the stages start at their scores, grow denser, and level off', () => {
   assert.equal(at(STAGE_POTS - 1).pots, 0)
   assert.ok(at(STAGE_POTS).pots > 0)
   assert.ok(at(STAGE_POTS + 100).pots > at(STAGE_POTS).pots)
-  assert.equal(at(STAGE_POTS + STAGE_RAMP).pots, at(STAGE_POTS + STAGE_RAMP * 3).pots)
+  assert.equal(at(TOP_SCORE).pots, at(TOP_SCORE * 3).pots)
   assert.equal(at(STAGE_MOVERS - 1).movers, 0)
   assert.equal(at(STAGE_MOVERS - 1).swing, 0)
   assert.ok(at(STAGE_MOVERS).movers > 0 && at(STAGE_MOVERS).swing > 0)
-  assert.ok(at(STAGE_MOVERS + STAGE_RAMP).swing > at(STAGE_MOVERS).swing)
+  assert.ok(at(TOP_SCORE).swing > at(STAGE_MOVERS).swing)
+  assert.ok(STAGE_MOVERS < STAGE_POTS && STAGE_POTS < TOP_SCORE)
 })
 
 test('every difficulty gets faster and tighter, never the reverse', () => {

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { ACHIEVEMENTS } from '../game/achievements.ts'
-import { STAGE_MOVERS, STAGE_POTS } from '../game/constants.ts'
+import { STAGE_MOVERS, STAGE_POTS, TOP_SCORE } from '../game/constants.ts'
 import { DIFFICULTIES } from '../game/difficulty.ts'
 import type { DifficultyId } from '../game/difficulty.ts'
 import type { Progress } from '../game/storage.ts'
@@ -281,8 +281,8 @@ function SettingsTab({
             <Fill
               message={t.menu.settings.installIos}
               slots={{
-                share: <span className="text-brand font-bold">{t.menu.settings.installIosShare}</span>,
-                add: <span className="text-brand font-bold">{t.menu.settings.installIosAdd}</span>,
+                share: <span className="font-bold">{t.menu.settings.installIosShare}</span>,
+                add: <span className="font-bold">{t.menu.settings.installIosAdd}</span>,
               }}
             />
           </p>
@@ -423,14 +423,14 @@ function AwardsTab({ progress }: { progress: Progress }) {
 }
 
 function HelpTab() {
-  const rules = [...t.menu.help.rules, t.menu.help.stages(STAGE_POTS, STAGE_MOVERS)]
+  const rules = [...t.menu.help.rules, t.menu.help.stages(STAGE_MOVERS, STAGE_POTS), t.menu.help.top(TOP_SCORE)]
   return (
     <>
       <Section title={t.menu.help.howToPlay}>
         <ul className="space-y-2.5">
           {rules.map((rule) => (
             <li key={rule.lead}>
-              <span className="text-brand font-bold">{rule.lead}</span> {rule.rest}
+              <span className="font-bold">{rule.lead}</span> {rule.rest}
             </li>
           ))}
         </ul>

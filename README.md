@@ -10,9 +10,9 @@ phone like an app, and works offline after the first visit.
 ## Features
 
 - **One control:** tap, click or Space.
-- **Three difficulties** that get faster and tighter as the score climbs. From 100 points flower
-  pots fall from the balconies, from 200 some pipes move up and down. Both are telegraphed and can
-  be answered with skill: dying is never luck.
+- **Three difficulties** that get faster and tighter as the score climbs, up to 500 points, then
+  hold. From 50 points some pipes move up and down, from 100 flower pots fall from the balconies.
+  Both are telegraphed and can be answered with skill: dying is never luck.
 - **Melons and shields:** melons hang between the pipes and are worth three points; the bubble
   takes exactly one hit.
 - **Records, medals and 22 achievements**, ten of them hidden until you get close. Everything is
@@ -65,7 +65,8 @@ the backdrop are baked into bitmaps once and blitted at the scroll offset; only 
 drawn each frame. Resolution is capped at 2x and stepped down if a device cannot hold 60 fps.
 
 The interface follows the browser's first language: German where that is German, English
-otherwise. Strings live in [src/i18n](src/i18n), typed against the English catalogue.
+otherwise. `?lang=de` or `?lang=en` overrides that and is remembered until `?lang=auto`. Strings
+live in [src/i18n](src/i18n), typed against the English catalogue.
 
 ## Project structure
 

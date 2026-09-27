@@ -39,7 +39,7 @@ export const de: Messages = {
     pause: 'Pause',
     openMenu: 'Menü öffnen',
     fly: 'Fliegen',
-    notices: { 1: 'Achtung, Blumentöpfe!', 2: 'Die Röhren wandern!' },
+    notices: { 1: 'Die Röhren wandern!', 2: 'Achtung, Blumentöpfe!' },
   },
   canvas: { shield: 'Schild' },
   status: {
@@ -115,9 +115,13 @@ export const de: Messages = {
         { lead: 'Die Blase', rest: 'in einer Lücke hält genau einen Treffer aus. Danach bleibt das Nilpferd kurz unverwundbar.' },
         { lead: 'Die Decke', rest: 'ist eine Grenze, kein Ende. Gefährlich sind nur Boden und Röhren.' },
       ],
-      stages: (pots, movers) => ({
-        lead: `Ab ${pots} Punkten`,
-        rest: `fallen Blumentöpfe von den Balkonen. Ein Topf wackelt erst, dann fällt er: unten durch oder oben drüber. Ab ${movers} Punkten wandern manche Röhren auf und ab, zu erkennen an der Baustelle davor.`,
+      stages: (movers, pots) => ({
+        lead: `Ab ${movers} Punkten`,
+        rest: `wandern manche Röhren auf und ab, zu erkennen an der Baustelle davor. Ab ${pots} Punkten fallen Blumentöpfe von den Balkonen: Ein Topf wackelt erst, dann fällt er, also unten durch oder oben drüber.`,
+      }),
+      top: (score) => ({
+        lead: `Bis ${score} Punkte`,
+        rest: 'wird das Spiel immer noch ein wenig schneller und enger; ab da bleibt es so.',
       }),
       keyboard: 'Tastatur',
       shortcuts: [

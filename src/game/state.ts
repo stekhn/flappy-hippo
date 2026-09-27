@@ -316,7 +316,7 @@ function stepConfetti(pieces: Confetti[], dt: number): Confetti[] {
 
 /** Everything that may follow a point: a new stage, confetti every ten, and the moment a record falls. */
 function celebrate(state: GameState, world: World, now: number, events: GameEvent[]): void {
-  const stage = state.score >= STAGE_MOVERS ? 2 : state.score >= STAGE_POTS ? 1 : 0
+  const stage = state.score >= STAGE_POTS ? 2 : state.score >= STAGE_MOVERS ? 1 : 0
   if (stage > state.stage) {
     state.stage = stage
     state.stageAt = now

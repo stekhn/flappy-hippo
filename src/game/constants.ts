@@ -84,15 +84,19 @@ export const SHAKE_MS = 260
 // telegraphed and can be answered with skill.
 
 /**
- * Testing switch, code only: brings the stages forward to 10 and 20 points so a pot or a moving
- * pipe is a minute away, not ten. The title card says so while it is on. Ship with it off.
+ * Testing switch, code only: brings the stages forward to 10 and 20 points so a moving pipe or a
+ * pot is a minute away, not ten. The title card says so while it is on. Ship with it off.
  */
 export const EARLY_STAGES = true
-/** Scores at which the stages begin: flower pots falling from the top edge, then pipes on the move. */
-export const STAGE_POTS = EARLY_STAGES ? 10 : 100
-export const STAGE_MOVERS = EARLY_STAGES ? 20 : 200
-/** Over how many points past its start a stage keeps getting denser before it levels off. */
-export const STAGE_RAMP = 200
+/** Scores at which the stages begin: pipes on the move, then flower pots falling from balconies. */
+export const STAGE_MOVERS = EARLY_STAGES ? 10 : 50
+export const STAGE_POTS = EARLY_STAGES ? 20 : 100
+/**
+ * The top of the game. Everything that tightens with the score — speed, spacing, gap, how many
+ * pipes move and how far, how many pots fall — reaches its final value here and holds. Past it a
+ * round is a test of endurance, not of a game that keeps escalating until no one can play it.
+ */
+export const TOP_SCORE = 500
 
 export const POT_RADIUS = 9
 /** A pot falls with a third of the hippo's gravity and never faster than this: a warning first. */
