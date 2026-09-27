@@ -55,6 +55,8 @@
   /* Every modal — cards, sheet, toasts — shares this one frosted surface. */
   --game-glass: rgb(238 245 255 / 0.8);
   --game-glass-edge: rgb(0 106 255 / 0.16);
+  /* Under a glass button: darker than its edge, or the lift is lost on a pale sky. */
+  --game-glass-shadow: rgb(0 80 200 / 0.38);
   /* Smaller panels inside a modal: stat tiles, list rows, control tracks. */
   --game-tile: rgb(255 255 255 / 0.62);
   --game-tile-edge: rgb(0 106 255 / 0.12);
@@ -83,6 +85,7 @@
   --game-melon-flesh: #ff7a9a;
   --game-glass: rgb(18 27 40 / 0.82);
   --game-glass-edge: rgb(140 185 255 / 0.22);
+  --game-glass-shadow: rgb(0 0 0 / 0.55);
   --game-tile: rgb(255 255 255 / 0.06);
   --game-tile-edge: rgb(255 255 255 / 0.12);
   --game-shadow: rgb(0 0 0 / 0.55);
@@ -298,14 +301,14 @@ body {
     outline-none;
   background: var(--game-glass);
   border: 2px solid var(--game-glass-edge);
-  box-shadow: 0 3px 0 var(--game-glass-edge);
+  box-shadow: 0 3px 0 var(--game-glass-shadow);
   backdrop-filter: blur(12px);
   transition:
     transform 80ms ease,
     box-shadow 80ms ease;
   &:active {
     transform: translateY(2px);
-    box-shadow: 0 1px 0 var(--game-glass-edge);
+    box-shadow: 0 1px 0 var(--game-glass-shadow);
   }
 }
 

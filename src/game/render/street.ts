@@ -705,17 +705,18 @@ function drawCat(ctx: CanvasRenderingContext2D, p: Palette, x: number, base: num
 
 /**
  * A small yellow dog after the classic cartoon: sitting up, a big round head with long ears
- * hanging either side, big eyes, a big black nose, a smile, a red collar with a tag, tail up
- * and wagging. Every so often it gets up, lifts a hind leg against nothing in particular, and
- * sits back down. Faces right.
+ * hanging either side, big eyes, a big black nose, a smile, a red collar with a tag. It keeps
+ * still but for its tail, which wags, and its tongue, which comes out now and then to pant.
+ * Faces right.
  */
 function drawDog(ctx: CanvasRenderingContext2D, p: Palette, x: number, base: number, age: number, seed: number): void {
   const coat = p.postbox
   const light = p.dogLight
   const shade = p.dogShade
-  const pee = routine(age, 6, 0.33, seed)
-  const standing = pee > 0
-  const wag = Math.sin(age * 6 + seed * 9) * (standing ? 0.5 : 1.4)
+  const pant = routine(age, 5, 0.45, seed)
+  const wag = Math.sin(age * 6 + seed * 9) * 1.4
+  const hx = x + 3
+  const hy = base - 20.5
   ctx.lineWidth = OUTLINE
   ctx.strokeStyle = p.hippoDark
   // Tail up, wagging, outlined by stroking it twice
@@ -729,74 +730,7 @@ function drawDog(ctx: CanvasRenderingContext2D, p: Palette, x: number, base: num
   ctx.stroke(tail)
   ctx.lineWidth = OUTLINE
   ctx.strokeStyle = p.hippoDark
-  const leg = (lx: number, top: number, color: string): void => {
-    ctx.fillStyle = color
-    ctx.beginPath()
-    ctx.roundRect(lx, top, 3, base - top, [1.2, 1.2, 1.5, 1.5])
-    ctx.fill()
-    ctx.stroke()
-  }
-  if (standing) {
-    // On its feet: a capsule of a body on four legs, the near hind leg up
-    leg(x - 5, base - 8, shade)
-    leg(x + 2.6, base - 8, shade)
-    ctx.fillStyle = coat
-    ctx.beginPath()
-    ctx.roundRect(x - 9, base - 15, 17.5, 9, 4.5)
-    ctx.fill()
-    ctx.stroke()
-    leg(x + 4.6, base - 8, coat)
-    ctx.save()
-    ctx.translate(x - 5.6, base - 8.5)
-    ctx.rotate(1.45 + Math.sin(pee * Math.PI * 4) * 0.05)
-    ctx.beginPath()
-    ctx.roundRect(-1.5, 0, 3, 7.5, 1.3)
-    ctx.fillStyle = coat
-    ctx.fill()
-    ctx.stroke()
-    ctx.restore()
-    ctx.strokeStyle = p.stream
-    ctx.lineWidth = 1
-    ctx.globalAlpha = 0.9
-    ctx.beginPath()
-    ctx.moveTo(x - 4, base - 7)
-    ctx.quadraticCurveTo(x - 9, base - 7.5, x - 11.5, base - 0.6)
-    ctx.stroke()
-    ctx.fillStyle = p.stream
-    ctx.globalAlpha = 0.55
-    ctx.beginPath()
-    ctx.ellipse(x - 12, base - 0.4, 1.5 + pee * 2.5, 0.7, 0, 0, Math.PI * 2)
-    ctx.fill()
-    ctx.globalAlpha = 1
-    ctx.lineWidth = OUTLINE
-    ctx.strokeStyle = p.hippoDark
-  } else {
-    // Sitting: haunches wide at the bottom, the chest up, the front legs straight
-    ctx.fillStyle = coat
-    ctx.beginPath()
-    ctx.moveTo(x - 8.5, base)
-    ctx.bezierCurveTo(x - 10, base - 7, x - 6, base - 13, x - 1, base - 15)
-    ctx.bezierCurveTo(x + 3, base - 16, x + 6.5, base - 13, x + 7, base - 8)
-    ctx.bezierCurveTo(x + 7.3, base - 5, x + 7.5, base - 2, x + 7.2, base)
-    ctx.closePath()
-    ctx.fill()
-    ctx.stroke()
-    ctx.fillStyle = light
-    ctx.beginPath()
-    ctx.ellipse(x + 3, base - 6, 2.6, 4.2, -0.1, 0, Math.PI * 2)
-    ctx.fill()
-    // The hind paw peeking out in front of the haunch, then the two front legs
-    ctx.fillStyle = coat
-    ctx.beginPath()
-    ctx.roundRect(x - 7.5, base - 2.6, 5, 2.6, 1.2)
-    ctx.fill()
-    ctx.stroke()
-    leg(x + 0.6, base - 8.5, coat)
-    leg(x + 4.4, base - 8.5, coat)
-  }
-  // The head, big and round, the far ear behind it and the near ear over it
-  const hx = x + 3
-  const hy = base - 20.5
+  // The far ear, behind everything
   const ear = (ex: number, tilt: number): void => {
     ctx.save()
     ctx.translate(ex, hy - 3.5)
@@ -813,12 +747,38 @@ function drawDog(ctx: CanvasRenderingContext2D, p: Palette, x: number, base: num
     ctx.restore()
   }
   ear(hx - 5.4, 0.35)
+  // Sitting: haunches wide at the bottom, the chest up, a hind paw peeking out, front legs straight
+  ctx.fillStyle = coat
+  ctx.beginPath()
+  ctx.moveTo(x - 8.5, base)
+  ctx.bezierCurveTo(x - 10, base - 7, x - 6, base - 13, x - 1, base - 15)
+  ctx.bezierCurveTo(x + 3, base - 16, x + 6.5, base - 13, x + 7, base - 8)
+  ctx.bezierCurveTo(x + 7.3, base - 5, x + 7.5, base - 2, x + 7.2, base)
+  ctx.closePath()
+  ctx.fill()
+  ctx.stroke()
+  ctx.fillStyle = light
+  ctx.beginPath()
+  ctx.ellipse(x + 3, base - 6, 2.6, 4.2, -0.1, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.fillStyle = coat
+  ctx.beginPath()
+  ctx.roundRect(x - 7.5, base - 2.6, 5, 2.6, 1.2)
+  ctx.fill()
+  ctx.stroke()
+  for (const lx of [x + 0.6, x + 4.4]) {
+    ctx.beginPath()
+    ctx.roundRect(lx, base - 8.5, 3, 8.5, [1.2, 1.2, 1.5, 1.5])
+    ctx.fill()
+    ctx.stroke()
+  }
+  // The head; the near ear over it
   ctx.fillStyle = coat
   ctx.beginPath()
   ctx.arc(hx, hy, 6.4, 0, Math.PI * 2)
   ctx.fill()
   ctx.stroke()
-  // Muzzle with the smile, the nose on top with its highlight
+  // Muzzle with the smile; the tongue out and panting now and then; the nose on top with its highlight
   ctx.fillStyle = light
   ctx.beginPath()
   ctx.ellipse(hx + 2.6, hy + 2.4, 4.2, 3.1, 0, 0, Math.PI * 2)
@@ -868,6 +828,23 @@ function drawDog(ctx: CanvasRenderingContext2D, p: Palette, x: number, base: num
   ctx.fill()
   ctx.stroke()
   ctx.restore()
+  // The tongue, red, lolling out of the front of the mouth under the nose, bobbing as it pants
+  if (pant > 0) {
+    const out = 1.8 + Math.min(pant * 6, 1) * 1.6 + Math.sin(pant * Math.PI * 9) * 0.5
+    ctx.fillStyle = p.melonFlesh
+    ctx.beginPath()
+    ctx.roundRect(hx + 4, hy + 4.2, 2.8, out + 1, [0, 0, 1.4, 1.4])
+    ctx.fill()
+    ctx.stroke()
+    ctx.strokeStyle = 'rgba(0, 0, 0, 0.2)'
+    ctx.lineWidth = 0.7
+    ctx.beginPath()
+    ctx.moveTo(hx + 5.4, hy + 5.2)
+    ctx.lineTo(hx + 5.4, hy + 4.2 + out - 0.2)
+    ctx.stroke()
+    ctx.lineWidth = OUTLINE
+    ctx.strokeStyle = p.hippoDark
+  }
 }
 
 /** One of the hippo's eyes, small: white, outlined, a dark pupil a touch off centre. */
