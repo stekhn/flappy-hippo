@@ -6,7 +6,8 @@ import { drawHippo } from './hippo.ts'
 import { drawPickups } from './pickups.ts'
 import { drawPipes } from './pipes.ts'
 import type { SkyMotion } from './scenery.ts'
-import { drawGreenery, drawGround, drawScenery, drawSky } from './scenery.ts'
+import { drawGround, drawScenery, drawSky } from './scenery.ts'
+import { drawStreet } from './street.ts'
 
 /** The pose a knocked-out hippo settles into: body level, head hanging from the neck. */
 export const DEFEAT = { tilt: 0, headNod: 0.7, headDrop: 2 }
@@ -29,7 +30,7 @@ export function drawScene(
   drawPipes(ctx, p, state.pipes, world)
   drawPickups(ctx, p, state.pickups, now)
   drawGround(ctx, p, world, state.scrolled)
-  drawGreenery(ctx, p, world, state.scrolled)
+  drawStreet(ctx, p, world, state.scrolled)
   if (effects) drawParticles(ctx, p, state.particles)
 
   const idle = state.phase === 'ready'

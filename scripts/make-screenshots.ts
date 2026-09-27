@@ -109,7 +109,10 @@ async function flight(page: Page): Promise<void> {
       { x: ahead + 420, gapY: gap + 25, half: 62, passed: false },
     ]
     // The melon hangs between the hippo and the first pipe, in view on every field.
-    state.pickups = [{ kind: 'melon', x: world.hippoX + 78, y: gap - 62, taken: false, seed: 1 }]
+    state.pickups = [
+      { kind: 'melon', x: world.hippoX + 78, y: gap - 62, taken: false, seed: 1 },
+      { kind: 'shield', x: ahead + 28, y: gap + 8, taken: false, seed: 2 },
+    ]
     state.nextSpawn = state.scrolled + ahead + 630
   })
   await sleep(80)

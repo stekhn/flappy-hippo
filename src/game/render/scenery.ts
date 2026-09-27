@@ -52,7 +52,7 @@ const WINDOW_GAP = 3
 const ROOFS: Building['roof'][] = ['flat', 'flat', 'step', 'spire', 'antenna']
 
 /** Fixed seed, so the skyline is the same on every frame and every visit. */
-function seeded(seed: number): () => number {
+export function seeded(seed: number): () => number {
   let s = seed
   return () => {
     s = (s * 1664525 + 1013904223) % 4294967296
@@ -123,24 +123,6 @@ interface Bush {
   leaves: Lobe[]
 }
 
-interface Blade {
-  dx: number
-  h: number
-  lean: number
-  w: number
-  lit: boolean
-}
-
-interface Tuft {
-  /** Scene x, always on a joint of the top brick row, so the weed grows out of the crack. */
-  x: number
-  blades: Blade[]
-  /** One in five tufts carries a flower at the tip of its tallest blade. */
-  flower: boolean
-  /** One in four is a low clover instead of blades. */
-  clover: boolean
-}
-
 interface Crack {
   x: number
   y: number
@@ -177,32 +159,14 @@ function makeBushes(seed: number): Bush[] {
   return out
 }
 
-/**
- * Weeds on the wall: tufts of four to seven blades, rooted in the joints between the top row's
- * bricks (the joints are BRICK_WIDTH apart and the scene repeats on a multiple of it, so the
- * roots stay in the cracks however far the wall has scrolled). Never a lawn.
- */
-function makeTufts(seed: number): Tuft[] {
+/** Lamp posts along the hedge line, every so often; they carry the height the hedge lacks. */
+function makeLamps(seed: number): number[] {
   const rnd = seeded(seed)
-  const out: Tuft[] = []
-  let joint = 1
-  const joints = SCENE_PERIOD / BRICK_WIDTH
-  while (joint < joints) {
-    const count = 4 + Math.floor(rnd() * 4)
-    const blades: Blade[] = Array.from({ length: count }, (_, k) => {
-      const spread = k - (count - 1) / 2
-      return {
-        dx: spread * 2 + (rnd() - 0.5) * 1.2,
-        h: 6 + rnd() * 8,
-        // Outer blades splay outward; every blade has a little lean of its own.
-        lean: spread * 0.22 + (rnd() - 0.5) * 0.9,
-        w: 1.3 + rnd() * 1,
-        lit: rnd() > 0.45,
-      }
-    })
-    const clover = rnd() < 0.25
-    out.push({ x: joint * BRICK_WIDTH, blades, flower: !clover && rnd() < 0.2, clover })
-    joint += 1 + Math.floor(rnd() * 2.6)
+  const out: number[] = []
+  let x = 80 + rnd() * 120
+  while (x < SCENE_PERIOD - 40) {
+    out.push(x)
+    x += 250 + rnd() * 200
   }
   return out
 }
@@ -237,8 +201,8 @@ const CITY_NEAR = makeSkyline(13, 24, 84, true)
 const CLOUDS = makeClouds(21, 7)
 const STARS = makeStars(37, 46)
 const BUSHES = makeBushes(43)
-const TUFTS = makeTufts(59)
 const CRACKS = makeCracks(71)
+const LAMPS = makeLamps(83)
 
 /** Indexed clouds first, sun or moon last. */
 export interface SkyMotion {
@@ -337,6 +301,7 @@ export function drawScenery(
   drawHaze(ctx, world, HAZE_HEIGHT, p.haze)
   drawCity(ctx, p, CITY_NEAR, world, (scrolled * 0.45) % SCENE_PERIOD, p.cityNear)
   drawHaze(ctx, world, HAZE_NEAR_HEIGHT, p.hazeNear)
+  drawLamps(ctx, p, world, (scrolled * 0.7) % SCENE_PERIOD)
   drawBushes(ctx, p, world, (scrolled * 0.7) % SCENE_PERIOD)
   // In front of the skyline and its haze, behind the pipes: a party, not a rumour of one.
   if (effects) drawFireworks(ctx, p, state.fireworks, world, now)
@@ -363,6 +328,97 @@ function drawStars(
     }
   }
   ctx.restore()
+}
+
+/**
+ * Old-town lamps: a plinth, a slender post, an arm that swoops out and curls back on itself, and
+ * a tapered lantern hanging from the tip. At night the lantern is lit and throws a soft glow.
+ */
+function drawLamps(ctx: CanvasRenderingContext2D, p: Palette, world: World, shift: number): void {
+  const base = world.groundY
+  const top = base - 34
+  for (const lx of LAMPS) {
+    for (const offset of [0, SCENE_PERIOD]) {
+      const x = lx - shift + offset
+      if (x < -40 || x > world.width + 40) continue
+      // The lantern hangs from the arm's tip, a little out from the post.
+      const hx = x + 11
+      const hy = top - 3
+
+      if (p.night) {
+        const glow = ctx.createRadialGradient(hx, hy + 4, 2, hx, hy + 4, 30)
+        glow.addColorStop(0, p.sunHalo)
+        glow.addColorStop(1, 'rgba(255, 244, 226, 0)')
+        ctx.fillStyle = glow
+        ctx.fillRect(hx - 30, hy - 26, 60, 60)
+      }
+
+      ctx.save()
+      ctx.lineCap = 'round'
+      ctx.lineJoin = 'round'
+      ctx.strokeStyle = p.lamp
+      ctx.fillStyle = p.lamp
+
+      // Plinth and post, the post tapering a touch towards the top.
+      ctx.beginPath()
+      ctx.roundRect(x - 3.5, base - 3, 7, 3.5, 1)
+      ctx.fill()
+      ctx.beginPath()
+      ctx.moveTo(x - 1.6, base - 3)
+      ctx.lineTo(x + 1.6, base - 3)
+      ctx.lineTo(x + 1, top)
+      ctx.lineTo(x - 1, top)
+      ctx.closePath()
+      ctx.fill()
+      // A collar where the arm meets the post.
+      ctx.beginPath()
+      ctx.roundRect(x - 2.2, top - 1, 4.4, 2.6, 1)
+      ctx.fill()
+
+      // The arm: up and out in one swoop, then a curl back under it.
+      ctx.lineWidth = 1.7
+      ctx.beginPath()
+      ctx.moveTo(x, top)
+      ctx.bezierCurveTo(x + 1, top - 7, x + 7, top - 8, hx, hy - 3)
+      ctx.stroke()
+      ctx.lineWidth = 1.1
+      ctx.beginPath()
+      ctx.moveTo(x + 4.5, top - 5.2)
+      ctx.bezierCurveTo(x + 8, top - 5.5, x + 8.5, top - 1, x + 5.5, top - 1.5)
+      ctx.stroke()
+
+      // The lantern: a cap, a tapered glass body, a finial.
+      ctx.beginPath()
+      ctx.moveTo(hx, hy - 3)
+      ctx.lineTo(hx, hy - 1)
+      ctx.stroke()
+      ctx.beginPath()
+      ctx.moveTo(hx - 4.2, hy + 1)
+      ctx.lineTo(hx, hy - 1.5)
+      ctx.lineTo(hx + 4.2, hy + 1)
+      ctx.closePath()
+      ctx.fill()
+      ctx.fillStyle = p.night ? p.sun : p.flower
+      ctx.beginPath()
+      ctx.moveTo(hx - 3.4, hy + 1)
+      ctx.lineTo(hx + 3.4, hy + 1)
+      ctx.lineTo(hx + 2.4, hy + 8)
+      ctx.lineTo(hx - 2.4, hy + 8)
+      ctx.closePath()
+      ctx.fill()
+      ctx.strokeStyle = p.lamp
+      ctx.lineWidth = 1
+      ctx.stroke()
+      ctx.fillStyle = p.lamp
+      ctx.beginPath()
+      ctx.roundRect(hx - 3, hy + 8, 6, 1.6, 0.8)
+      ctx.fill()
+      ctx.beginPath()
+      ctx.arc(hx, hy + 10.6, 1, 0, Math.PI * 2)
+      ctx.fill()
+      ctx.restore()
+    }
+  }
 }
 
 function drawBushes(ctx: CanvasRenderingContext2D, p: Palette, world: World, shift: number): void {
@@ -413,95 +469,6 @@ function drawBushes(ctx: CanvasRenderingContext2D, p: Palette, world: World, shi
       ctx.fill()
       ctx.restore()
     }
-  }
-}
-
-/**
- * Weeds in the wall's joints, scrolling with the wall: a dark seam where the mortar has gone,
- * shade blades, lit blades over them, and now and then a flower or a clover instead.
- */
-export function drawGreenery(ctx: CanvasRenderingContext2D, p: Palette, world: World, scrolled: number): void {
-  const base = world.groundY
-  const shift = scrolled % SCENE_PERIOD
-  ctx.save()
-  ctx.lineCap = 'round'
-  for (const tuft of TUFTS) {
-    for (const offset of [0, SCENE_PERIOD]) {
-      const x = tuft.x - shift + offset
-      if (x < -16 || x > world.width + 16) continue
-
-      // The joint has opened up a little where the roots are.
-      ctx.fillStyle = p.groundLine
-      ctx.fillRect(x - 1.5, base, 3, 6)
-
-      if (tuft.clover) {
-        drawClover(ctx, p, x, base)
-        continue
-      }
-
-      for (const pass of [false, true]) {
-        ctx.strokeStyle = pass ? p.grassLit : p.grassShade
-        for (const blade of tuft.blades) {
-          if (blade.lit !== pass) continue
-          ctx.lineWidth = blade.w
-          ctx.beginPath()
-          ctx.moveTo(x + blade.dx * 0.6, base + 3)
-          ctx.quadraticCurveTo(
-            x + blade.dx + blade.lean * 2.5,
-            base - blade.h * 0.55,
-            x + blade.dx + blade.lean * 6,
-            base - blade.h,
-          )
-          ctx.stroke()
-        }
-      }
-
-      if (tuft.flower) {
-        const tall = tuft.blades.reduce((a, b) => (b.h > a.h ? b : a))
-        const fx = x + tall.dx + tall.lean * 6
-        const fy = base - tall.h - 1
-        ctx.fillStyle = p.flower
-        ctx.beginPath()
-        for (let k = 0; k < 5; k++) {
-          const a = (k / 5) * Math.PI * 2
-          ctx.moveTo(fx + Math.cos(a) * 1.6 + 1.1, fy + Math.sin(a) * 1.6)
-          ctx.arc(fx + Math.cos(a) * 1.6, fy + Math.sin(a) * 1.6, 1.1, 0, Math.PI * 2)
-        }
-        ctx.fill()
-        ctx.fillStyle = p.flowerCenter
-        ctx.beginPath()
-        ctx.arc(fx, fy, 0.9, 0, Math.PI * 2)
-        ctx.fill()
-      }
-    }
-  }
-  ctx.restore()
-}
-
-/** A low clover: three stalks from the joint, each with a small three-leaf head. */
-function drawClover(ctx: CanvasRenderingContext2D, p: Palette, x: number, base: number): void {
-  ctx.strokeStyle = p.grassShade
-  ctx.lineWidth = 1
-  const heads: [number, number][] = [
-    [-4, 4.5],
-    [0.5, 6.5],
-    [4.5, 4],
-  ]
-  for (const [hx, hy] of heads) {
-    ctx.beginPath()
-    ctx.moveTo(x, base + 2)
-    ctx.quadraticCurveTo(x + hx * 0.5, base - hy * 0.5, x + hx, base - hy)
-    ctx.stroke()
-  }
-  for (const [i, [hx, hy]] of heads.entries()) {
-    ctx.fillStyle = i === 1 ? p.grassLit : p.grassShade
-    ctx.beginPath()
-    for (let k = 0; k < 3; k++) {
-      const a = -Math.PI / 2 + (k / 3) * Math.PI * 2
-      ctx.moveTo(x + hx + Math.cos(a) * 1.3 + 1.3, base - hy + Math.sin(a) * 1.3)
-      ctx.arc(x + hx + Math.cos(a) * 1.3, base - hy + Math.sin(a) * 1.3, 1.3, 0, Math.PI * 2)
-    }
-    ctx.fill()
   }
 }
 

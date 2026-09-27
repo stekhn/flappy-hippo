@@ -41,6 +41,9 @@ export function resolvePalette(dark: boolean): Palette {
     bushEdge: dark ? '#1e4232' : '#3d8a5e',
     flower: dark ? '#e8ecf2' : '#ffffff',
     flowerCenter: cssVar('--game-gold', '#e8930c'),
+    wood: dark ? '#8a6f45' : '#d2a86a',
+    postbox: dark ? '#c99a2e' : '#e9b83d',
+    lamp: dark ? '#3e4b5c' : '#8a97ab',
     pipe: brand,
     pipeEdge: cssVar('--game-pipe-edge', dark ? '#1f4f9e' : '#00479f'),
     text: cssVar('--game-text', dark ? '#dde3ec' : '#1f2430'),
@@ -50,7 +53,7 @@ export function resolvePalette(dark: boolean): Palette {
     melonRind: '#2f8a4a',
     melonSeed: 'rgba(38, 30, 34, 0.85)',
     // The shield is the one violet thing in the game, so it can never be mistaken for a pipe.
-    bubble: dark ? 'rgba(196, 181, 253, 0.42)' : 'rgba(139, 92, 246, 0.32)',
+    bubble: dark ? 'rgba(196, 181, 253, 0.45)' : 'rgba(124, 77, 255, 0.42)',
     bubbleEdge: cssVar('--game-shield', dark ? '#c4b5fd' : '#7c4dff'),
     hippoBody: dark ? '#9aa6b8' : '#93a1b5',
     hippoShade: dark ? 'rgba(95, 106, 120, 0.26)' : 'rgba(92, 103, 116, 0.26)',

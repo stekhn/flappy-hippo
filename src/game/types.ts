@@ -129,6 +129,10 @@ export interface Palette {
   bushEdge: string
   flower: string
   flowerCenter: string
+  /** Street furniture: bench slats, the postbox, lamp posts. Metal borrows the hippo's greys. */
+  wood: string
+  postbox: string
+  lamp: string
   pipe: string
   pipeEdge: string
   text: string

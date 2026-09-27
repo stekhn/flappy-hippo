@@ -76,7 +76,8 @@ function drawShieldOrb(
   ctx.arc(0, 0, r - 3, Math.PI * 1.15, Math.PI * 1.55)
   ctx.stroke()
 
-  ctx.fillStyle = p.brand
+  // The glyph is the shield's own violet, never the pipes' blue.
+  ctx.fillStyle = p.bubbleEdge
   ctx.beginPath()
   ctx.moveTo(0, -r * 0.55)
   ctx.lineTo(r * 0.45, -r * 0.3)
