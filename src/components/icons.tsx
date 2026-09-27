@@ -90,15 +90,16 @@ export function IconClose(props: IconProps) {
   )
 }
 
+/** Filled: it stands next to a number, in the number's colour, and must read at 18px. */
 export function IconTrophy(props: IconProps) {
   return (
     <Icon {...props}>
-      <path d="M8 4h8v5a4 4 0 0 1 -8 0z" />
+      <path d="M8 4h8v5a4 4 0 0 1 -8 0z" fill="currentColor" />
       <path d="M8 5.5h-3a3 3 0 0 0 3 3" />
       <path d="M16 5.5h3a3 3 0 0 1 -3 3" />
       <path d="M12 13v3" />
+      <path d="M10 16h4l1 4h-6z" fill="currentColor" />
       <path d="M9 20h6" />
-      <path d="M10 16h4l1 4h-6z" />
     </Icon>
   )
 }
@@ -115,15 +116,15 @@ export function IconStar(props: IconProps) {
   )
 }
 
+/** Filled, with the rind line and the pips knocked out in white. */
 export function IconMelon(props: IconProps) {
   return (
     <Icon {...props}>
-      <path d="M3 16a9 9 0 0 1 18 0z" fill="currentColor" stroke="none" opacity="0.25" />
-      <path d="M3 16a9 9 0 0 1 18 0z" />
-      <path d="M6 16a6 6 0 0 1 12 0" />
-      <path d="M10 14.5h.01" />
-      <path d="M14 14.5h.01" />
-      <path d="M12 12h.01" />
+      <path d="M3 16a9 9 0 0 1 18 0z" fill="currentColor" />
+      <path d="M6 16a6 6 0 0 1 12 0" stroke="#fff" strokeOpacity="0.6" strokeWidth={1.5} />
+      <path d="M10 14.5h.01" stroke="#fff" strokeOpacity="0.85" />
+      <path d="M14 14.5h.01" stroke="#fff" strokeOpacity="0.85" />
+      <path d="M12 12h.01" stroke="#fff" strokeOpacity="0.85" />
     </Icon>
   )
 }
@@ -131,7 +132,7 @@ export function IconMelon(props: IconProps) {
 export function IconShield(props: IconProps) {
   return (
     <Icon {...props}>
-      <path d="M12 3l7 3v5.5c0 4 -3 7.4 -7 8.5c-4 -1.1 -7 -4.5 -7 -8.5v-5.5z" />
+      <path d="M12 3l7 3v5.5c0 4 -3 7.4 -7 8.5c-4 -1.1 -7 -4.5 -7 -8.5v-5.5z" fill="currentColor" />
     </Icon>
   )
 }
