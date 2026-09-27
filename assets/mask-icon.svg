@@ -1,0 +1,21 @@
+<!-- Safari pinned-tab icon: a single-colour silhouette, black on transparent. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="4 4.5 16 15.5" width="16" height="16">
+  <defs>
+    <mask id="cut">
+      <rect x="0" y="0" width="24" height="24" fill="#000"/>
+      <g fill="#fff">
+        <circle cx="7.9" cy="7.4" r="1.9"/>
+        <circle cx="16.1" cy="7.4" r="1.9"/>
+        <ellipse cx="12" cy="12.6" rx="7" ry="5.9"/>
+        <ellipse cx="12" cy="15.6" rx="5.1" ry="3.5"/>
+      </g>
+      <g fill="#000">
+        <ellipse cx="9.9" cy="15.1" rx="0.9" ry="1.15"/>
+        <ellipse cx="14.1" cy="15.1" rx="0.9" ry="1.15"/>
+        <circle cx="9.5" cy="10.4" r="1.45"/>
+        <circle cx="14.5" cy="10.4" r="1.45"/>
+      </g>
+    </mask>
+  </defs>
+  <rect x="0" y="0" width="24" height="24" fill="#000" mask="url(#cut)"/>
+</svg>

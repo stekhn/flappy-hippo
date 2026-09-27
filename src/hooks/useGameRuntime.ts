@@ -121,6 +121,8 @@ export function useGameRuntime({ settings, dark, best, record, preview, onUnlock
     })
     runtimeRef.current = runtime
     runtime.start()
+    // Dev builds expose the runtime so scripts/make-screenshots.ts can stage scenes.
+    if (import.meta.env.DEV) (window as Window & { __flappyHippo?: GameRuntime }).__flappyHippo = runtime
     return () => {
       runtime.destroy()
       runtimeRef.current = null

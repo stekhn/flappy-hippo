@@ -303,6 +303,11 @@ export class GameRuntime {
     buzz(this.haptics, [15, 50, 15])
   }
 
+  /** The live state and field, for tooling that stages a scene (the screenshot script). */
+  inspect(): { state: GameState; world: World } {
+    return { state: this.state, world: this.world }
+  }
+
   summary(): RunSummary {
     const { score, pipesCleared, melons, shields, saves, elapsed } = this.state
     return {

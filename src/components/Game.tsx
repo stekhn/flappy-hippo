@@ -14,6 +14,17 @@ import type { MenuTab } from './MenuSheet.tsx'
 import { OverCard } from './OverCard.tsx'
 import { PauseCard } from './PauseCard.tsx'
 import { StartCard } from './StartCard.tsx'
+import { UpdatePrompt } from './UpdatePrompt.tsx'
+
+/** An app shortcut (or a shared link) may ask for a menu tab: ?menu=scores. */
+function menuFromUrl(): MenuTab | null {
+  try {
+    const tab = new URLSearchParams(location.search).get('menu')
+    return tab === 'settings' || tab === 'scores' || tab === 'awards' || tab === 'help' ? tab : null
+  } catch {
+    return null
+  }
+}
 
 /**
  * The game screen: a canvas the runtime paints, with the HUD, the overlay cards and the menu in
@@ -26,8 +37,13 @@ export function Game() {
   const { progress, record, preview, reset } = useProgress()
   const { canInstall, install } = useInstallPrompt()
   const { current: toast, push: showToasts } = useToasts()
-  const [menu, setMenu] = useState<MenuTab | null>(null)
+  const [menu, setMenu] = useState<MenuTab | null>(menuFromUrl)
   const [touch] = useState(isTouch)
+
+  // The query string has done its job once the menu is open; a reload should not reopen it.
+  useEffect(() => {
+    if (location.search) history.replaceState(null, '', location.pathname)
+  }, [])
 
   const { boxRef, canvasRef, snapshot, status, controls } = useGameRuntime({
     settings,
@@ -135,6 +151,7 @@ export function Game() {
         )}
 
         <AchievementToast toast={toast} />
+        <UpdatePrompt />
 
         {menu !== null && (
           <MenuSheet

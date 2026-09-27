@@ -18,8 +18,10 @@ auf dem Handy als App installieren und funktioniert danach auch offline.
 - **Tag und Nacht**: Sonne, Mond, Sterne und beleuchtete Fenster, gekoppelt an das System-Design.
 - **Für Handys gebaut**: füllt den Bildschirm inklusive Notch, pausiert beim App-Wechsel, Ton und
   Vibration lassen sich abschalten.
-- **Offline spielbar** und als PWA installierbar. Ein Ergebnis lässt sich über das Teilen-Menü des
-  Systems weitergeben — mehr Verbindung nach außen gibt es nicht.
+- **Eine richtige App**: installierbar auf Handy und Desktop, offline spielbar, mit Startbild auf
+  dem iPhone, Screenshots im Installationsdialog und Verknüpfungen zu Rekorden und Erfolgen. Eine
+  neue Version wird angeboten, nie mitten in der Runde erzwungen. Ein Ergebnis lässt sich über das
+  Teilen-Menü des Systems weitergeben — mehr Verbindung nach außen gibt es nicht.
 
 ## Quick start
 
@@ -32,11 +34,37 @@ npm run build    # statisches Bundle in dist/
 npm run preview  # das gebaute Bundle unter /flappy-hippo/ ansehen
 npm test         # Spiellogik (Node Test Runner)
 npm run lint     # oxlint
-npm run icons    # assets/*.svg → public/*.png (nur nach Icon-Änderungen nötig)
+npm run assets   # assets/*.svg → Icons, Favicon, iOS-Startbilder (nur nach Änderungen an den SVGs)
+npm run screenshots  # Manifest-Screenshots aus der laufenden App (braucht Chrome, s. u.)
 ```
 
 Der Build ist eine reine statische Seite: `dist/` auf einen beliebigen Webserver legen, fertig. Zur
 Laufzeit gibt es keine Netzwerkaufrufe.
+
+## Als App
+
+Flappy Hippo erfüllt alles, was Chrome, Safari und Edge für eine installierbare Web-App verlangen,
+und das, was den Unterschied zu einer bloßen Webseite macht:
+
+- **Manifest** mit `id`, Name, Beschreibung, Kategorien, `launch_handler` (ein zweiter Tipp aufs
+  Icon holt das laufende Spiel zurück) und Verknüpfungen zu *Rekorde* und *Erfolge*.
+- **Icons** in allen Rollen: normal, *maskable* (Kopf in der 80-%-Sicherheitszone, für runde und
+  eckige Launcher), *monochrome* (für Android-Themen und Badges), Apple-Touch-Icon, SVG- und
+  PNG-Favicon, Safari-Pinned-Tab. Quelle sind die SVGs in `assets/`, gerendert von
+  `scripts/make-assets.ts`.
+- **Screenshots** im Manifest — vier im Hochformat für Android, zwei im Querformat für den
+  Desktop — damit der Installationsdialog aussieht wie ein Store-Eintrag. Sie werden mit
+  `scripts/make-screenshots.ts` aus der echten App aufgenommen (Chrome oder Chromium nötig;
+  `CHROME_PATH=/pfad/zu/chrome npm run screenshots`, sonst wird an den üblichen Orten gesucht).
+- **Startbilder für iOS** für gängige iPhones und iPads, Hoch- und Querformat, hell und dunkel —
+  sonst zeigt Safari beim Start einer installierten App eine weiße Fläche. `npm run assets`
+  erzeugt sie und schreibt die `<link>`-Tags in `index.html`.
+- **Service Worker** (Workbox über `vite-plugin-pwa`): das Spiel ist nach dem ersten Besuch
+  vollständig offline. Eine neue Version meldet sich als Hinweis mit *Neu laden* und wartet — ein
+  Reload mitten im Flug würde die Runde kosten. Screenshots und Startbilder sind vom Precache
+  ausgenommen.
+- **Teilen-Metadaten** (Open Graph, Twitter Card, kanonische URL), damit ein geteilter Link mit
+  Bild und Beschreibung erscheint.
 
 ## Deployment
 

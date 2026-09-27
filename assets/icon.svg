@@ -1,21 +1,37 @@
-<!-- Flappy Hippo app mark: the hippo's face, squared off. Mirrors the head drawn in
-     src/game/render/hippo.ts — same greys, outlined the same way, white eyes with dark pupils.
-     Rendered to PNG by scripts/make-icons.ts for the home-screen icons. The browser favicon
-     (public/favicon.svg) and HippoMark in src/components/icons.tsx are the face alone. -->
+<!-- Flappy Hippo app icon: the hippo's face on a blue tile with a little depth — a gradient, a
+     sheen from the top left, a soft shadow under the head. Same face as HippoMark in
+     src/components/icons.tsx and public/favicon.svg. Rendered to PNG by scripts/make-assets.ts. -->
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
-  <rect width="24" height="24" rx="5.5" fill="#006aff"/>
-  <g stroke="#5c6774" stroke-width="0.45">
-    <circle cx="7.9" cy="7.4" r="1.9" fill="#93a1b5"/>
-    <circle cx="16.1" cy="7.4" r="1.9" fill="#93a1b5"/>
-    <circle cx="7.9" cy="7.6" r="0.9" fill="#e8a2b0" stroke="none"/>
-    <circle cx="16.1" cy="7.6" r="0.9" fill="#e8a2b0" stroke="none"/>
-    <ellipse cx="12" cy="12.6" rx="7" ry="5.9" fill="#93a1b5"/>
-    <ellipse cx="12" cy="15.6" rx="5.1" ry="3.5" fill="#b6c1d1"/>
-    <ellipse cx="9.9" cy="15.1" rx="0.85" ry="1.1" fill="#3e4753" stroke="none"/>
-    <ellipse cx="14.1" cy="15.1" rx="0.85" ry="1.1" fill="#3e4753" stroke="none"/>
-    <circle cx="9.5" cy="10.4" r="1.5" fill="#ffffff"/>
-    <circle cx="14.5" cy="10.4" r="1.5" fill="#ffffff"/>
-    <circle cx="9.8" cy="10.6" r="0.7" fill="#3e4753" stroke="none"/>
-    <circle cx="14.2" cy="10.6" r="0.7" fill="#3e4753" stroke="none"/>
+  <defs>
+    <linearGradient id="tile" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2f8cff"/>
+      <stop offset="1" stop-color="#0055cc"/>
+    </linearGradient>
+    <radialGradient id="sheen" cx="0.3" cy="0.12" r="0.85">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.3"/>
+      <stop offset="0.6" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="soft" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="0.55"/>
+    </filter>
+  </defs>
+  <rect width="24" height="24" rx="5.5" fill="url(#tile)"/>
+  <rect width="24" height="24" rx="5.5" fill="url(#sheen)"/>
+  <g transform="translate(12 12.4) scale(1.05) translate(-12 -12.4)">
+    <ellipse cx="12" cy="13.7" rx="7.4" ry="6.2" fill="#002a6b" opacity="0.35" filter="url(#soft)"/>
+    <g stroke="#5c6774" stroke-width="0.45">
+      <circle cx="7.9" cy="7.4" r="1.9" fill="#93a1b5"/>
+      <circle cx="16.1" cy="7.4" r="1.9" fill="#93a1b5"/>
+      <circle cx="7.9" cy="7.6" r="0.9" fill="#e8a2b0" stroke="none"/>
+      <circle cx="16.1" cy="7.6" r="0.9" fill="#e8a2b0" stroke="none"/>
+      <ellipse cx="12" cy="12.6" rx="7" ry="5.9" fill="#93a1b5"/>
+      <ellipse cx="12" cy="15.6" rx="5.1" ry="3.5" fill="#b6c1d1"/>
+      <ellipse cx="9.9" cy="15.1" rx="0.85" ry="1.1" fill="#3e4753" stroke="none"/>
+      <ellipse cx="14.1" cy="15.1" rx="0.85" ry="1.1" fill="#3e4753" stroke="none"/>
+      <circle cx="9.5" cy="10.4" r="1.5" fill="#ffffff"/>
+      <circle cx="14.5" cy="10.4" r="1.5" fill="#ffffff"/>
+      <circle cx="9.8" cy="10.6" r="0.7" fill="#3e4753" stroke="none"/>
+      <circle cx="14.2" cy="10.6" r="0.7" fill="#3e4753" stroke="none"/>
+    </g>
   </g>
 </svg>
