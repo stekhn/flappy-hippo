@@ -89,8 +89,9 @@ export default defineConfig(({ command, isPreview }) => ({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,woff2,txt}'],
-        // Store material only: the install dialog and iOS fetch these themselves.
-        globIgnores: ['screenshots/**', 'splash/**'],
+        // Store material only: the install dialog and the launcher fetch these themselves, and
+        // the 512 px icons are photographic, a third of a megabyte each.
+        globIgnores: ['screenshots/**', 'icon-512.png', 'icon-maskable-512.png', 'icon-mono-512.png'],
         // Everything else is precached; nothing is fetched at runtime, so no network fallbacks.
         navigateFallback: 'index.html',
         cleanupOutdatedCaches: true,

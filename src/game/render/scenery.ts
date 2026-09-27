@@ -1,6 +1,4 @@
 import {
-  BRICK_HEIGHT,
-  BRICK_WIDTH,
   CLOUD_FALL_DISTANCE,
   CLOUD_FALL_GRAVITY,
   CLOUD_RISE_OMEGA,
@@ -298,7 +296,7 @@ export function drawScenery(
   })
   cache.blit(ctx, near, (scrolled * 0.45) % SCENE_PERIOD, world.width)
 
-  const hedge = cache.layer('hedge', 84, 0, (c, ground) => {
+  const hedge = cache.layer('hedge', 84, TUCK, (c, ground) => {
     paintLamps(c, p, ground)
     paintBushes(c, p, ground)
   })
@@ -477,7 +475,7 @@ function paintLamps(ctx: CanvasRenderingContext2D, p: Palette, ground: number): 
       ctx.fillStyle = p.lamp
       // Plinth and post, the post tapering a touch towards the top.
       ctx.beginPath()
-      ctx.roundRect(x - 3.5, ground - 3, 7, 3.5, 1)
+      ctx.roundRect(x - 3.5, ground - 3, 7, 3.5 + TUCK, 1)
       ctx.fill()
       ctx.beginPath()
       ctx.moveTo(x - 1.6, ground - 3)
@@ -561,7 +559,7 @@ function paintBushes(ctx: CanvasRenderingContext2D, p: Palette, ground: number):
       // Silhouette outline: every lobe again, a little larger, in the edge colour underneath.
       ctx.fillStyle = p.bushEdge
       ctx.beginPath()
-      ctx.rect(first - EDGE, -bush.h * 0.6, last - first + EDGE * 2, bush.h * 0.6 + EDGE)
+      ctx.rect(first - EDGE, -bush.h * 0.6, last - first + EDGE * 2, bush.h * 0.6 + EDGE + TUCK)
       for (const lobe of bush.lobes) {
         ctx.moveTo(lobe.dx + lobe.r + EDGE, lobe.dy)
         ctx.arc(lobe.dx, lobe.dy, lobe.r + EDGE, 0, Math.PI * 2)
@@ -571,7 +569,7 @@ function paintBushes(ctx: CanvasRenderingContext2D, p: Palette, ground: number):
       // The body in shade, then the lit side: the same lobes shifted towards the light, clipped
       // to the body so nothing pokes out of the silhouette.
       const body = new Path2D()
-      body.rect(first, -bush.h * 0.6, last - first, bush.h * 0.6)
+      body.rect(first, -bush.h * 0.6, last - first, bush.h * 0.6 + TUCK)
       for (const lobe of bush.lobes) {
         body.moveTo(lobe.dx + lobe.r, lobe.dy)
         body.arc(lobe.dx, lobe.dy, lobe.r, 0, Math.PI * 2)
@@ -599,39 +597,68 @@ function paintBushes(ctx: CanvasRenderingContext2D, p: Palette, ground: number):
   }
 }
 
-/** The wall: bricks with a bevel, and the plants that stand on it. */
-function paintWall(ctx: CanvasRenderingContext2D, p: Palette, ground: number): void {
-  ctx.fillStyle = p.ground
-  ctx.fillRect(0, ground, STREET_PERIOD, GROUND_HEIGHT)
+/** How tall the band of grass is; the earth fills the rest of the ground. */
+const GRASS_HEIGHT = 6
+/** How far the hedge's bushes and lamp plinths reach below the ground line, tucked under the grass. */
+const TUCK = 4
 
-  // Dark joints plus a light line inside each brick's top and left edge read as a bevel
-  const joints = new Path2D()
-  const edges = new Path2D()
-  for (let row = 0; row * BRICK_HEIGHT < GROUND_HEIGHT; row++) {
-    const y = ground + row * BRICK_HEIGHT + 0.5
-    joints.moveTo(0, y)
-    joints.lineTo(STREET_PERIOD, y)
-    edges.moveTo(0, y + 1)
-    edges.lineTo(STREET_PERIOD, y + 1)
-    const shift = (row % 2) * (BRICK_WIDTH / 2)
-    for (let x = shift - BRICK_WIDTH; x < STREET_PERIOD; x += BRICK_WIDTH) {
-      joints.moveTo(x + 0.5, y)
-      joints.lineTo(x + 0.5, y + BRICK_HEIGHT)
-      edges.moveTo(x + 1.5, y + 1)
-      edges.lineTo(x + 1.5, y + BRICK_HEIGHT)
-    }
+/**
+ * The ground: a band of grass with a tufted top edge over earth, the way a side-scroller's
+ * ground has always looked. The grass is lit along its top and shaded where it meets the earth;
+ * the earth carries a few clods and darkens toward the bottom. The plants stand on the grass.
+ */
+function paintGround(ctx: CanvasRenderingContext2D, p: Palette, ground: number): void {
+  // Earth, with clods scattered on a fixed seed so the strip tiles without a seam
+  ctx.fillStyle = p.earth
+  ctx.fillRect(0, ground + GRASS_HEIGHT - 1, STREET_PERIOD, GROUND_HEIGHT - GRASS_HEIGHT + 1)
+  ctx.fillStyle = p.earthDeep
+  ctx.fillRect(0, ground + GROUND_HEIGHT - 2.5, STREET_PERIOD, 2.5)
+  const rnd = seeded(11)
+  ctx.fillStyle = p.clod
+  for (let x = 8; x < STREET_PERIOD - 8; x += 12 + rnd() * 22) {
+    const y = ground + GRASS_HEIGHT + 2 + rnd() * (GROUND_HEIGHT - GRASS_HEIGHT - 5)
+    const r = 0.8 + rnd() * 0.9
+    ctx.beginPath()
+    ctx.ellipse(x, y, r * 1.4, r * 0.85, 0, 0, Math.PI * 2)
+    ctx.fill()
   }
-  ctx.lineWidth = 1
-  ctx.strokeStyle = p.groundLine
-  ctx.stroke(joints)
-  ctx.strokeStyle = p.groundHighlight
-  ctx.stroke(edges)
+  // The grass: one band with a scalloped top, filled lit, then again a touch lower in the
+  // middle green, so a lit rim runs along the tufts
+  const band = new Path2D()
+  band.moveTo(0, ground + GRASS_HEIGHT)
+  band.lineTo(0, ground + 1)
+  for (let x = 0; x < STREET_PERIOD; x += 8) {
+    band.quadraticCurveTo(x + 2, ground - 0.9, x + 4, ground + 0.5)
+    band.quadraticCurveTo(x + 6, ground + 1.5, x + 8, ground + 1)
+  }
+  band.lineTo(STREET_PERIOD, ground + GRASS_HEIGHT)
+  band.closePath()
+  ctx.fillStyle = p.grassLit
+  ctx.fill(band)
+  ctx.save()
+  ctx.translate(0, 1.3)
+  ctx.fillStyle = p.groundGrass
+  ctx.fill(band)
+  ctx.restore()
+  ctx.fillStyle = p.grassShadow
+  ctx.fillRect(0, ground + GRASS_HEIGHT - 1.2, STREET_PERIOD, 1.4)
+  // An ink edge along the tufts, as the bushes and the pipes have one
+  const edge = new Path2D()
+  edge.moveTo(0, ground + 1)
+  for (let x = 0; x < STREET_PERIOD; x += 8) {
+    edge.quadraticCurveTo(x + 2, ground - 0.9, x + 4, ground + 0.5)
+    edge.quadraticCurveTo(x + 6, ground + 1.5, x + 8, ground + 1)
+  }
+  ctx.strokeStyle = p.bushEdge
+  ctx.lineWidth = 0.9
+  ctx.lineJoin = 'round'
+  ctx.stroke(edge)
 
   paintStreet(ctx, p, ground)
 }
 
 /**
- * The wall and its plants, baked together, and the furniture on top: they scroll as one at the
+ * The ground and its plants, baked together, and the furniture on top: they scroll as one at the
  * field's own speed.
  */
 export function drawGround(
@@ -643,7 +670,7 @@ export function drawGround(
   now: number,
   cache: LayerCache,
 ): void {
-  const wall = cache.layer('wall', STREET_ABOVE, GROUND_HEIGHT, (c, ground) => paintWall(c, p, ground), STREET_PERIOD)
+  const wall = cache.layer('wall', STREET_ABOVE, GROUND_HEIGHT, (c, ground) => paintGround(c, p, ground), STREET_PERIOD)
   const origin = cache.blit(ctx, wall, scrolled % STREET_PERIOD, world.width)
   drawFurniture(ctx, p, origin, Math.floor(scrolled / STREET_PERIOD), round, world.width, world.groundY, now / 1000, cache)
 }

@@ -19,7 +19,7 @@ phone like an app, and works offline after the first visit.
   stored on the device; there is no server.
 - **Pause with a count-in:** switching apps or taking a call never costs a round.
 - **Day and night** with the system theme; **German or English** with the browser language.
-- **A real app:** installable on phones and desktops, offline, with iOS splash screens, store-style
+- **A real app:** installable on phones and desktops, offline, with store-style
   screenshots in the install dialog, and app shortcuts. Updates are offered, never forced mid-round.
 
 ## Getting started
@@ -33,7 +33,7 @@ npm run build        # static bundle in dist/
 npm run preview      # serve the build under /flappy-hippo/
 npm test             # game logic (Node test runner)
 npm run lint         # oxlint
-npm run assets       # src/assets/* → icons, favicon, iOS splash screens, link preview
+npm run assets       # src/assets/* → icons, favicon, link preview
 npm run screenshots  # manifest screenshots from the running app (needs Chrome, see below)
 ```
 
@@ -76,9 +76,9 @@ src/game/render/   canvas drawing: hippo, pipes, backdrop, street, effects
 src/components/    React UI: HUD, cards, menu
 src/hooks/         runtime binding, settings, progress, install prompt
 src/i18n/          message catalogues and locale detection
-src/assets/        icon and poster sources for scripts/make-assets.ts
+src/assets/        icon and poster images for scripts/make-assets.ts
 src/dev/           pose lab: open /src/dev/poses.html on the dev server
-public/            static files served as they are: icons, splash screens, screenshots, fonts
+public/            static files served as they are: icons, screenshots, fonts
 scripts/           asset, screenshot and SVG generation
 ```
 

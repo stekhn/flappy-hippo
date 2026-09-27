@@ -51,7 +51,7 @@ export function OverCard({ snapshot, touch, onRestart, onOpenMenu }: OverCardPro
             borderColor: medal.color,
             background: medal.background,
             color: medal.color,
-            boxShadow: `0 4px 0 ${medal.shade}`,
+            boxShadow: `0 3px 0 ${medal.shade}`,
           }}
         >
           <IconTrophy width={24} height={24} />

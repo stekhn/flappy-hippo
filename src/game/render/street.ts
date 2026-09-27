@@ -159,9 +159,11 @@ export function paintStreet(ctx: CanvasRenderingContext2D, p: Palette, ground: n
     for (const base of WRAPS) {
       const x = prop.x + base
       if (x < -30 || x > STREET_PERIOD + 30) continue
-      // Everything roots in an opened joint
-      ctx.fillStyle = p.groundLine
-      ctx.fillRect(x - 1.5, ground, 3, 6)
+      // A touch of shade where it stands in the grass
+      ctx.fillStyle = p.grassShadow
+      ctx.beginPath()
+      ctx.ellipse(x, ground + 1.6, 3.2, 1, 0, 0, Math.PI * 2)
+      ctx.fill()
       ctx.save()
       ctx.translate(x, ground)
       ctx.scale(prop.mirror ? -prop.scale : prop.scale, prop.scale)

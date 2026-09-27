@@ -177,6 +177,11 @@ export interface Palette {
   ground: string
   groundLine: string
   groundHighlight: string
+  /** The ground: a band of grass over earth. The grass sits between the lit and the shaded green. */
+  groundGrass: string
+  earth: string
+  clod: string
+  earthDeep: string
   /** Greenery: lit side warm and yellow, shade side cool and blue, as a painter would mix it. */
   grassLit: string
   grassShade: string

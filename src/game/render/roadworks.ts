@@ -32,12 +32,10 @@ export function drawRoadworks(
 
 /** Earth over the base of the pipe, a few clods on it, the shovel's blade in it and its handle out. */
 function paintHeap(ctx: CanvasRenderingContext2D, p: Palette): void {
-  const earth = mix(p.wood, '#000000', 0.45)
-  const clod = mix(p.wood, '#000000', 0.28)
   const mid = PIPE_WIDTH / 2
   ctx.lineWidth = OUTLINE
   ctx.strokeStyle = p.hippoDark
-  ctx.fillStyle = earth
+  ctx.fillStyle = p.earth
   ctx.beginPath()
   ctx.moveTo(-18, 1)
   ctx.quadraticCurveTo(-6, -11, mid - 6, -12.5)
@@ -45,7 +43,7 @@ function paintHeap(ctx: CanvasRenderingContext2D, p: Palette): void {
   ctx.closePath()
   ctx.fill()
   ctx.stroke()
-  ctx.fillStyle = clod
+  ctx.fillStyle = p.clod
   for (const [cx, cy, r] of [
     [-4, -4, 2.6],
     [mid + 4, -8, 2.2],

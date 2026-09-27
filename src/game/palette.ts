@@ -20,6 +20,9 @@ export function resolvePalette(dark: boolean): Palette {
   const bubbleEdge = cssVar('--game-shield', dark ? '#d6a5ff' : '#ad4bf2')
   const wood = dark ? '#8a6f45' : '#d2a86a'
   const hippoDark = dark ? '#5f6a78' : '#5c6774'
+  const grassLit = dark ? '#57a875' : '#63c57f'
+  const grassShade = dark ? '#2b6a48' : '#2f9058'
+  const earth = mix(wood, '#000000', 0.45)
   const confetti = [gold, pipe, melon]
   return {
     night: dark,
@@ -43,8 +46,12 @@ export function resolvePalette(dark: boolean): Palette {
     groundHighlight: dark ? 'rgba(255, 255, 255, 0.07)' : 'rgba(255, 255, 255, 0.5)',
     // Greenery. The grass is foreground: saturated, dark enough to read on the bricks. The hedge
     // sits one layer back: a step paler and cooler. Lit tones lean yellow, shade tones lean blue.
-    grassLit: dark ? '#57a875' : '#63c57f',
-    grassShade: dark ? '#2b6a48' : '#2f9058',
+    groundGrass: mix(grassLit, grassShade, 0.45),
+    earth,
+    clod: mix(wood, '#000000', 0.28),
+    earthDeep: mix(earth, '#000000', 0.22),
+    grassLit,
+    grassShade,
     grassShadow: dark ? 'rgba(0, 0, 0, 0.28)' : 'rgba(22, 62, 44, 0.14)',
     // The hedge sits behind the pipes and should stay there: a step toward the sky's own colour.
     bushLit: mix(dark ? '#4c8a63' : '#93d3a6', dark ? '#111a26' : '#e5f0ff', 0.18),

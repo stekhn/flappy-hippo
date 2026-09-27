@@ -205,7 +205,7 @@ export function IconHome(props: IconProps) {
 }
 
 /**
- * The hippo's face from the app icon, for the cards. Mirrors assets/icon.svg. Asleep, the eyes
+ * The hippo's face for the cards, the same as public/favicon.svg. Asleep, the eyes
  * are shut the way the knocked-out sprite's are.
  */
 export function HippoMark({ asleep = false, ...props }: IconProps & { asleep?: boolean }) {

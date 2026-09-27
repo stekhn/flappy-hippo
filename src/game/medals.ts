@@ -8,20 +8,20 @@ export interface Medal {
   color: string
   /** Fill behind it. */
   background: string
-  /** The badge's underside: darker than the ring, so it stands off the card. */
+  /** The badge's underside: a step darker than the ring, so it stands off the card without a hard rim. */
   shade: string
 }
 
 export const MEDALS: Medal[] = [
-  { id: 'bronze', from: 10, color: '#a2612c', background: 'rgb(203 133 68 / 0.22)', shade: '#6f3f18' },
-  { id: 'silver', from: 25, color: '#7c8796', background: 'rgb(148 163 184 / 0.25)', shade: '#4e5866' },
-  { id: 'gold', from: 50, color: '#c08307', background: 'rgb(245 180 40 / 0.25)', shade: '#7f5604' },
+  { id: 'bronze', from: 10, color: '#a2612c', background: 'rgb(203 133 68 / 0.22)', shade: '#7e4c22' },
+  { id: 'silver', from: 25, color: '#7c8796', background: 'rgb(148 163 184 / 0.25)', shade: '#616975' },
+  { id: 'gold', from: 50, color: '#c08307', background: 'rgb(245 180 40 / 0.25)', shade: '#966605' },
   {
     id: 'platinum',
     from: 100,
     color: '#3f8f9c',
     background: 'rgb(94 205 220 / 0.25)',
-    shade: '#245e68',
+    shade: '#31707a',
   },
 ]
 
