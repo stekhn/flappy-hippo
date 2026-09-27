@@ -158,7 +158,7 @@ function launchFireworks(state: GameState, world: World, now: number): void {
   for (let i = 0; i < count; i++) {
     const sparks: Spark[] = Array.from({ length: sparkCount }, (_, k) => ({
       angle: (k / sparkCount) * Math.PI * 2 + (Math.random() - 0.5) * 0.3,
-      speed: 24 + Math.random() * 20,
+      speed: 30 + Math.random() * 24,
       size: 1.3 + Math.random() * 0.9,
     }))
     state.fireworks.push({
@@ -167,6 +167,7 @@ function launchFireworks(state: GameState, world: World, now: number): void {
       peakY: world.groundY * 0.2 + Math.random() * world.groundY * 0.25,
       launchAt: now + i * ROCKET_SPACING_MS + Math.random() * 100,
       sparks,
+      tint: Math.floor(Math.random() * 5),
     })
   }
 }

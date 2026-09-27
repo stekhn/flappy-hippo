@@ -34,6 +34,8 @@ export interface Rocket {
   peakY: number
   launchAt: number
   sparks: Spark[]
+  /** Index into the palette's firework colours. */
+  tint: number
 }
 
 /** Which palette colour a particle borrows — resolved at draw time, so a theme swap re-tints them. */
@@ -107,7 +109,8 @@ export interface Palette {
   moon: string
   moonGlow: string
   star: string
-  firework: string
+  /** One colour per rocket, cycled — saturated enough to read on a daytime sky. */
+  fireworks: string[]
   cloud: string
   cityFar: string
   cityNear: string

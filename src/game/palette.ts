@@ -20,7 +20,9 @@ export function resolvePalette(dark: boolean): Palette {
     moon: 'rgba(223, 227, 234, 0.9)',
     moonGlow: 'rgba(255, 255, 255, 0.1)',
     star: 'rgba(255, 255, 255, 0.85)',
-    firework: dark ? 'rgba(255, 255, 255, 0.85)' : 'rgba(255, 255, 255, 0.95)',
+    fireworks: dark
+      ? ['#ffc65c', '#7db0ff', '#ff6b8f', '#4ade80', '#c4b5fd']
+      : ['#f5a524', '#006aff', '#f2426b', '#22a05a', '#8b5cf6'],
     cloud: dark ? 'rgba(255, 255, 255, 0.07)' : 'rgba(255, 255, 255, 0.72)',
     cityFar: cssVar('--game-city-far', dark ? '#1b2533' : '#d9e8fe'),
     cityNear: cssVar('--game-city-near', dark ? '#26313f' : '#c6dcfd'),

@@ -13,25 +13,26 @@ export function drawFireworks(
 ): void {
   const launchY = world.groundY
   ctx.save()
-  ctx.strokeStyle = p.firework
-  ctx.fillStyle = p.firework
   ctx.lineCap = 'round'
   for (const rocket of rockets) {
     const t = now - rocket.launchAt
     if (t < 0 || t > ROCKET_RISE_MS + ROCKET_BURST_MS) continue
+    const color = p.fireworks[rocket.tint % p.fireworks.length]
+    ctx.strokeStyle = color
+    ctx.fillStyle = color
     if (t < ROCKET_RISE_MS) {
       const u = t / ROCKET_RISE_MS
       const [x, y] = rocketPos(rocket, launchY, u)
       const [tx, ty] = rocketPos(rocket, launchY, Math.max(0, u - 0.1))
-      ctx.lineWidth = 1.5
-      ctx.globalAlpha = 0.4
+      ctx.lineWidth = 2
+      ctx.globalAlpha = 0.5
       ctx.beginPath()
       ctx.moveTo(tx, ty)
       ctx.lineTo(x, y)
       ctx.stroke()
       ctx.globalAlpha = 1
       ctx.beginPath()
-      ctx.arc(x, y, 1.8, 0, Math.PI * 2)
+      ctx.arc(x, y, 2.2, 0, Math.PI * 2)
       ctx.fill()
       continue
     }
@@ -40,8 +41,6 @@ export function drawFireworks(
     // gravity, so the burst reads as radial arcs
     const u = (t - ROCKET_RISE_MS) / ROCKET_BURST_MS
     const tail = Math.max(0, u - 0.2)
-    ctx.globalAlpha = 1 - u
-    ctx.lineWidth = 2
     ctx.beginPath()
     for (const spark of rocket.sparks) {
       const dx = Math.cos(spark.angle) * spark.speed
@@ -49,6 +48,12 @@ export function drawFireworks(
       ctx.moveTo(burstX + dx * easeOut(tail), rocket.peakY + dy * easeOut(tail) + 28 * tail * tail)
       ctx.lineTo(burstX + dx * easeOut(u), rocket.peakY + dy * easeOut(u) + 28 * u * u)
     }
+    // A wide faint pass under a crisp one reads as glow without a filter.
+    ctx.globalAlpha = (1 - u) * 0.3
+    ctx.lineWidth = 7
+    ctx.stroke()
+    ctx.globalAlpha = 1 - u
+    ctx.lineWidth = 2.4
     ctx.stroke()
   }
   ctx.restore()

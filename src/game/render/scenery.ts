@@ -208,9 +208,10 @@ export function drawScenery(
 
   drawCity(ctx, p, CITY_FAR, world, (scrolled * 0.2) % SCENE_PERIOD, p.cityFar)
   drawHaze(ctx, world, HAZE_HEIGHT, p.haze)
-  if (effects) drawFireworks(ctx, p, state.fireworks, world, now)
   drawCity(ctx, p, CITY_NEAR, world, (scrolled * 0.45) % SCENE_PERIOD, p.cityNear)
   drawHaze(ctx, world, HAZE_NEAR_HEIGHT, p.hazeNear)
+  // In front of the skyline and its haze, behind the pipes: a party, not a rumour of one.
+  if (effects) drawFireworks(ctx, p, state.fireworks, world, now)
 }
 
 function drawStars(
