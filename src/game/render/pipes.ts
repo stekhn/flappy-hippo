@@ -25,9 +25,22 @@ export function drawPipes(
   for (const pipe of pipes) {
     // Whole pixels keep the outline crisp while the pipe scrolls
     const x = Math.round(pipe.x)
+    if (pipe.swing > 0) drawRail(ctx, p, x, world)
     drawPipeSegment(ctx, p, x, 0, pipe.gapY - pipe.half, true)
     drawPipeSegment(ctx, p, x, pipe.gapY + pipe.half, world.groundY, false)
   }
+}
+
+/**
+ * A moving pipe runs on a rail: a faint line down its middle, seen in the gap, so the motion
+ * reads as a mechanism and a mover is told from a still pipe at a glance.
+ */
+function drawRail(ctx: CanvasRenderingContext2D, p: Palette, x: number, world: World): void {
+  ctx.save()
+  ctx.globalAlpha = 0.3
+  ctx.fillStyle = p.pipeEdge
+  ctx.fillRect(x + PIPE_WIDTH / 2 - 1.5, 0, 3, world.groundY)
+  ctx.restore()
 }
 
 function drawPipeSegment(

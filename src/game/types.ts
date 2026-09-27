@@ -11,6 +11,31 @@ export interface Pipe {
   /** Half the vertical opening, frozen at spawn so a difficulty ramp never moves a live pipe. */
   half: number
   passed: boolean
+  /** Where the gap's centre rests; a moving pipe swings `swing` above and below it. */
+  baseY: number
+  swing: number
+  /** Where in its swing the pipe started, so a row of movers is not in lockstep. */
+  phase: number
+}
+
+/**
+ * A flower pot: rests on the top edge ahead of the hippo, wobbling, and lets go when the hippo
+ * is `lead` seconds away, so that it comes down past the hippo's line at the height it was
+ * aimed at. Then it tumbles, and smashes on the wall or on the hippo.
+ */
+export interface Pot {
+  x: number
+  y: number
+  vy: number
+  /** Seconds its fall takes to the height it is aimed at. */
+  lead: number
+  falling: boolean
+  /** Wobble while resting, tumble while falling. */
+  spin: number
+  /** Went past the hippo without hitting it. */
+  passed: boolean
+  smashed: boolean
+  seed: number
 }
 
 export interface Pickup {
@@ -39,7 +64,7 @@ export interface Rocket {
 }
 
 /** Which palette colour a particle borrows — resolved at draw time, so a theme swap re-tints them. */
-export type Tint = 'melon' | 'bubble'
+export type Tint = 'melon' | 'bubble' | 'pot'
 
 export interface Particle {
   x: number
@@ -51,7 +76,7 @@ export interface Particle {
   maxLife: number
   size: number
   tint: Tint
-  /** Gravity multiplier: 0 floats (bubble shards), 1 falls (melon juice). */
+  /** Gravity multiplier: 0 floats (bubble shards), 1 falls (melon juice, pot shards). */
   weight: number
 }
 
@@ -70,6 +95,15 @@ export interface GameState {
   velocity: number
   pipes: Pipe[]
   pickups: Pickup[]
+  pots: Pot[]
+  /** Pots that came down past the hippo without hitting it, and moving pipes cleared. */
+  potsDodged: number
+  moversPassed: number
+  /** Pipe slots since the last pot, so two never come in a row. */
+  pipesSincePot: number
+  /** The stage the score has reached (0, then pots, then movers), and when it was reached. */
+  stage: number
+  stageAt: number
   /** Distance travelled, in world units — pipes spawn on distance, not on a timer. */
   scrolled: number
   /** Distance at which the next pipe enters from the right. */
@@ -108,6 +142,11 @@ export type GameEvent =
   | { type: 'melon'; score: number }
   | { type: 'shield' }
   | { type: 'shield-pop' }
+  /** A pot went past without hitting; a pot smashed, on the wall or on the bubble. */
+  | { type: 'dodge' }
+  | { type: 'smash' }
+  /** The score just reached a new stage. */
+  | { type: 'stage'; stage: number }
   | { type: 'milestone'; score: number }
   /** The running score just passed the record set in an earlier round. */
   | { type: 'record'; score: number }

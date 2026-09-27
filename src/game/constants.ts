@@ -80,6 +80,31 @@ export const FLOATER_MS = 800
 /** The screen shudders for this long on a crash. */
 export const SHAKE_MS = 260
 
+// The later stages. A long round keeps getting harder, but never by chance: everything new is
+// telegraphed and can be answered with skill.
+
+/** Scores at which the stages begin: flower pots falling from the top edge, then pipes on the move. */
+export const STAGE_POTS = 100
+export const STAGE_MOVERS = 200
+/** Over how many points past its start a stage keeps getting denser before it levels off. */
+export const STAGE_RAMP = 200
+
+export const POT_RADIUS = 9
+/** A pot falls with a third of the hippo's gravity and never faster than this: a warning first. */
+export const POT_GRAVITY = 520
+export const POT_MAX_FALL = 300
+/** How far above or below the last gap a pot comes down as it passes the hippo, as a share of the jump. */
+export const POT_AIM = 0.6
+/** Where a pot rests before it drops: on the top edge, in full view, wobbling. */
+export const POT_REST_Y = 16
+/** Pipe slots between two pots, at least. */
+export const POT_SPACING = 2
+
+/** A moving pipe's gap swings up and down once every this many seconds. */
+export const MOVER_PERIOD_S = 2.6
+/** What a moving pipe leaves the random walk of the jump, at least. */
+export const MOVER_MIN_JUMP = 24
+
 /** The scenery repeats every two short sides, so the parallax loop is never visible. */
 export const SCENE_PERIOD = SHORT_SIDE * 2
 export const HAZE_HEIGHT = 120

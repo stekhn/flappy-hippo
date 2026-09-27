@@ -66,7 +66,8 @@ export function Game() {
     controls.clearBest()
   }, [controls, reset])
 
-  // Keyboard: space flies, P pauses. Anything typed into a control belongs to that control.
+  // Keyboard: space flies, P pauses, Shift+P freezes the frame with no card over it (for a
+  // screenshot). Anything typed into a control belongs to that control.
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       const flapKey = event.code === 'Space' || event.code === 'ArrowUp'
@@ -77,6 +78,7 @@ export function Game() {
       if (menu !== null) return
       event.preventDefault()
       if (flapKey) controls.flap()
+      else if (event.code === 'KeyP' && event.shiftKey) controls.freeze()
       else if (snapshot.paused) controls.resume()
       else controls.pause()
     }

@@ -11,6 +11,8 @@ const run: RunResult = {
   shields: 1,
   saves: 1,
   seconds: 31.5,
+  pots: 3,
+  movers: 2,
   difficulty: 'normal',
   night: false,
 }
@@ -57,6 +59,9 @@ test('a finished round lands in the stats, the record and the table', () => {
   assert.equal(after.stats.points, 12)
   assert.equal(after.stats.saves, 1)
   assert.equal(after.stats.seconds, 31.5)
+  assert.equal(after.stats.pots, 3)
+  assert.equal(after.stats.potsRun, 3)
+  assert.equal(after.stats.moversRun, 2)
   assert.deepEqual(after.scores, [{ score: 12, difficulty: 'normal', melons: 1, at: 1000 }])
 })
 

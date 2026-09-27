@@ -11,6 +11,7 @@ export type Cue =
   | 'melon'
   | 'shield'
   | 'pop'
+  | 'smash'
   | 'crash'
   | 'milestone'
   | 'record'
@@ -143,6 +144,11 @@ export function createSfx(initiallyMuted = false): Sfx {
         case 'pop':
           tone(context, { type: 'sine', from: 1200, to: 320, duration: 0.14, gain: 0.16 })
           hit(context, { duration: 0.12, gain: 0.08, cutoff: 3200 })
+          return
+        case 'smash':
+          // A pot on the wall: a short dull crack and a thump.
+          hit(context, { duration: 0.14, gain: 0.16, cutoff: 2400, type: 'bandpass', q: 1 })
+          tone(context, { type: 'sine', from: 180, to: 70, duration: 0.1, gain: 0.12 })
           return
         case 'crash':
           // Glass going: a thud, a bright burst of noise, and shards ringing off at random

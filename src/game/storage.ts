@@ -21,6 +21,12 @@ export interface Stats {
   /** Rounds played with the dark theme on. */
   nightGames: number
   seconds: number
+  /** Flower pots dodged, all time and the most in one round. */
+  pots: number
+  potsRun: number
+  /** Moving pipes cleared, all time and the most in one round. */
+  movers: number
+  moversRun: number
 }
 
 export interface ScoreEntry {
@@ -49,6 +55,10 @@ export const EMPTY_STATS: Stats = {
   saves: 0,
   nightGames: 0,
   seconds: 0,
+  pots: 0,
+  potsRun: 0,
+  movers: 0,
+  moversRun: 0,
 }
 
 export function emptyProgress(): Progress {
@@ -151,6 +161,9 @@ export interface RunResult {
   shields: number
   saves: number
   seconds: number
+  /** Pots dodged and moving pipes cleared this round. */
+  pots: number
+  movers: number
   difficulty: DifficultyId
   night: boolean
 }
@@ -166,6 +179,10 @@ export function recordRun(progress: Progress, run: RunResult, at: number): Progr
     saves: progress.stats.saves + run.saves,
     nightGames: progress.stats.nightGames + (run.night ? 1 : 0),
     seconds: progress.stats.seconds + run.seconds,
+    pots: progress.stats.pots + run.pots,
+    potsRun: Math.max(progress.stats.potsRun, run.pots),
+    movers: progress.stats.movers + run.movers,
+    moversRun: Math.max(progress.stats.moversRun, run.movers),
   }
   const scores =
     run.score > 0

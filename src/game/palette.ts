@@ -1,4 +1,4 @@
-import type { Palette } from './types.ts'
+import type { Palette, Tint } from './types.ts'
 
 // The canvas can't use CSS, so every colour the game paints is declared once as a --game-* custom
 // property in styles.css and read back here whenever the theme changes. One source of truth, and
@@ -69,8 +69,8 @@ export function resolvePalette(dark: boolean): Palette {
 }
 
 /** Particle colours, keyed by the tint the simulation asked for. */
-export function tintColor(p: Palette, tint: 'melon' | 'bubble'): string {
-  return tint === 'melon' ? p.melonFlesh : p.bubble
+export function tintColor(p: Palette, tint: Tint): string {
+  return tint === 'melon' ? p.melonFlesh : tint === 'pot' ? p.wood : p.bubble
 }
 
 /** A colour between two hex colours, `t` of the way from `a` to `b`. For variants of one thing. */

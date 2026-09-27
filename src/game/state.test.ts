@@ -1,9 +1,22 @@
 import assert from 'node:assert/strict'
 import { mock, test } from 'node:test'
-import { FLAP_VELOCITY, HIPPO_RADIUS, MAX_SHIELDS, MELON_POINTS, MELON_REACH, PIPE_WIDTH } from './constants.ts'
-import { difficultyById } from './difficulty.ts'
-import { advance, flap, hasCollision, initialState } from './state.ts'
-import type { GameEvent, GameState, Pickup, Pipe } from './types.ts'
+import {
+  FLAP_VELOCITY,
+  GAP_MARGIN,
+  HIPPO_RADIUS,
+  MAX_SHIELDS,
+  MELON_POINTS,
+  MELON_REACH,
+  MOVER_MIN_JUMP,
+  PIPE_WIDTH,
+  POT_REST_Y,
+  POT_SPACING,
+  STAGE_MOVERS,
+  STAGE_POTS,
+} from './constants.ts'
+import { difficultyById, tuningFor } from './difficulty.ts'
+import { advance, fallTime, flap, hasCollision, initialState } from './state.ts'
+import type { GameEvent, GameState, Pickup, Pipe, Pot } from './types.ts'
 import { fitWorld } from './world.ts'
 
 const world = fitWorld(390, 780)
@@ -16,6 +29,14 @@ function running(): GameState {
   state.nextSpawn = 100_000
   state.pipes = []
   return state
+}
+
+function pipeAt(x: number, gapY: number, half: number, passed = false): Pipe {
+  return { x, gapY, half, passed, baseY: gapY, swing: 0, phase: 0 }
+}
+
+function potAt(x: number, y: number, lead: number, falling: boolean): Pot {
+  return { x, y, vy: falling ? 100 : 0, lead, falling, spin: 0, passed: false, smashed: false, seed: 0 }
 }
 
 function step(state: GameState, dt = 1 / 60, now = 1000): GameEvent[] {
@@ -64,7 +85,7 @@ test('the ceiling stops the hippo instead of ending the round', () => {
 
 test('passing a pipe scores a point exactly once', () => {
   const state = running()
-  state.pipes = [{ x: world.hippoX - PIPE_WIDTH + 1, gapY: state.hippoY, half: 80, passed: false }]
+  state.pipes = [pipeAt(world.hippoX - PIPE_WIDTH + 1, state.hippoY, 80)]
   const events = step(state)
   assert.equal(state.score, 1)
   assert.equal(state.pipesCleared, 1)
@@ -97,7 +118,7 @@ test('a score below the record leaves the record alone', () => {
 test('a shield absorbs one hit and keeps the round alive', () => {
   const state = running()
   state.charges = 1
-  state.pipes = [{ x: world.hippoX - 4, gapY: 0, half: 10, passed: true }]
+  state.pipes = [pipeAt(world.hippoX - 4, 0, 10, true)]
   const events = step(state)
   assert.equal(state.phase, 'running')
   assert.equal(state.charges, 0)
@@ -109,7 +130,7 @@ test('a shield absorbs one hit and keeps the round alive', () => {
 test('the hippo stays solid for a moment after the shield pops', () => {
   const state = running()
   state.solidUntil = 2000
-  state.pipes = [{ x: world.hippoX - 4, gapY: 0, half: 10, passed: true }]
+  state.pipes = [pipeAt(world.hippoX - 4, 0, 10, true)]
   assert.equal(hasCollision(state, world), true)
   step(state, 1 / 60, 1500)
   assert.equal(state.phase, 'running')
@@ -137,18 +158,22 @@ test('shield pickups stack, one charge each', () => {
 })
 
 /**
- * Runs the spawner for a while with the hippo out of harm's way: every pipe is recorded as it
- * appears, then widened and re-centred so the round keeps going and the survey stays honest.
- * Every melon is recorded with the gap of the pipe it was spawned with.
+ * Runs the spawner for a while with the hippo out of harm's way (held mid-field and made solid):
+ * every pipe is recorded as it appears, every melon with the gap of the pipe it was spawned
+ * with, every pot with the slot it stands in. Starting at `score` puts the later stages in play.
  */
-function surveySpawns(frames: number) {
+function surveySpawns(frames: number, score = 0) {
   const state = initialState({ world, difficulty: normal, best: 0 })
   state.phase = 'running'
   state.pipes = []
+  state.score = score
+  state.solidUntil = Number.MAX_SAFE_INTEGER
   const seen = new Set<Pipe>()
   const seenPickups = new Set<Pickup>()
-  const spawns: { at: number; gapY: number; half: number }[] = []
+  const seenPots = new Set<Pot>()
+  const spawns: { at: number; gapY: number; half: number; baseY: number; swing: number }[] = []
   const melons: { y: number; gapY: number }[] = []
+  const pots: { lead: number; slot: number }[] = []
   for (let i = 0; i < frames; i++) {
     state.hippoY = world.groundY / 2
     state.velocity = 0
@@ -156,18 +181,103 @@ function surveySpawns(frames: number) {
     for (const pipe of state.pipes) {
       if (seen.has(pipe)) continue
       seen.add(pipe)
-      spawns.push({ at: state.scrolled, gapY: pipe.gapY, half: pipe.half })
-      pipe.gapY = state.hippoY
-      pipe.half = 150
+      spawns.push({ at: state.scrolled, gapY: pipe.gapY, half: pipe.half, baseY: pipe.baseY, swing: pipe.swing })
     }
     for (const pickup of state.pickups) {
       if (seenPickups.has(pickup)) continue
       seenPickups.add(pickup)
       if (pickup.kind === 'melon') melons.push({ y: pickup.y, gapY: spawns[spawns.length - 1].gapY })
     }
+    for (const pot of state.pots) {
+      if (seenPots.has(pot)) continue
+      seenPots.add(pot)
+      pots.push({ lead: pot.lead, slot: spawns.length - 1 })
+    }
   }
-  return { state, spawns, melons }
+  return { state, spawns, melons, pots }
 }
+
+test('pots and moving pipes wait for their stages', () => {
+  const { spawns, pots } = surveySpawns(1500)
+  assert.ok(spawns.length > 5)
+  assert.equal(pots.length, 0)
+  assert.ok(spawns.every((s) => s.swing === 0))
+})
+
+test('from the pot stage, pots come at a spacing and fall within the field', () => {
+  const { pots } = surveySpawns(3000, STAGE_POTS)
+  assert.ok(pots.length >= 3, `pots: ${pots.length}`)
+  for (const pot of pots) assert.ok(pot.lead > 0.1 && pot.lead < fallTime(world.groundY), `lead ${pot.lead}`)
+  for (let i = 1; i < pots.length; i++) assert.ok(pots[i].slot - pots[i - 1].slot >= POT_SPACING)
+})
+
+test('a pot lets go on its own and crosses the hippo at the height it was aimed at', () => {
+  const state = running()
+  state.score = STAGE_POTS
+  const aimY = 400
+  const lead = fallTime(aimY - POT_REST_Y)
+  const { speed } = tuningFor(normal, state.score, world)
+  state.pots = [potAt(world.hippoX + speed * (lead + 0.5), POT_REST_Y, lead, false)]
+  let closest = Infinity
+  let crossedAt = 0
+  for (let i = 0; i < 240; i++) {
+    state.hippoY = 100
+    state.velocity = 0
+    step(state, 1 / 60, 1000 + i * 16)
+    const pot = state.pots[0]
+    if (!pot) break
+    const away = Math.abs(pot.x - world.hippoX)
+    if (away < closest) {
+      closest = away
+      crossedAt = pot.y
+    }
+  }
+  assert.ok(closest < 4, `closest approach ${closest}`)
+  assert.ok(Math.abs(crossedAt - aimY) < 12, `crossed at ${crossedAt}, aimed at ${aimY}`)
+  assert.equal(state.potsDodged, 1)
+})
+
+test('a falling pot knocks the hippo out, and a shield takes the hit instead', () => {
+  for (const charges of [0, 1]) {
+    const state = running()
+    state.charges = charges
+    state.pots = [potAt(world.hippoX, state.hippoY - 5, 0, true)]
+    const events = step(state)
+    if (charges === 0) {
+      assert.equal(state.phase, 'over')
+    } else {
+      assert.equal(state.phase, 'running')
+      assert.equal(state.charges, 0)
+      assert.equal(state.pots.length, 0)
+      assert.ok(events.some((event) => event.type === 'shield-pop'))
+      assert.ok(events.some((event) => event.type === 'smash'))
+    }
+  }
+})
+
+test('moving pipes keep their whole swing in the field and within the jump of their neighbours', () => {
+  const { spawns } = surveySpawns(3000, STAGE_MOVERS)
+  const movers = spawns.filter((s) => s.swing > 0)
+  assert.ok(movers.length >= 3, `movers: ${movers.length}`)
+  for (const [i, s] of spawns.entries()) {
+    assert.ok(s.baseY - s.swing - s.half >= GAP_MARGIN - 1e-9)
+    assert.ok(s.baseY + s.swing + s.half <= world.groundY - GAP_MARGIN + 1e-9)
+    if (i === 0) continue
+    const prev = spawns[i - 1]
+    assert.ok(Math.abs(s.baseY - prev.baseY) + s.swing + prev.swing <= normal.jump[1] + MOVER_MIN_JUMP + 1e-9)
+  }
+})
+
+test('reaching a stage announces it once', () => {
+  const state = running()
+  state.score = STAGE_POTS - 1
+  state.pipes = [pipeAt(world.hippoX - PIPE_WIDTH + 1, state.hippoY, 80)]
+  const events = step(state)
+  assert.equal(state.score, STAGE_POTS)
+  assert.equal(state.stage, 1)
+  assert.ok(events.some((event) => event.type === 'stage' && event.stage === 1))
+  assert.ok(!step(state).some((event) => event.type === 'stage'))
+})
 
 test('melons hang within reach of the gap they are spawned with', () => {
   const { melons } = surveySpawns(3000)
@@ -181,10 +291,12 @@ test('melons hang within reach of the gap they are spawned with', () => {
 test('pipes keep spawning within the difficulty spacing range', () => {
   const { spawns } = surveySpawns(1200)
   assert.ok(spawns.length > 5, `expected several pipes, got ${spawns.length}`)
+  // A spawn is noticed on the frame after it is due, so a frame's travel is the tolerance.
+  const slack = normal.speed[1] / 60
   for (let i = 1; i < spawns.length; i++) {
     const gap = spawns[i].at - spawns[i - 1].at
-    assert.ok(gap >= normal.spacing[0] - 1, `spacing ${gap} below the opening value`)
-    assert.ok(gap <= normal.spacing[1] + 1, `spacing ${gap} above the closing value`)
+    assert.ok(gap >= normal.spacing[0] - slack, `spacing ${gap} below the opening value`)
+    assert.ok(gap <= normal.spacing[1] + slack, `spacing ${gap} above the closing value`)
   }
 })
 
@@ -201,8 +313,8 @@ test('a record from an earlier round is announced the moment it falls, and only 
   const state = running()
   state.best = 1
   state.pipes = [
-    { x: world.hippoX - PIPE_WIDTH + 1, gapY: state.hippoY, half: 80, passed: false },
-    { x: world.hippoX - PIPE_WIDTH + 1, gapY: state.hippoY, half: 80, passed: false },
+    pipeAt(world.hippoX - PIPE_WIDTH + 1, state.hippoY, 80),
+    pipeAt(world.hippoX - PIPE_WIDTH + 1, state.hippoY, 80),
   ]
   const events = step(state)
   assert.equal(state.score, 2)
@@ -213,7 +325,7 @@ test('a record from an earlier round is announced the moment it falls, and only 
 test('the first points ever are not a mid-flight record', () => {
   const state = running()
   state.best = 0
-  state.pipes = [{ x: world.hippoX - PIPE_WIDTH + 1, gapY: state.hippoY, half: 80, passed: false }]
+  state.pipes = [pipeAt(world.hippoX - PIPE_WIDTH + 1, state.hippoY, 80)]
   const events = step(state)
   assert.equal(state.newBest, false)
   assert.ok(!events.some((event) => event.type === 'record'))
@@ -252,7 +364,7 @@ test('a shield only spawns once a few pipes are cleared and the stack is not ful
 
 test('knocked out, the hippo stays exactly where it was hit', () => {
   const state = running()
-  state.pipes = [{ x: world.hippoX - 4, gapY: 0, half: 10, passed: true }]
+  state.pipes = [pipeAt(world.hippoX - 4, 0, 10, true)]
   state.hippoY = 100
   state.velocity = 0
   step(state)

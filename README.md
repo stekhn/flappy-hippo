@@ -8,10 +8,12 @@ auf dem Handy als App installieren und funktioniert danach auch offline.
 ## Features
 
 - **Eine Steuerung**: tippen, klicken oder Leertaste. Mehr braucht es nicht.
-- **Drei Schwierigkeitsstufen**, die mit steigender Punktzahl schneller und enger werden.
+- **Drei Schwierigkeitsstufen**, die mit steigender Punktzahl schneller und enger werden. Ab 100
+  Punkten fallen Blumentöpfe vom oberen Rand, ab 200 wandern manche Röhren auf und ab. Beides
+  kündigt sich an und lässt sich mit Können umfliegen: Sterben ist nie Zufall.
 - **Melonen und Schilde**: Melonen hängen zwischen den Röhren und bringen drei Punkte, die Blase
   hält genau einen Treffer aus.
-- **Rekorde, Medaillen und zwölf Erfolge** — alles lokal, ohne Konto und ohne Server. Fällt der
+- **Rekorde, Medaillen und 22 Erfolge**, zehn davon verborgen, bis man ihnen nahe kommt — alles lokal, ohne Konto und ohne Server. Fällt der
   Rekord mitten im Flug, färbt sich die Anzeige gold; ein Erfolg meldet sich in dem Moment, in
   dem er erreicht ist, als Toast am unteren Rand — wie auf der Konsole, nicht erst nach dem Absturz.
 - **Pause mit Countdown**: App-Wechsel oder Anruf kosten keine Runde; weiter geht es mit 3-2-1.
@@ -100,7 +102,7 @@ Ein Side-Scroller zeigt jedes Bild dieselbe Kulisse, nur verschoben. Deshalb wer
 Ebenen (Skylines, Hecke mit Laternen, Mauer mit Straße) einmal in Bitmaps gebacken, eine
 Szenenperiode breit in Geräteauflösung, und pro Bild nur noch zwei-, dreimal an der Scrollposition
 eingeblendet ([src/game/render/layers.ts](src/game/render/layers.ts)). Gezeichnet wird pro Bild
-nur, was sich bewegt: Himmelskörper, Röhren, Sammelobjekte, das Nilpferd, dazu das seltene
+nur, was sich bewegt: Himmelskörper, Röhren, Blumentöpfe, Sammelobjekte, das Nilpferd, dazu das seltene
 Straßenmobiliar (Bank, Briefkasten, Mülleimer, ab und zu eine Katze oder ein Hund), das nicht
 gebacken wird, damit es sich nie wiederholt: Was an welcher Stelle steht, ergibt sich aus ihrer
 Nummer, nicht aus einer Liste. Die Auflösung ist auf 2x

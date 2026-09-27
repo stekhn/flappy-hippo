@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { ACHIEVEMENTS } from '../game/achievements.ts'
+import { STAGE_MOVERS, STAGE_POTS } from '../game/constants.ts'
 import { DIFFICULTIES, difficultyById } from '../game/difficulty.ts'
 import type { DifficultyId } from '../game/difficulty.ts'
 import type { Progress } from '../game/storage.ts'
@@ -360,6 +361,8 @@ function ScoresTab({ progress }: { progress: Progress }) {
           <Figure label="Melonen" value={stats.melons} />
           <Figure label="Schilde" value={stats.shields} />
           <Figure label="Flugzeit" value={formatDuration(stats.seconds)} />
+          <Figure label="Blumentöpfe" value={stats.pots} />
+          <Figure label="Wanderröhren" value={stats.movers} />
         </dl>
       </Section>
     </>
@@ -392,15 +395,19 @@ function AwardsTab({ progress }: { progress: Progress }) {
       <ul className="space-y-2">
         {ACHIEVEMENTS.map((achievement) => {
           const unlocked = Boolean(progress.achievements[achievement.id])
+          // The later ones stay secret until the player is close, and say what brings them out.
+          const secret = !unlocked && achievement.reveal !== undefined && !achievement.reveal.when(progress)
           return (
             <li
               key={achievement.id}
               className={`tile flex items-center gap-3 px-3 py-2.5 ${unlocked ? '' : 'opacity-55'}`}
             >
-              <EmojiBadge icon={achievement.icon} earned={unlocked} />
+              <EmojiBadge icon={secret ? '🔒' : achievement.icon} earned={unlocked} />
               <span className="min-w-0 flex-1">
-                <span className="t-label block">{achievement.label}</span>
-                <span className="block text-[0.9375rem]">{achievement.hint}</span>
+                <span className="t-label block">{secret ? 'Noch verborgen' : achievement.label}</span>
+                <span className="block text-[0.9375rem]">
+                  {secret && achievement.reveal ? achievement.reveal.hint : achievement.hint}
+                </span>
               </span>
               {unlocked && <IconCheck width={22} height={22} className="text-gold shrink-0" />}
             </li>
@@ -432,6 +439,11 @@ function HelpTab() {
             <span className="text-brand font-bold">Die Decke</span> ist eine Grenze, kein Ende.
             Gefährlich sind nur Boden und Röhren.
           </li>
+          <li>
+            <span className="text-brand font-bold">Ab {STAGE_POTS} Punkten</span> fallen Blumentöpfe
+            vom oberen Rand. Ein Topf wackelt erst, dann fällt er: unten durch oder oben drüber. Ab{' '}
+            {STAGE_MOVERS} Punkten wandern manche Röhren auf und ab, zu erkennen an ihrer Schiene.
+          </li>
         </ul>
       </Section>
 
@@ -439,6 +451,7 @@ function HelpTab() {
         <dl className="space-y-2">
           <Shortcut keys="Leertaste, ↑" action="Fliegen, Runde starten, neue Runde" />
           <Shortcut keys="P, Esc" action="Pause und weiter (mit Countdown)" />
+          <Shortcut keys="Shift + P" action="Standbild ohne Pausekarte, für Screenshots" />
         </dl>
       </Section>
 

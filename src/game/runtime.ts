@@ -29,6 +29,8 @@ export interface Snapshot {
   round: number
   /** The difficulty this round runs on — what the share text and the over card should name. */
   difficulty: DifficultyId
+  /** The stage the round has reached: 0, 1 with the pots, 2 with the moving pipes. */
+  stage: number
 }
 
 /** Numbers for the stats and the score table, read once when a round ends. */
@@ -39,6 +41,8 @@ export interface RunSummary {
   shields: number
   saves: number
   seconds: number
+  pots: number
+  movers: number
   /** The difficulty the round was actually played on, not the one now selected. */
   difficulty: DifficultyId
 }
@@ -115,6 +119,8 @@ export class GameRuntime {
   private paused = false
   /** While the menu sheet is up nothing moves and nothing is painted, whatever the phase. */
   private suspended = false
+  /** A still frame with no card over it, for taking screenshots. Shift+P. */
+  private frozen = false
   /** performance.now() until which a resumed round is still counting back in. */
   private countdownUntil = 0
   /** A difficulty picked mid-round, applied when the next one starts. */
@@ -249,7 +255,7 @@ export class GameRuntime {
 
   /** The one input the game has. Starts a round, flaps, or begins the next round after a crash. */
   flap(): void {
-    if (this.suspended) return
+    if (this.suspended || this.frozen) return
     const now = performance.now()
     const state = this.state
     if (this.paused) {
@@ -286,6 +292,7 @@ export class GameRuntime {
     this.state.startedAt = now
     flap(this.state, now)
     this.paused = false
+    this.frozen = false
     this.countdownUntil = 0
     this.sfx.play('flap')
     this.push()
@@ -295,6 +302,7 @@ export class GameRuntime {
   pause(): boolean {
     if (this.state.phase !== 'running' || this.paused) return false
     this.paused = true
+    this.frozen = false
     this.dirty = true
     this.push()
     return true
@@ -310,10 +318,29 @@ export class GameRuntime {
     return true
   }
 
+  /**
+   * Freezes a live round with nothing drawn over it, or lifts that freeze with the count-in.
+   * Returns what it did, or null when there was no live round.
+   */
+  toggleFreeze(): 'frozen' | 'resumed' | null {
+    if (this.frozen) {
+      this.frozen = false
+      this.state.velocity = Math.min(this.state.velocity, 0)
+      this.countdownUntil = performance.now() + COUNTDOWN_MS
+      this.push()
+      return 'resumed'
+    }
+    if (this.state.phase !== 'running' || this.paused) return null
+    this.frozen = true
+    this.dirty = true
+    return 'frozen'
+  }
+
   /** Gives up the current round — the score still counts. */
   surrender(): void {
     if (this.state.phase !== 'running') return
     this.paused = false
+    this.frozen = false
     this.countdownUntil = 0
     gameOver(this.state, performance.now(), this.events)
     this.drain()
@@ -331,7 +358,7 @@ export class GameRuntime {
   }
 
   summary(): RunSummary {
-    const { score, pipesCleared, melons, shields, saves, elapsed } = this.state
+    const { score, pipesCleared, melons, shields, saves, elapsed, potsDodged, moversPassed } = this.state
     return {
       score,
       pipes: pipesCleared,
@@ -339,6 +366,8 @@ export class GameRuntime {
       shields,
       saves,
       seconds: elapsed,
+      pots: potsDodged,
+      movers: moversPassed,
       difficulty: this.difficulty.id,
     }
   }
@@ -359,7 +388,7 @@ export class GameRuntime {
    * phone left on that screen should not spend its battery redrawing it.
    */
   private live(now: number): boolean {
-    if (this.suspended || this.paused) return false
+    if (this.suspended || this.paused || this.frozen) return false
     const s = this.state
     if (s.phase !== 'over') return true
     return now - s.overAt < OVER_SETTLE_MS || s.particles.length > 0
@@ -374,7 +403,7 @@ export class GameRuntime {
 
     // Suspended (the menu is up), paused, or counting back in: nothing moves, but a frame that
     // was marked dirty — a theme switch made from that very menu — is still painted once.
-    const frozen = this.suspended || this.paused || now < this.countdownUntil
+    const frozen = this.suspended || this.paused || this.frozen || now < this.countdownUntil
     if (!frozen) {
       advance(this.state, dt, now, this.world, this.difficulty, this.events)
       this.drain()
@@ -388,7 +417,7 @@ export class GameRuntime {
 
   /** Steps the resolution down when the device has not kept 60 fps for a while. */
   private govern(elapsed: number): void {
-    if (this.state.phase !== 'running' || this.paused) return
+    if (this.state.phase !== 'running' || this.paused || this.frozen) return
     if (elapsed <= SLOW_FRAME_S) {
       this.slowFrames = 0
       return
@@ -426,6 +455,14 @@ export class GameRuntime {
         this.sfx.play('pop')
         buzz(this.haptics, [20, 40, 20])
         return
+      case 'smash':
+        this.sfx.play('smash')
+        return
+      case 'dodge':
+        return
+      case 'stage':
+        buzz(this.haptics, [10, 30, 10])
+        return
       case 'milestone':
         this.sfx.play('milestone')
         return
@@ -454,6 +491,7 @@ export class GameRuntime {
       overTitle: s.overTitle,
       round: s.round,
       difficulty: this.difficulty.id,
+      stage: s.stage,
     }
   }
 
@@ -471,7 +509,8 @@ export class GameRuntime {
       next.charges === prev.charges &&
       next.melons === prev.melons &&
       next.round === prev.round &&
-      next.difficulty === prev.difficulty
+      next.difficulty === prev.difficulty &&
+      next.stage === prev.stage
     if (same) return
     this.snapshot = next
     this.options.onSnapshot(next)

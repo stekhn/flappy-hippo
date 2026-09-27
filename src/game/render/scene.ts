@@ -12,6 +12,7 @@ import { drawParticles } from './effects.ts'
 import { drawHippo } from './hippo.ts'
 import { drawPickups } from './pickups.ts'
 import { drawPipes } from './pipes.ts'
+import { drawPots } from './pots.ts'
 import type { LayerCache } from './layers.ts'
 import type { SkyMotion } from './scenery.ts'
 import { drawGround, drawScenery, drawSky } from './scenery.ts'
@@ -44,6 +45,8 @@ export function drawScene(
   drawPipes(ctx, p, state.pipes, world)
   drawPickups(ctx, p, state.pickups, now)
   drawGround(ctx, p, world, state.scrolled, state.round, cache)
+  // Pots land on the wall, so they go over it
+  drawPots(ctx, p, state.pots)
   if (effects) drawParticles(ctx, p, state.particles)
 
   if (effects) drawFloaters(ctx, p, state, now)

@@ -105,9 +105,9 @@ async function flight(page: Page): Promise<void> {
     // few frames it scrolls before the capture.
     const ahead = Math.max(world.hippoX + 150, world.width * 0.62)
     state.pipes = [
-      { x: ahead, gapY: gap + 8, half: 62, passed: false },
-      { x: ahead + 210, gapY: gap - 55, half: 62, passed: false },
-      { x: ahead + 420, gapY: gap + 25, half: 62, passed: false },
+      { x: ahead, gapY: gap + 8, half: 62, passed: false, baseY: gap + 8, swing: 0, phase: 0 },
+      { x: ahead + 210, gapY: gap - 55, half: 62, passed: false, baseY: gap - 55, swing: 0, phase: 0 },
+      { x: ahead + 420, gapY: gap + 25, half: 62, passed: false, baseY: gap + 25, swing: 0, phase: 0 },
     ]
     // The melon hangs between the hippo and the first pipe, in view on every field.
     state.pickups = [
@@ -173,7 +173,9 @@ try {
       localStorage.setItem('flappy-hippo.progress', JSON.stringify(progress))
       localStorage.setItem('flappy-hippo.settings', JSON.stringify({ difficulty: 'normal', sound: true, haptics: true }))
     }, PROGRESS)
-    await page.goto(URL, { waitUntil: 'networkidle0' })
+    // "Network idle" is not a reliable signal against a dev server; the game hook is.
+    await page.goto(URL, { waitUntil: 'load' })
+    await page.waitForFunction(() => '__flappyHippo' in window)
     await page.evaluate(() => document.fonts.ready)
     await sleep(500)
     await scene.stage(page)

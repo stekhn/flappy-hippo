@@ -351,6 +351,29 @@ body {
   }
 }
 
+/* A stage callout: in with a pop, held, then gone. A leaf in the HUD, never over a glass card. */
+@keyframes notice {
+  0% {
+    transform: scale(0.7);
+    opacity: 0;
+  }
+  12% {
+    transform: scale(1.06);
+    opacity: 1;
+  }
+  20% {
+    transform: scale(1);
+  }
+  80% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(0.96) translateY(-8px);
+    opacity: 0;
+  }
+}
+
 @keyframes rise-in {
   from {
     transform: translateY(110%);
@@ -398,6 +421,10 @@ body {
   animation: pop-in 260ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
 
+.animate-notice {
+  animation: notice 3.2s ease-out both;
+}
+
 .animate-rise {
   animation: rise-in 280ms cubic-bezier(0.34, 1.4, 0.64, 1) both;
 }
@@ -423,6 +450,7 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .animate-pop,
   .animate-rise,
+  .animate-notice,
   .animate-scrim,
   .animate-toast-in,
   .animate-toast-out,

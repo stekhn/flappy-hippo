@@ -18,6 +18,7 @@ const INITIAL_SNAPSHOT: Snapshot = {
   overTitle: 'Vorbei',
   round: 0,
   difficulty: 'normal',
+  stage: 0,
 }
 
 interface Options {
@@ -37,6 +38,8 @@ export interface GameControls {
   flap: () => void
   pause: () => void
   resume: () => void
+  /** Freezes the frame with no card over it (and lifts that again): for screenshots. */
+  freeze: () => void
   restart: () => void
   /** Ends the current round properly first, so the points still count. */
   restartFromPause: () => void
@@ -75,7 +78,7 @@ export function useGameRuntime({ settings, dark, best, record, preview, onUnlock
     const unlocked =
       event.type === 'crash'
         ? save({ ...runtime.summary(), night })
-        : event.type === 'score' || event.type === 'melon' || event.type === 'shield-pop'
+        : event.type === 'score' || event.type === 'melon' || event.type === 'shield-pop' || event.type === 'dodge'
           ? check({ ...runtime.summary(), night })
           : []
     if (unlocked.length > 0) {
@@ -154,6 +157,10 @@ export function useGameRuntime({ settings, dark, best, record, preview, onUnlock
       },
       resume: () => {
         if (runtimeRef.current?.resume()) setStatus('Weiter, es zählt runter')
+      },
+      freeze: () => {
+        const did = runtimeRef.current?.toggleFreeze()
+        if (did) setStatus(did === 'frozen' ? 'Standbild' : 'Weiter, es zählt runter')
       },
       restart,
       restartFromPause: () => {
