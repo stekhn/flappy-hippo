@@ -1,9 +1,9 @@
-import type { ReactNode } from 'react'
 import { difficultyById } from '../game/difficulty.ts'
 import { medalFor, nextMedal } from '../game/medals.ts'
 import type { Snapshot } from '../game/runtime.ts'
 import { canShare } from '../platform.ts'
 import { CardShell } from './CardShell.tsx'
+import { Stat } from './Stat.tsx'
 import { IconChart, IconMelon, IconRestart, IconShare, IconTrophy } from './icons.tsx'
 import type { MenuTab } from './MenuSheet.tsx'
 
@@ -31,7 +31,7 @@ async function shareScore(snapshot: Snapshot): Promise<void> {
 
 /**
  * The round's result. One number is the hero — this round's score — and everything else is a
- * chip underneath it: the record (gold when it just fell), the melons, the next medal.
+ * line underneath it: the record (gold, as on the title card), the melons, the next medal.
  */
 export function OverCard({ snapshot, touch, onRestart, onOpenMenu }: OverCardProps) {
   const medal = medalFor(snapshot.score)
@@ -39,7 +39,7 @@ export function OverCard({ snapshot, touch, onRestart, onOpenMenu }: OverCardPro
   const shareable = canShare() && snapshot.score > 0
 
   return (
-    <CardShell dim onBackdropTap={onRestart} labelledBy="over-title">
+    <CardShell onBackdropTap={onRestart} labelledBy="over-title">
       <h2 id="over-title" className="t-heading">
         {snapshot.overTitle}
       </h2>
@@ -68,8 +68,8 @@ export function OverCard({ snapshot, touch, onRestart, onOpenMenu }: OverCardPro
         <span className="t-label block">{snapshot.score === 1 ? 'Punkt' : 'Punkte'}</span>
       </p>
 
-      <ul className="mt-3 flex flex-wrap justify-center gap-2">
-        <Chip icon={<IconTrophy width={18} height={18} />} gold={snapshot.newBest ? 'filled' : 'text'}>
+      <p className="mt-3 flex flex-wrap justify-center gap-x-5 gap-y-1">
+        <Stat icon={<IconTrophy width={18} height={18} />} tone="gold" animate={snapshot.newBest}>
           {snapshot.newBest ? (
             'Neuer Rekord'
           ) : (
@@ -77,14 +77,14 @@ export function OverCard({ snapshot, touch, onRestart, onOpenMenu }: OverCardPro
               Rekord <span className="t-number">{snapshot.best}</span>
             </>
           )}
-        </Chip>
+        </Stat>
         {snapshot.melons > 0 && (
-          <Chip icon={<IconMelon width={18} height={18} className="text-brand" />}>
+          <Stat icon={<IconMelon width={18} height={18} />} tone="brand">
             <span className="t-number">{snapshot.melons}</span>{' '}
             {snapshot.melons === 1 ? 'Melone' : 'Melonen'}
-          </Chip>
+          </Stat>
         )}
-      </ul>
+      </p>
 
       {next && (
         <p className="mt-3">
@@ -111,41 +111,5 @@ export function OverCard({ snapshot, touch, onRestart, onOpenMenu }: OverCardPro
         )}
       </div>
     </CardShell>
-  )
-}
-
-/**
- * A small figure with an icon on the tile surface. A record is always gold, icon and text alike;
- * when it is the news of the round the whole chip fills gold.
- */
-function Chip({
-  icon,
-  gold,
-  children,
-}: {
-  icon: ReactNode
-  gold?: 'text' | 'filled'
-  children: ReactNode
-}) {
-  return (
-    <li
-      className="t-label flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[0.9375rem]"
-      style={
-        gold === 'filled'
-          ? {
-              background: 'color-mix(in srgb, var(--game-gold) 20%, transparent)',
-              border: '2px solid var(--game-gold)',
-              color: 'var(--game-gold-deep)',
-            }
-          : {
-              background: 'var(--game-tile)',
-              border: '2px solid var(--game-tile-edge)',
-              color: gold ? 'var(--game-gold-deep)' : undefined,
-            }
-      }
-    >
-      {icon}
-      <span>{children}</span>
-    </li>
   )
 }

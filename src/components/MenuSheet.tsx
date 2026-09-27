@@ -9,6 +9,7 @@ import { isIos, isStandalone } from '../platform.ts'
 import type { Settings } from '../settings.ts'
 import { THEME_OPTIONS } from '../theme.ts'
 import type { ThemePref } from '../theme.ts'
+import { EmojiBadge } from './EmojiBadge.tsx'
 import { Segmented } from './Segmented.tsx'
 import { Toggle } from './Toggle.tsx'
 import { IconChart, IconCheck, IconClose, IconGear, IconHelp, IconInstall, IconStar } from './icons.tsx'
@@ -104,8 +105,8 @@ export function MenuSheet({
       role="tab"
       aria-selected={tab === id}
       onClick={() => onTab(id)}
-      className={`t-label flex items-center gap-2 rounded-2xl text-[0.9375rem] transition-[background-color,color,box-shadow] duration-100 ${
-        wide ? 'w-full justify-start px-3 py-2.5' : 'flex-1 flex-col gap-0.5 px-1 py-2'
+      className={`t-label flex items-center gap-2 rounded-full text-[0.9375rem] transition-[background-color,color,box-shadow] duration-100 ${
+        wide ? 'w-full justify-start px-4 py-2.5' : 'flex-1 flex-col gap-0.5 px-1 py-2'
       } ${tab === id ? 'bg-brand text-white shadow-[0_3px_0_var(--game-brand-deep)]' : 'text-muted'}`}
     >
       <Icon width={22} height={22} />
@@ -137,14 +138,14 @@ export function MenuSheet({
   )
 
   const close = (
-    <button type="button" className="icon-btn h-10 w-10" onClick={onClose} aria-label="Menü schließen">
+    <button type="button" className="icon-btn" onClick={onClose} aria-label="Menü schließen">
       <IconClose width={20} height={20} />
     </button>
   )
 
   return (
     <div
-      className={`safe-inset animate-fade absolute inset-0 z-20 flex justify-center bg-black/30 ${
+      className={`safe-inset animate-fade absolute inset-0 z-20 flex justify-center bg-sky/40 ${
         wide ? 'items-center' : 'items-end !p-0'
       }`}
       onPointerDown={onClose}
@@ -159,14 +160,16 @@ export function MenuSheet({
           className="glass animate-pop flex max-h-full w-full max-w-[44rem] rounded-[1.75rem] outline-none"
           onPointerDown={(event) => event.stopPropagation()}
         >
-          <div
-            role="tablist"
-            aria-label="Bereiche"
-            aria-orientation="vertical"
-            className="flex w-44 shrink-0 flex-col gap-1 p-3"
-          >
-            <div className="mb-1 flex justify-start">{close}</div>
-            {tabs}
+          <div className="flex w-44 shrink-0 flex-col p-3">
+            <div className="mb-2">{close}</div>
+            <div
+              role="tablist"
+              aria-label="Bereiche"
+              aria-orientation="vertical"
+              className="flex flex-col gap-1"
+            >
+              {tabs}
+            </div>
           </div>
           <div className="bg-glass-edge my-3 w-0.5 shrink-0" aria-hidden="true" />
           {content}
@@ -183,7 +186,7 @@ export function MenuSheet({
           onPointerDown={(event) => event.stopPropagation()}
         >
           {/* Its own row, so the close button never sits on top of the last tab. */}
-          <div className="relative flex h-12 shrink-0 items-center justify-center px-2 pt-2">
+          <div className="relative flex h-16 shrink-0 items-center justify-center px-2">
             <div className="bg-ink/20 h-1.5 w-12 rounded-full" aria-hidden="true" />
             <div className="absolute right-3">{close}</div>
           </div>
@@ -339,9 +342,7 @@ function ScoresTab({ progress }: { progress: Progress }) {
                 <span className="t-hint flex-1 truncate">
                   {difficultyById(entry.difficulty).label}
                 </span>
-                <span className="t-hint text-[0.8125rem]">
-                  {entry.at ? DATE_FORMAT.format(entry.at) : ''}
-                </span>
+                <span className="t-hint">{entry.at ? DATE_FORMAT.format(entry.at) : ''}</span>
               </li>
             ))}
           </ol>
@@ -365,7 +366,7 @@ function ScoresTab({ progress }: { progress: Progress }) {
 function Figure({ label, value }: { label: string; value: number | string }) {
   return (
     <div className="tile px-4 py-3">
-      <dt className="t-hint text-[0.875rem]">{label}</dt>
+      <dt className="t-hint">{label}</dt>
       <dd className="t-number mt-1 text-[1.5rem]">
         {typeof value === 'number' ? value.toLocaleString('de-DE') : value}
       </dd>
@@ -393,23 +394,10 @@ function AwardsTab({ progress }: { progress: Progress }) {
               key={achievement.id}
               className={`tile flex items-center gap-3 px-3 py-2.5 ${unlocked ? '' : 'opacity-55'}`}
             >
-              <span
-                aria-hidden="true"
-                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-2xl"
-                style={
-                  unlocked
-                    ? {
-                        background: 'color-mix(in srgb, var(--game-gold) 22%, transparent)',
-                        border: '2px solid var(--game-gold)',
-                      }
-                    : { background: 'var(--game-tile)', border: '2px solid var(--game-tile-edge)' }
-                }
-              >
-                {achievement.icon}
-              </span>
+              <EmojiBadge icon={achievement.icon} earned={unlocked} />
               <span className="min-w-0 flex-1">
                 <span className="t-label block">{achievement.label}</span>
-                <span className="block text-[0.875rem]">{achievement.hint}</span>
+                <span className="block text-[0.9375rem]">{achievement.hint}</span>
               </span>
               {unlocked && <IconCheck width={22} height={22} className="text-gold shrink-0" />}
             </li>
@@ -474,7 +462,7 @@ function HelpTab() {
 function Shortcut({ keys, action }: { keys: string; action: string }) {
   return (
     <div className="flex items-baseline gap-3">
-      <dt className="tile t-label shrink-0 rounded-lg px-2 py-0.5 text-[0.875rem]">{keys}</dt>
+      <dt className="tile t-label shrink-0 rounded-full px-2.5 py-0.5 text-[0.9375rem]">{keys}</dt>
       <dd>{action}</dd>
     </div>
   )

@@ -1,8 +1,6 @@
-<!-- Flappy Hippo app mark: the hippo's face, squared off. Mirrors the head drawn in
-     src/game/render/hippo.ts — same greys, outlined the same way, white eyes with dark pupils.
-     Rendered to PNG by scripts/make-icons.ts; HippoMark in src/components/icons.tsx is a copy. -->
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
-  <rect width="24" height="24" rx="5.5" fill="#006aff"/>
+<!-- The browser-tab mark: just the hippo's face, as on the title card (HippoMark in
+     src/components/icons.tsx). The home-screen icons in assets/ keep a blue tile behind it. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="4 4.5 16 15.5" width="64" height="62">
   <g stroke="#5c6774" stroke-width="0.45">
     <circle cx="7.9" cy="7.4" r="1.9" fill="#93a1b5"/>
     <circle cx="16.1" cy="7.4" r="1.9" fill="#93a1b5"/>

@@ -2,6 +2,7 @@ import { DIFFICULTIES } from '../game/difficulty.ts'
 import type { DifficultyId } from '../game/difficulty.ts'
 import { CardShell } from './CardShell.tsx'
 import { Segmented } from './Segmented.tsx'
+import { Stat } from './Stat.tsx'
 import { HippoMark, IconChart, IconGear, IconPlay, IconTrophy } from './icons.tsx'
 import type { MenuTab } from './MenuSheet.tsx'
 
@@ -43,11 +44,10 @@ export function StartCard({
       </div>
 
       {best > 0 && (
-        <p className="t-label text-gold mt-4 flex items-center justify-center gap-1.5">
-          <IconTrophy width={18} height={18} />
-          <span>
+        <p className="mt-4">
+          <Stat icon={<IconTrophy width={18} height={18} />} tone="gold">
             Rekord <span className="t-number">{best}</span>
-          </span>
+          </Stat>
         </p>
       )}
 

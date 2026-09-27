@@ -1,5 +1,6 @@
 import { CardShell } from './CardShell.tsx'
-import { IconHome, IconPlay, IconRestart } from './icons.tsx'
+import { Stat } from './Stat.tsx'
+import { IconHome, IconPlay, IconRestart, IconStar } from './icons.tsx'
 
 interface PauseCardProps {
   score: number
@@ -10,12 +11,14 @@ interface PauseCardProps {
 
 export function PauseCard({ score, onResume, onRestart, onGiveUp }: PauseCardProps) {
   return (
-    <CardShell dim onBackdropTap={onResume} labelledBy="pause-title">
+    <CardShell onBackdropTap={onResume} labelledBy="pause-title">
       <h2 id="pause-title" className="t-heading">
         Pause
       </h2>
       <p className="mt-2">
-        Aktueller Stand <span className="t-number text-lg">{score}</span>
+        <Stat icon={<IconStar width={18} height={18} />} tone="brand">
+          <span className="t-number">{score}</span> {score === 1 ? 'Punkt' : 'Punkte'}
+        </Stat>
       </p>
 
       <button type="button" className="btn-primary mt-5 w-full" onClick={onResume}>

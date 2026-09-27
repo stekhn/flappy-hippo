@@ -1,6 +1,7 @@
 <!-- Flappy Hippo app mark: the hippo's face, squared off. Mirrors the head drawn in
      src/game/render/hippo.ts — same greys, outlined the same way, white eyes with dark pupils.
-     Rendered to PNG by scripts/make-icons.ts; HippoMark in src/components/icons.tsx is a copy. -->
+     Rendered to PNG by scripts/make-icons.ts for the home-screen icons. The browser favicon
+     (public/favicon.svg) and HippoMark in src/components/icons.tsx are the face alone. -->
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
   <rect width="24" height="24" rx="5.5" fill="#006aff"/>
   <g stroke="#5c6774" stroke-width="0.45">

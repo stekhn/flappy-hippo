@@ -220,12 +220,13 @@ body {
    Surfaces
    -------------------------------------------------------------------------------------------- */
 
-/* The one frosted surface every modal is made of: cards, the sheet, toasts. */
+/* The one frosted surface every modal is made of: cards, the sheet, toasts. Only the standard
+   property is written: the build adds -webkit- for the Safari versions it targets, and a
+   hand-written prefixed copy makes Lightning CSS drop the unprefixed one entirely. */
 @utility glass {
   background: var(--game-glass);
   border: 2px solid var(--game-glass-edge);
   backdrop-filter: blur(18px) saturate(1.4);
-  -webkit-backdrop-filter: blur(18px) saturate(1.4);
   box-shadow: 0 22px 50px -24px var(--game-shadow);
 }
 
@@ -290,7 +291,6 @@ body {
   border: 2px solid var(--game-glass-edge);
   box-shadow: 0 3px 0 var(--game-glass-edge);
   backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
   transition:
     transform 80ms ease,
     box-shadow 80ms ease;
