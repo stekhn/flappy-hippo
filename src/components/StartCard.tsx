@@ -1,4 +1,4 @@
-import { EARLY_STAGES, STAGE_MOVERS, STAGE_POTS } from '../game/constants.ts'
+import { STAGE_MOVERS, STAGE_POTS, TEST_MODE } from '../game/constants.ts'
 import { DIFFICULTIES } from '../game/difficulty.ts'
 import type { DifficultyId } from '../game/difficulty.ts'
 import { t } from '../i18n/index.ts'
@@ -68,8 +68,8 @@ export function StartCard({
         </button>
       </div>
 
-      {/* The stages were brought forward in code for testing: say so, or it ships that way. */}
-      {EARLY_STAGES && <p className="t-hint mt-3">{t.start.testMode(STAGE_MOVERS, STAGE_POTS)}</p>}
+      {/* Test mode brings the stages forward: say so, or it ships that way. */}
+      {TEST_MODE && <p className="t-hint mt-3">{t.start.testMode(STAGE_MOVERS, STAGE_POTS)}</p>}
     </CardShell>
   )
 }

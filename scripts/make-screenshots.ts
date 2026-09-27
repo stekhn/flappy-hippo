@@ -87,17 +87,23 @@ const VIEWPORTS = {
   wide: { width: 960, height: 540 },
 }
 
-/** A round in progress: score, a shield, a melon to detour for, pipes ahead. */
+/**
+ * A round deep in the game: a big score, a shield with a spare, a melon to detour for, a pipe
+ * under repair swinging ahead, a pot on its balcony and one already falling, and the last
+ * milestone's confetti still in the air.
+ */
 async function flight(page: Page): Promise<void> {
   await page.evaluate(() => {
     const runtime = (window as Window & { __flappyHippo?: { flap(): void; inspect(): { state: any; world: any } } }).__flappyHippo!
     runtime.flap()
     const { state, world } = runtime.inspect()
-    state.score = 27
-    state.pipesCleared = 24
-    state.melons = 1
+    state.score = 213
+    state.pipesCleared = 198
+    state.melons = 5
     state.charges = 2
     state.shieldAt = 0
+    state.potsDodged = 9
+    state.moversPassed = 14
     state.hippoY = world.groundY * 0.5
     state.velocity = -150
     const gap = state.hippoY
@@ -105,16 +111,28 @@ async function flight(page: Page): Promise<void> {
     // few frames it scrolls before the capture.
     const ahead = Math.max(world.hippoX + 150, world.width * 0.62)
     state.pipes = [
-      { x: ahead, gapY: gap + 8, half: 62, passed: false, baseY: gap + 8, swing: 0, phase: 0 },
-      { x: ahead + 210, gapY: gap - 55, half: 62, passed: false, baseY: gap - 55, swing: 0, phase: 0 },
-      { x: ahead + 420, gapY: gap + 25, half: 62, passed: false, baseY: gap + 25, swing: 0, phase: 0 },
+      { x: ahead, gapY: gap + 8, half: 55, passed: false, baseY: gap + 8, swing: 34, phase: 0.6 },
+      { x: ahead + 220, gapY: gap - 55, half: 55, passed: false, baseY: gap - 55, swing: 0, phase: 0 },
+      { x: ahead + 440, gapY: gap + 25, half: 55, passed: false, baseY: gap + 25, swing: 0, phase: 0 },
     ]
     // The melon hangs between the hippo and the first pipe, in view on every field.
     state.pickups = [
       { kind: 'melon', x: world.hippoX + 78, y: gap - 62, taken: false, seed: 1 },
-      { kind: 'shield', x: ahead + 28, y: gap + 8, taken: false, seed: 2 },
+      { kind: 'shield', x: ahead + 248, y: gap - 55, taken: false, seed: 2 },
     ]
-    state.nextSpawn = state.scrolled + ahead + 630
+    state.pots = [
+      { x: world.hippoX + 40, y: gap - 110, vy: 220, lead: 0.7, falling: true, spin: 0.7, passed: false, smashed: false, seed: 1 },
+      { x: Math.min(ahead + 120, world.width - 32), y: 13.4, vy: 0, lead: 0.8, falling: false, spin: 0.08, passed: false, smashed: false, seed: 2 },
+    ]
+    for (let i = 0; i < 44; i++) {
+      state.confetti.push({
+        x: 20 + ((i * 37) % (world.width - 40)),
+        y: 40 + ((i * 53) % (world.groundY * 0.55)),
+        vx: 0, vy: 30, angle: i, spin: 3, flip: i * 0.7, flipRate: 8,
+        w: 6, h: 3.5, round: i % 4 === 0, tint: i % 3, life: 1.5, seed: i,
+      })
+    }
+    state.nextSpawn = state.scrolled + ahead + 660
   })
   await sleep(80)
 }

@@ -84,13 +84,13 @@ export const SHAKE_MS = 260
 // telegraphed and can be answered with skill.
 
 /**
- * Testing switch, code only: brings the stages forward to 10 and 20 points so a moving pipe or a
- * pot is a minute away, not ten. The title card says so while it is on. Ship with it off.
+ * Test mode, code only: brings the stages forward to 10 and 20 points so a moving pipe or a pot
+ * is a minute away, not ten. The title card says so while it is on. Ship with it off.
  */
-export const EARLY_STAGES = true
+export const TEST_MODE = false
 /** Scores at which the stages begin: pipes on the move, then flower pots falling from balconies. */
-export const STAGE_MOVERS = EARLY_STAGES ? 10 : 50
-export const STAGE_POTS = EARLY_STAGES ? 20 : 100
+export const STAGE_MOVERS = TEST_MODE ? 10 : 50
+export const STAGE_POTS = TEST_MODE ? 20 : 100
 /**
  * The top of the game. Everything that tightens with the score — speed, spacing, gap, how many
  * pipes move and how far, how many pots fall — reaches its final value here and holds. Past it a

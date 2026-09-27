@@ -40,6 +40,13 @@ await out('icon-mono-512.png', await raster(mono, 512))
 await out('apple-touch-icon.png', await raster(maskable, 180))
 // Browsers without SVG favicon support (Safari) fall back to this.
 await out('favicon-32.png', await raster(await readFile(join(root, 'public', 'favicon.svg')), 32))
+
+// The link preview (Open Graph, Twitter card): the poster, at a size every network accepts and
+// a weight a chat client fetches without blinking. Its 3:2 keeps the title and the cat; feeds
+// that want 1.91:1 crop a little sky and wall.
+const preview = await sharp(await asset('poster.jpeg')).resize(1200, 800).jpeg({ quality: 82, mozjpeg: true }).toBuffer()
+await writeFile(join(root, 'public', 'preview.jpg'), preview)
+console.log(`public/preview.jpg (${Math.round(preview.length / 1024)} KB)`)
 await writeFile(join(root, 'public', 'mask-icon.svg'), await asset('mask-icon.svg'))
 
 // ---- iOS splash screens ----------------------------------------------------------------------

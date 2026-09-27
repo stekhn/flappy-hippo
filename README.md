@@ -33,7 +33,7 @@ npm run build        # static bundle in dist/
 npm run preview      # serve the build under /flappy-hippo/
 npm test             # game logic (Node test runner)
 npm run lint         # oxlint
-npm run assets       # assets/*.svg → icons, favicon, iOS splash screens
+npm run assets       # assets/* → icons, favicon, iOS splash screens, link preview
 npm run screenshots  # manifest screenshots from the running app (needs Chrome, see below)
 ```
 
@@ -85,3 +85,7 @@ scripts/           asset and screenshot generation
 The game began as an easter egg on a maintenance page of an internal Next.js app and grew into a
 standalone web app here: a portrait-friendly field, pickups, difficulties, sound, records,
 achievements and offline play.
+
+## License
+
+[MIT](LICENSE)
