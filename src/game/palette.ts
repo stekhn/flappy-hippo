@@ -11,6 +11,10 @@ function cssVar(name: string, fallback: string): string {
 
 export function resolvePalette(dark: boolean): Palette {
   const brand = cssVar('--game-brand', dark ? '#5b9dff' : '#006aff')
+  const gold = cssVar('--game-gold', '#f5a524')
+  const melon = cssVar('--game-melon', dark ? '#7fe0a0' : '#178a48')
+  // A step lighter than the brand and a softer edge: pipes must read, not dominate.
+  const pipe = mix(brand, dark ? '#9cc4ff' : '#dbe9ff', 0.14)
   return {
     night: dark,
     sky: cssVar('--game-sky', dark ? '#111a26' : '#e5f0ff'),
@@ -20,8 +24,8 @@ export function resolvePalette(dark: boolean): Palette {
     moon: 'rgba(223, 227, 234, 0.9)',
     moonGlow: 'rgba(255, 255, 255, 0.1)',
     star: 'rgba(255, 255, 255, 0.85)',
-    // Gold for the reward, violet for the magic, white for the sparkle: the palette's own accents.
-    fireworks: dark ? ['#ffc65c', '#c4b5fd', '#ffffff'] : ['#f5a524', '#8b5cf6', '#ffffff'],
+    // The reward's gold, the world's blue, the melon's green: a party in the game's own paper.
+    confetti: [gold, pipe, melon],
     cloud: dark ? 'rgba(255, 255, 255, 0.07)' : 'rgba(255, 255, 255, 0.72)',
     cityFar: cssVar('--game-city-far', dark ? '#1b2533' : '#d9e8fe'),
     cityNear: cssVar('--game-city-near', dark ? '#26313f' : '#c6dcfd'),
@@ -45,20 +49,19 @@ export function resolvePalette(dark: boolean): Palette {
     wood: dark ? '#8a6f45' : '#d2a86a',
     postbox: dark ? '#c99a2e' : '#e9b83d',
     lamp: dark ? '#3e4b5c' : '#8a97ab',
-    // A step lighter than the brand and a softer edge: pipes must read, not dominate.
-    pipe: mix(brand, dark ? '#9cc4ff' : '#dbe9ff', 0.14),
+    pipe,
     pipeEdge: mix(cssVar('--game-pipe-edge', dark ? '#1f4f9e' : '#00479f'), brand, 0.3),
     pipeLight: mix(brand, '#ffffff', 0.34),
     text: cssVar('--game-text', dark ? '#dde3ec' : '#1f2430'),
     brand,
-    gold: cssVar('--game-gold', '#f5a524'),
-    melon: cssVar('--game-melon', dark ? '#7fe0a0' : '#178a48'),
+    gold,
+    melon,
     melonFlesh: cssVar('--game-melon-flesh', dark ? '#ff7a9a' : '#e8395f'),
     melonRind: '#2f8a4a',
     melonSeed: 'rgba(38, 30, 34, 0.85)',
-    // The shield is the one violet thing in the game, so it can never be mistaken for a pipe.
-    bubble: dark ? 'rgba(196, 181, 253, 0.45)' : 'rgba(124, 77, 255, 0.42)',
-    bubbleEdge: cssVar('--game-shield', dark ? '#c4b5fd' : '#7c4dff'),
+    // The shield is the one violet thing in the game: leaning to magenta, a good way round the
+    // wheel from the pipes' blue and short of the melon's red.
+    bubbleEdge: cssVar('--game-shield', dark ? '#d6a5ff' : '#ad4bf2'),
     hippoBody: dark ? '#9aa6b8' : '#93a1b5',
     hippoShade: dark ? 'rgba(95, 106, 120, 0.26)' : 'rgba(92, 103, 116, 0.26)',
     hippoDark: dark ? '#5f6a78' : '#5c6774',
@@ -70,7 +73,7 @@ export function resolvePalette(dark: boolean): Palette {
 
 /** Particle colours, keyed by the tint the simulation asked for. */
 export function tintColor(p: Palette, tint: Tint): string {
-  return tint === 'melon' ? p.melonFlesh : tint === 'pot' ? p.wood : p.bubble
+  return tint === 'melon' ? p.melonFlesh : tint === 'pot' ? p.wood : p.bubbleEdge
 }
 
 /** A colour between two hex colours, `t` of the way from `a` to `b`. For variants of one thing. */

@@ -1,5 +1,7 @@
 import { HIPPO_DRAW_SCALE, HIPPO_OUTLINE, HIPPO_RADIUS, INNER_LINE } from '../constants.ts'
+import { alpha } from '../palette.ts'
 import type { Palette } from '../types.ts'
+import { drawBubbleSkin } from './bubble.ts'
 import { drawEllipse, drawShadedEllipse } from './shapes.ts'
 
 /** The bubble's radius: the drawn hippo, snout and feet included, with a little air around it. */
@@ -13,7 +15,7 @@ export interface HippoPose {
   flap: number
   /** Knocked out: wings and ears droop, legs dangle, eyes shut. */
   defeated: boolean
-  /** Shield charges in hand: one bubble, and a fainter ring for each one beyond the first. */
+  /** Shield charges in hand: one bubble round the hippo, a small one trailing for each beyond the first. */
   shield: number
   /** 0..1 as a freshly picked-up bubble grows in; 1 once it is there. */
   shieldIn: number
@@ -118,10 +120,11 @@ export function drawHippo(
 function drawGlow(ctx: CanvasRenderingContext2D, p: Palette, pose: HippoPose): void {
   const r = BUBBLE_RADIUS * 1.9
   const glow = ctx.createRadialGradient(pose.x, pose.y, HIPPO_RADIUS, pose.x, pose.y, r)
-  glow.addColorStop(0, p.bubble)
-  glow.addColorStop(1, 'rgba(124, 77, 255, 0)')
+  glow.addColorStop(0, alpha(p.bubbleEdge, 0.5))
+  glow.addColorStop(1, alpha(p.bubbleEdge, 0))
   ctx.save()
-  ctx.globalAlpha = 0.55 * pose.shieldIn
+  // Faint: the bubble is clear now, and a strong halo would fog it up again
+  ctx.globalAlpha = 0.25 * pose.shieldIn
   ctx.fillStyle = glow
   ctx.fillRect(pose.x - r, pose.y - r, r * 2, r * 2)
   ctx.restore()
@@ -151,7 +154,7 @@ function drawCrack(ctx: CanvasRenderingContext2D, p: Palette, pose: HippoPose): 
   ctx.restore()
 }
 
-/** The shield: a soap bubble with a drifting highlight, so it reads as a skin and not a ring. */
+/** The shield: a soap bubble round the hippo; spare charges trail behind as bubbles of their own. */
 function drawBubble(
   ctx: CanvasRenderingContext2D,
   p: Palette,
@@ -164,31 +167,13 @@ function drawBubble(
   const r = (BUBBLE_RADIUS + Math.sin(now / 320) * 1.2) * Math.max(grow, 0.05)
   ctx.save()
   ctx.translate(pose.x, pose.y)
-  const skin = ctx.createRadialGradient(0, 0, r * 0.55, 0, 0, r)
-  skin.addColorStop(0, 'rgba(255, 255, 255, 0)')
-  skin.addColorStop(1, p.bubble)
-  ctx.fillStyle = skin
-  ctx.beginPath()
-  ctx.arc(0, 0, r, 0, Math.PI * 2)
-  ctx.fill()
-  ctx.strokeStyle = p.bubbleEdge
-  ctx.lineWidth = 1.6
-  ctx.stroke()
-  ctx.globalAlpha = 0.8
-  ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)'
-  ctx.lineWidth = 2
-  ctx.beginPath()
-  const sheen = now / 900
-  ctx.arc(0, 0, Math.max(r - 2.5, 0), sheen, sheen + 0.7)
-  ctx.stroke()
-  // Spare charges show as thin rings outside the bubble.
-  ctx.strokeStyle = p.bubbleEdge
-  ctx.lineWidth = 1.2
+  drawBubbleSkin(ctx, p, r, now / 900)
   for (let i = 1; i < pose.shield; i++) {
-    ctx.globalAlpha = 0.55 - i * 0.12
-    ctx.beginPath()
-    ctx.arc(0, 0, r + 3.5 * i, 0, Math.PI * 2)
-    ctx.stroke()
+    const bob = Math.sin(now / 340 + i * 1.7) * 2
+    ctx.save()
+    ctx.translate(-r - 5 - (i - 1) * 12, 9 + (i - 1) * 4 + bob)
+    drawBubbleSkin(ctx, p, 5.2, now / 700 + i)
+    ctx.restore()
   }
   ctx.restore()
 }

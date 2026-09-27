@@ -16,7 +16,6 @@ import {
 import { mix } from '../palette.ts'
 import type { GameState, Palette } from '../types.ts'
 import type { World } from '../world.ts'
-import { drawFireworks } from './effects.ts'
 import type { LayerCache } from './layers.ts'
 import { drawFurniture, paintStreet, STREET_ABOVE, STREET_PERIOD } from './street.ts'
 
@@ -258,7 +257,6 @@ export function drawScenery(
   world: World,
   now: number,
   sky: SkyMotion,
-  effects: boolean,
   cache: LayerCache,
 ): void {
   const { scrolled } = state
@@ -305,9 +303,6 @@ export function drawScenery(
     paintBushes(c, p, ground)
   })
   cache.blit(ctx, hedge, (scrolled * 0.7) % SCENE_PERIOD, world.width)
-
-  // In front of the skyline and its haze, behind the pipes: a party, not a rumour of one.
-  if (effects) drawFireworks(ctx, p, state.fireworks, world, now)
 }
 
 function drawStars(

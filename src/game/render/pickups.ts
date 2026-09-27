@@ -1,5 +1,6 @@
 import { OUTLINE, PICKUP_RADIUS } from '../constants.ts'
 import { alpha } from '../palette.ts'
+import { drawBubbleSkin } from './bubble.ts'
 import type { Palette, Pickup } from '../types.ts'
 
 export function drawPickups(
@@ -63,7 +64,7 @@ function drawMelon(ctx: CanvasRenderingContext2D, p: Palette, tilt: number): voi
   }
 }
 
-/** The shield pickup: a bubble with a star inside, pulsing so it stands out inside a pipe gap. */
+/** The shield pickup: the very bubble the hippo will wear, a small shield emblem afloat inside. */
 function drawShieldOrb(
   ctx: CanvasRenderingContext2D,
   p: Palette,
@@ -72,32 +73,21 @@ function drawShieldOrb(
 ): void {
   const pulse = 1 + Math.sin(now / 260 + seed) * 0.07
   const r = PICKUP_RADIUS * 1.25 * pulse
-  const skin = ctx.createRadialGradient(0, 0, r * 0.25, 0, 0, r)
-  skin.addColorStop(0, 'rgba(255, 255, 255, 0.2)')
-  skin.addColorStop(1, p.bubble)
-  ctx.fillStyle = skin
-  ctx.beginPath()
-  ctx.arc(0, 0, r, 0, Math.PI * 2)
-  ctx.fill()
+  drawBubbleSkin(ctx, p, r, now / 900 + seed)
+  // The emblem: outlined like everything else, its fill light enough to keep the bubble clear
+  const e = r * 0.82
+  ctx.lineJoin = 'round'
   ctx.strokeStyle = p.bubbleEdge
-  ctx.lineWidth = 1.6
-  ctx.stroke()
-  // A short highlight arc is what makes a circle read as a bubble.
-  ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)'
-  ctx.lineWidth = 2
+  ctx.lineWidth = 1.4
+  ctx.fillStyle = alpha(p.bubbleEdge, 0.3)
   ctx.beginPath()
-  ctx.arc(0, 0, r - 3, Math.PI * 1.15, Math.PI * 1.55)
-  ctx.stroke()
-
-  // The glyph is the shield's own violet, never the pipes' blue.
-  ctx.fillStyle = p.bubbleEdge
-  ctx.beginPath()
-  ctx.moveTo(0, -r * 0.55)
-  ctx.lineTo(r * 0.45, -r * 0.3)
-  ctx.lineTo(r * 0.45, r * 0.15)
-  ctx.quadraticCurveTo(r * 0.45, r * 0.6, 0, r * 0.62)
-  ctx.quadraticCurveTo(-r * 0.45, r * 0.6, -r * 0.45, r * 0.15)
-  ctx.lineTo(-r * 0.45, -r * 0.3)
+  ctx.moveTo(0, -e * 0.55)
+  ctx.lineTo(e * 0.45, -e * 0.3)
+  ctx.lineTo(e * 0.45, e * 0.15)
+  ctx.quadraticCurveTo(e * 0.45, e * 0.6, 0, e * 0.62)
+  ctx.quadraticCurveTo(-e * 0.45, e * 0.6, -e * 0.45, e * 0.15)
+  ctx.lineTo(-e * 0.45, -e * 0.3)
   ctx.closePath()
   ctx.fill()
+  ctx.stroke()
 }

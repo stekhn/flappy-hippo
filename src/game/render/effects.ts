@@ -1,66 +1,32 @@
-import { ROCKET_BURST_MS, ROCKET_RISE_MS } from '../constants.ts'
-import { tintColor } from '../palette.ts'
-import type { Palette, Particle, Rocket } from '../types.ts'
-import type { World } from '../world.ts'
-import { easeOut } from './shapes.ts'
+import { mix, tintColor } from '../palette.ts'
+import type { Confetti, Palette, Particle } from '../types.ts'
 
-export function drawFireworks(
-  ctx: CanvasRenderingContext2D,
-  p: Palette,
-  rockets: Rocket[],
-  world: World,
-  now: number,
-): void {
-  const launchY = world.groundY
+/**
+ * Confetti: flat filled pieces in the game's own colours, each flipping about its long axis as
+ * it tumbles, so a piece thins to a line and back the way paper does, its back a shade darker.
+ * Outlined like everything else, and faded out over its last half second.
+ */
+export function drawConfetti(ctx: CanvasRenderingContext2D, p: Palette, pieces: Confetti[]): void {
   ctx.save()
-  ctx.lineCap = 'round'
-  for (const rocket of rockets) {
-    const t = now - rocket.launchAt
-    if (t < 0 || t > ROCKET_RISE_MS + ROCKET_BURST_MS) continue
-    const color = p.fireworks[rocket.tint % p.fireworks.length]
-    ctx.strokeStyle = color
-    ctx.fillStyle = color
-    if (t < ROCKET_RISE_MS) {
-      const u = t / ROCKET_RISE_MS
-      const [x, y] = rocketPos(rocket, launchY, u)
-      const [tx, ty] = rocketPos(rocket, launchY, Math.max(0, u - 0.1))
-      ctx.lineWidth = 2
-      ctx.globalAlpha = 0.5
-      ctx.beginPath()
-      ctx.moveTo(tx, ty)
-      ctx.lineTo(x, y)
-      ctx.stroke()
-      ctx.globalAlpha = 1
-      ctx.beginPath()
-      ctx.arc(x, y, 2.2, 0, Math.PI * 2)
-      ctx.fill()
-      continue
-    }
-    const burstX = rocket.x + rocket.drift
-    // Each spark is a streak from where it was a moment ago to where it is now, sagging under
-    // gravity, so the burst reads as radial arcs
-    const u = (t - ROCKET_RISE_MS) / ROCKET_BURST_MS
-    const tail = Math.max(0, u - 0.2)
+  ctx.lineWidth = 0.6
+  for (const piece of pieces) {
+    const color = p.confetti[piece.tint % p.confetti.length]
+    const face = Math.cos(piece.flip)
+    const thin = Math.max(Math.abs(face), 0.15)
+    ctx.globalAlpha = Math.min(piece.life / 0.5, 1)
+    ctx.save()
+    ctx.translate(piece.x, piece.y)
+    ctx.rotate(piece.angle)
+    ctx.fillStyle = face >= 0 ? color : mix(color, '#000000', 0.22)
+    ctx.strokeStyle = mix(color, '#000000', 0.42)
     ctx.beginPath()
-    for (const spark of rocket.sparks) {
-      const dx = Math.cos(spark.angle) * spark.speed
-      const dy = Math.sin(spark.angle) * spark.speed
-      ctx.moveTo(burstX + dx * easeOut(tail), rocket.peakY + dy * easeOut(tail) + 28 * tail * tail)
-      ctx.lineTo(burstX + dx * easeOut(u), rocket.peakY + dy * easeOut(u) + 28 * u * u)
-    }
-    // A wide faint pass under a crisp one reads as glow without a filter.
-    ctx.globalAlpha = (1 - u) * 0.3
-    ctx.lineWidth = 7
+    if (piece.round) ctx.ellipse(0, 0, piece.w / 2, (piece.h / 2) * thin, 0, 0, Math.PI * 2)
+    else ctx.rect(-piece.w / 2, (-piece.h / 2) * thin, piece.w, piece.h * thin)
+    ctx.fill()
     ctx.stroke()
-    ctx.globalAlpha = 1 - u
-    ctx.lineWidth = 2.4
-    ctx.stroke()
+    ctx.restore()
   }
   ctx.restore()
-}
-
-function rocketPos(rocket: Rocket, launchY: number, u: number): [number, number] {
-  return [rocket.x + rocket.drift * u * u, launchY + (rocket.peakY - launchY) * easeOut(u)]
 }
 
 export function drawParticles(

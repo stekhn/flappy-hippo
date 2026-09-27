@@ -171,9 +171,9 @@ function surveySpawns(frames: number, score = 0) {
   const seen = new Set<Pipe>()
   const seenPickups = new Set<Pickup>()
   const seenPots = new Set<Pot>()
-  const spawns: { at: number; gapY: number; half: number; baseY: number; swing: number }[] = []
+  const spawns: { at: number; gapY: number; half: number; baseY: number; swing: number; score: number }[] = []
   const melons: { y: number; gapY: number }[] = []
-  const pots: { lead: number; slot: number }[] = []
+  const pots: { lead: number; slot: number; score: number }[] = []
   for (let i = 0; i < frames; i++) {
     state.hippoY = world.groundY / 2
     state.velocity = 0
@@ -181,7 +181,7 @@ function surveySpawns(frames: number, score = 0) {
     for (const pipe of state.pipes) {
       if (seen.has(pipe)) continue
       seen.add(pipe)
-      spawns.push({ at: state.scrolled, gapY: pipe.gapY, half: pipe.half, baseY: pipe.baseY, swing: pipe.swing })
+      spawns.push({ at: state.scrolled, gapY: pipe.gapY, half: pipe.half, baseY: pipe.baseY, swing: pipe.swing, score: state.score })
     }
     for (const pickup of state.pickups) {
       if (seenPickups.has(pickup)) continue
@@ -191,7 +191,7 @@ function surveySpawns(frames: number, score = 0) {
     for (const pot of state.pots) {
       if (seenPots.has(pot)) continue
       seenPots.add(pot)
-      pots.push({ lead: pot.lead, slot: spawns.length - 1 })
+      pots.push({ lead: pot.lead, slot: spawns.length - 1, score: state.score })
     }
   }
   return { state, spawns, melons, pots }
@@ -199,9 +199,9 @@ function surveySpawns(frames: number, score = 0) {
 
 test('pots and moving pipes wait for their stages', () => {
   const { spawns, pots } = surveySpawns(1500)
-  assert.ok(spawns.length > 5)
-  assert.equal(pots.length, 0)
-  assert.ok(spawns.every((s) => s.swing === 0))
+  assert.ok(spawns.some((s) => s.score < STAGE_POTS), 'the survey must start before the pot stage')
+  for (const pot of pots) assert.ok(pot.score >= STAGE_POTS, `a pot at ${pot.score} points`)
+  for (const s of spawns) if (s.swing > 0) assert.ok(s.score >= STAGE_MOVERS, `a mover at ${s.score} points`)
 })
 
 test('from the pot stage, pots come at a spacing and fall within the field', () => {

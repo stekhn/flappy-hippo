@@ -47,20 +47,25 @@ export interface Pickup {
   seed: number
 }
 
-export interface Spark {
-  angle: number
-  speed: number
-  size: number
-}
-
-export interface Rocket {
+/** A piece of confetti thrown at a milestone: a small tumbling rectangle, or a dot. */
+export interface Confetti {
   x: number
-  drift: number
-  peakY: number
-  launchAt: number
-  sparks: Spark[]
-  /** Index into the palette's firework colours. */
+  y: number
+  vx: number
+  vy: number
+  /** The in-plane turn, and the flip about the long axis that makes a flat piece look like paper. */
+  angle: number
+  spin: number
+  flip: number
+  flipRate: number
+  w: number
+  h: number
+  round: boolean
+  /** Index into the palette's confetti colours. */
   tint: number
+  life: number
+  /** Side-to-side flutter phase. */
+  seed: number
 }
 
 /** Which palette colour a particle borrows — resolved at draw time, so a theme swap re-tints them. */
@@ -132,7 +137,7 @@ export interface GameState {
   flappedAt: number
   /** Seconds of running time this round, for the stats screen. */
   elapsed: number
-  fireworks: Rocket[]
+  confetti: Confetti[]
   particles: Particle[]
 }
 
@@ -161,8 +166,8 @@ export interface Palette {
   moon: string
   moonGlow: string
   star: string
-  /** One colour per rocket, cycled — saturated enough to read on a daytime sky. */
-  fireworks: string[]
+  /** Confetti colours: the game's own accents, cycled. Filled shapes, so they read on any sky. */
+  confetti: string[]
   cloud: string
   cityFar: string
   cityNear: string
@@ -198,7 +203,7 @@ export interface Palette {
   melonFlesh: string
   melonRind: string
   melonSeed: string
-  bubble: string
+  /** The shield's colour: the bubble's rim, its glow, its shards, its emblem. */
   bubbleEdge: string
   hippoBody: string
   hippoShade: string

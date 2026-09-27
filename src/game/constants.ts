@@ -121,12 +121,17 @@ export const CLOUD_SPIN = 0.9
 export const CLOUD_FALL_DISTANCE = 220
 export const CLOUD_RISE_OMEGA = 10
 
-/** Every this many points the sky throws a party. */
-export const FIREWORK_STEP = 10
-export const FIREWORK_MAX = 6
-export const ROCKET_RISE_MS = 700
-export const ROCKET_BURST_MS = 900
-export const ROCKET_SPACING_MS = 180
+/** Every this many points confetti flies. */
+export const MILESTONE_STEP = 10
+/** Pieces per milestone, and the most a big milestone throws. */
+export const CONFETTI_BASE = 28
+export const CONFETTI_MAX = 70
+/** Paper: little gravity, a lot of drag, so it stops quickly and flutters down. */
+export const CONFETTI_GRAVITY = 260
+export const CONFETTI_DRAG = 1.4
+/** Launch speed as a multiple of the field's height, so the paper reaches the hippo on any field. */
+export const CONFETTI_SPEED: readonly [number, number] = [1.4, 2.1]
+export const CONFETTI_LIFE_S = 2.6
 
 export const SUN_RADIUS = 17
 export const MOON_RADIUS = 16

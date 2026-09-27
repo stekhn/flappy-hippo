@@ -1,6 +1,10 @@
 import {
-  FIREWORK_MAX,
-  FIREWORK_STEP,
+  CONFETTI_BASE,
+  CONFETTI_DRAG,
+  CONFETTI_GRAVITY,
+  CONFETTI_LIFE_S,
+  CONFETTI_MAX,
+  CONFETTI_SPEED,
   FLOATER_MS,
   FLAP_VELOCITY,
   GAP_MARGIN,
@@ -12,6 +16,7 @@ import {
   MELON_CHANCE,
   MELON_REACH,
   MELON_POINTS,
+  MILESTONE_STEP,
   MOVER_MIN_JUMP,
   MOVER_PERIOD_S,
   OVER_TITLES,
@@ -23,9 +28,6 @@ import {
   POT_RADIUS,
   POT_REST_Y,
   POT_SPACING,
-  ROCKET_BURST_MS,
-  ROCKET_RISE_MS,
-  ROCKET_SPACING_MS,
   SHIELD_CHANCE,
   SHIELD_EARLIEST_PIPE,
   STAGE_MOVERS,
@@ -33,7 +35,7 @@ import {
 } from './constants.ts'
 import { tuningFor } from './difficulty.ts'
 import type { Difficulty, Tuning } from './difficulty.ts'
-import type { GameEvent, GameState, Particle, Pipe, Pot, Spark, Tint } from './types.ts'
+import type { Confetti, GameEvent, GameState, Particle, Pipe, Pot, Tint } from './types.ts'
 import type { World } from './world.ts'
 
 /** Where a pipe enters the field, just out of sight on the right. */
@@ -123,7 +125,7 @@ export function initialState({ world, difficulty, best, round = 0 }: InitOptions
     startedAt: 0,
     flappedAt: 0,
     elapsed: 0,
-    fireworks: [],
+    confetti: [],
     particles: [],
   }
 }
@@ -268,29 +270,53 @@ function burst(
   }
 }
 
-function launchFireworks(state: GameState, world: World, now: number): void {
-  const count = Math.min(Math.max(1, Math.floor(state.score / FIREWORK_STEP)), FIREWORK_MAX)
-  const total = ROCKET_RISE_MS + ROCKET_BURST_MS
-  state.fireworks = state.fireworks.filter((r) => now - r.launchAt < total)
-  const sparkCount = 12 + count * 2
+/**
+ * Two party poppers, one in each bottom corner, aimed up and inward: steeper on a tall phone so
+ * the paper climbs to the hippo rather than crossing the field, wider on a landscape field so it
+ * reaches well in from the sides. More points, more paper.
+ */
+function throwConfetti(state: GameState, world: World): void {
+  const count = Math.min(CONFETTI_BASE + Math.floor(state.score / MILESTONE_STEP) * 6, CONFETTI_MAX)
+  const widest = world.width > world.groundY ? 0.7 : 0.42
   for (let i = 0; i < count; i++) {
-    const sparks: Spark[] = Array.from({ length: sparkCount }, (_, k) => ({
-      angle: (k / sparkCount) * Math.PI * 2 + (Math.random() - 0.5) * 0.3,
-      speed: 30 + Math.random() * 24,
-      size: 1.3 + Math.random() * 0.9,
-    }))
-    state.fireworks.push({
-      x: 40 + Math.random() * Math.max(world.width - 80, 40),
-      drift: (Math.random() < 0.5 ? -1 : 1) * (12 + Math.random() * 16),
-      peakY: world.groundY * 0.2 + Math.random() * world.groundY * 0.25,
-      launchAt: now + i * ROCKET_SPACING_MS + Math.random() * 100,
-      sparks,
-      tint: Math.floor(Math.random() * 5),
+    const left = i % 2 === 0
+    const tilt = (0.15 + Math.random() * (widest - 0.15)) * (left ? 1 : -1)
+    const speed = world.groundY * (CONFETTI_SPEED[0] + Math.random() * (CONFETTI_SPEED[1] - CONFETTI_SPEED[0]))
+    const round = Math.random() < 0.25
+    state.confetti.push({
+      x: left ? 6 : world.width - 6,
+      y: world.groundY - 4,
+      vx: Math.sin(tilt) * speed,
+      vy: -Math.cos(tilt) * speed,
+      angle: Math.random() * Math.PI,
+      spin: (Math.random() - 0.5) * 10,
+      flip: Math.random() * Math.PI,
+      flipRate: 6 + Math.random() * 8,
+      w: round ? 3.4 : 5 + Math.random() * 3,
+      h: round ? 3.4 : 3 + Math.random() * 1.5,
+      round,
+      tint: Math.floor(Math.random() * 3),
+      life: CONFETTI_LIFE_S * (0.75 + Math.random() * 0.25),
+      seed: Math.random() * Math.PI * 2,
     })
   }
 }
 
-/** Everything that may follow a point: a new stage, fireworks every ten, and the moment a record falls. */
+function stepConfetti(pieces: Confetti[], dt: number): Confetti[] {
+  const drag = 1 - CONFETTI_DRAG * dt
+  for (const piece of pieces) {
+    piece.life -= dt
+    piece.vx *= drag
+    piece.vy = piece.vy * drag + CONFETTI_GRAVITY * dt
+    piece.x += piece.vx * dt + Math.sin(piece.life * 5 + piece.seed) * 16 * dt
+    piece.y += piece.vy * dt
+    piece.angle += piece.spin * dt
+    piece.flip += piece.flipRate * dt
+  }
+  return pieces.filter((piece) => piece.life > 0)
+}
+
+/** Everything that may follow a point: a new stage, confetti every ten, and the moment a record falls. */
 function celebrate(state: GameState, world: World, now: number, events: GameEvent[]): void {
   const stage = state.score >= STAGE_MOVERS ? 2 : state.score >= STAGE_POTS ? 1 : 0
   if (stage > state.stage) {
@@ -298,8 +324,8 @@ function celebrate(state: GameState, world: World, now: number, events: GameEven
     state.stageAt = now
     events.push({ type: 'stage', stage })
   }
-  if (state.score % FIREWORK_STEP === 0) {
-    launchFireworks(state, world, now)
+  if (state.score % MILESTONE_STEP === 0) {
+    throwConfetti(state, world)
     events.push({ type: 'milestone', score: state.score })
   }
   // Only a record from an earlier round is worth announcing mid-flight; the first point ever
@@ -386,6 +412,7 @@ export function advance(
   events: GameEvent[],
 ): void {
   state.particles = stepParticles(state.particles, dt)
+  state.confetti = stepConfetti(state.confetti, dt)
   state.floaters = state.floaters.filter((f) => now - f.born < FLOATER_MS)
   // Knocked out, the hippo stays exactly where it was hit; only the sky reacts.
   if (state.phase !== 'running') return

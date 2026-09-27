@@ -49,7 +49,7 @@
   --game-gold: #e8930c;
   --game-gold-deep: #b86f00;
   /* The shield's colour, and nothing else's. Likewise the melon's: its rind, not its flesh. */
-  --game-shield: #7c4dff;
+  --game-shield: #ad4bf2;
   --game-melon: #178a48;
   --game-melon-flesh: #e8395f;
   /* Every modal — cards, sheet, toasts — shares this one frosted surface. */
@@ -78,7 +78,7 @@
   --game-muted: #a6bad9;
   --game-gold: #ffc65c;
   --game-gold-deep: #c98a1a;
-  --game-shield: #c4b5fd;
+  --game-shield: #d6a5ff;
   --game-melon: #7fe0a0;
   --game-melon-flesh: #ff7a9a;
   --game-glass: rgb(18 27 40 / 0.82);

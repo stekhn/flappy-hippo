@@ -8,7 +8,7 @@ import {
 } from '../constants.ts'
 import type { GameState, Palette } from '../types.ts'
 import type { World } from '../world.ts'
-import { drawParticles } from './effects.ts'
+import { drawConfetti, drawParticles } from './effects.ts'
 import { drawHippo } from './hippo.ts'
 import { drawPickups } from './pickups.ts'
 import { drawPipes } from './pipes.ts'
@@ -22,7 +22,7 @@ export const DEFEAT = { tilt: 0, headNod: 0.7, headDrop: 2 }
 
 /**
  * Paints one frame of the world. Everything that is not the scene lives in the DOM above it.
- * With `effects` off (the viewer asked for reduced motion) fireworks and particles stay unpainted.
+ * With `effects` off (the viewer asked for reduced motion) confetti and particles stay unpainted.
  * The still backdrop comes from `cache` as baked strips; only what moves is drawn as paths.
  */
 export function drawScene(
@@ -41,13 +41,15 @@ export function drawScene(
   if (shake > 0) ctx.translate(Math.sin(now / 9) * 4 * shake, Math.cos(now / 7) * 3 * shake)
 
   drawSky(ctx, p, world, cache)
-  drawScenery(ctx, p, state, world, now, sky, effects, cache)
+  drawScenery(ctx, p, state, world, now, sky, cache)
   drawPipes(ctx, p, state.pipes, world)
   drawPickups(ctx, p, state.pickups, now)
   drawGround(ctx, p, world, state.scrolled, state.round, now, cache)
   // Pots land on the wall, so they go over it
   drawPots(ctx, p, state.pots)
   if (effects) drawParticles(ctx, p, state.particles)
+  // In front of the world, behind the hippo: the party never hides the hero
+  if (effects) drawConfetti(ctx, p, state.confetti)
 
   if (effects) drawFloaters(ctx, p, state, now)
 
