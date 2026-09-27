@@ -43,7 +43,7 @@ export function drawScene(
   drawScenery(ctx, p, state, world, now, sky, effects, cache)
   drawPipes(ctx, p, state.pipes, world)
   drawPickups(ctx, p, state.pickups, now)
-  drawGround(ctx, p, world, state.scrolled, cache)
+  drawGround(ctx, p, world, state.scrolled, state.round, cache)
   if (effects) drawParticles(ctx, p, state.particles)
 
   if (effects) drawFloaters(ctx, p, state, now)

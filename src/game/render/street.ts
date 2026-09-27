@@ -3,26 +3,23 @@ import { mix } from '../palette.ts'
 import type { Palette } from '../types.ts'
 import { seeded } from './scenery.ts'
 
-/** How far above the ground line the tallest thing on the street reaches (the postbox). */
-export const STREET_ABOVE = 28
+/** How far above the ground line the tallest plant on the street reaches (a tall tuft, full size). */
+export const STREET_ABOVE = 26
+/**
+ * The street repeats four times less often than the rest of the scene, so its plants never
+ * visibly come round.
+ */
+export const STREET_PERIOD = SCENE_PERIOD * 4
 
 // The foreground: what stands on the wall and scrolls with it. A small vocabulary of plants and
-// street furniture, all rooted in the joints between the top row's bricks (the scene repeats on
-// a multiple of the brick width, so they stay in the cracks however far the wall has scrolled),
-// drawn in the same outlined style as the hippo and the pipes and in their colours. Sparse: the
-// hippo and the pipes are the show, this is the set dressing.
+// litter, all rooted in the joints between the top row's bricks (the scene repeats on a multiple
+// of the brick width, so they stay in the cracks however far the wall has scrolled), baked into
+// the wall's strip; and, drawn live and far apart, the street furniture. All in the same outlined
+// style as the hippo and the pipes and in their colours, and sparse: the hippo and the pipes are
+// the show, this is the set dressing.
 
-type Kind =
-  | 'tuft'
-  | 'tall'
-  | 'clover'
-  | 'dandelion'
-  | 'buttercups'
-  | 'can'
-  | 'paper'
-  | 'bench'
-  | 'postbox'
-  | 'bike'
+type Plant = 'tuft' | 'tall' | 'clover' | 'dandelion' | 'buttercups' | 'can' | 'paper'
+type Furniture = 'bench' | 'postbox' | 'bin' | 'cat' | 'dog'
 
 interface Blade {
   dx: number
@@ -33,7 +30,7 @@ interface Blade {
 }
 
 interface Prop {
-  kind: Kind
+  kind: Plant
   x: number
   blades: Blade[]
   /** Per-prop variation: a tilt, a stalk height. */
@@ -44,24 +41,40 @@ interface Prop {
   tone: number
 }
 
-/** How often each thing turns up. Plants carry the rhythm; furniture is the exception. */
-const WEIGHTS: [Kind, number][] = [
+interface Street {
+  plants: Prop[]
+  /** Where along a period the furniture stands; the plants keep clear of these. */
+  spots: number[]
+}
+
+/** How often each plant (or bit of litter) turns up along the joints. */
+const WEIGHTS: [Plant, number][] = [
   ['tuft', 30],
   ['tall', 12],
   ['clover', 12],
   ['dandelion', 10],
   ['buttercups', 8],
-  ['can', 5],
-  ['paper', 5],
-  ['bench', 6],
-  ['postbox', 6],
-  ['bike', 6],
+  ['can', 3],
+  ['paper', 3],
 ]
-const FURNITURE = new Set<Kind>(['bench', 'postbox', 'bike'])
-/** Two pieces of furniture never share a screen. */
-const FURNITURE_GAP = 480
 
-function pick(rnd: () => number): Kind {
+/** Furniture spots per period, and how far apart they must be. */
+const SPOTS_PER_PERIOD = 3
+const SPOT_GAP = 700
+/** Room a plant leaves around a spot. */
+const SPOT_CLEARANCE = 34
+/** How often a spot stays empty, and how often what stands there is an animal, not a fixture. */
+const EMPTY_CHANCE = 0.25
+const ANIMAL_CHANCE = 0.12
+/** The fixtures take turns, so no two alike stand next to each other. */
+const FIXTURES: Furniture[] = ['bench', 'postbox', 'bin']
+/**
+ * Each round starts this many spots further along the schedule (further than any round gets),
+ * so the scroll resetting does not make every round the same street.
+ */
+const ROUND_STRIDE = 89
+
+function pick(rnd: () => number): Plant {
   const total = WEIGHTS.reduce((sum, [, w]) => sum + w, 0)
   let roll = rnd() * total
   for (const [kind, weight] of WEIGHTS) {
@@ -84,19 +97,29 @@ function makeBlades(rnd: () => number, count: number, tall: boolean): Blade[] {
   })
 }
 
-export function makeStreet(seed: number): Prop[] {
+export function makeStreet(seed: number): Street {
   const rnd = seeded(seed)
-  const out: Prop[] = []
-  const joints = SCENE_PERIOD / BRICK_WIDTH
+
+  // The furniture spots first: a handful per period, well apart, on a joint like everything else.
+  const spots: number[] = []
+  let guard = 0
+  while (spots.length < SPOTS_PER_PERIOD && guard++ < 200) {
+    const x = Math.round((rnd() * STREET_PERIOD) / BRICK_WIDTH) * BRICK_WIDTH
+    if (spots.every((s) => Math.abs(s - x) >= SPOT_GAP && Math.abs(s - x) <= STREET_PERIOD - SPOT_GAP)) spots.push(x)
+  }
+  spots.sort((a, b) => a - b)
+
+  // Then the plants along the joints, leaving room around the spots.
+  const plants: Prop[] = []
+  const joints = STREET_PERIOD / BRICK_WIDTH
   let joint = 1
-  let lastFurniture = -FURNITURE_GAP
   while (joint < joints) {
-    let kind = pick(rnd)
     const x = joint * BRICK_WIDTH
-    if (FURNITURE.has(kind) && x - lastFurniture < FURNITURE_GAP) kind = 'tuft'
-    if (FURNITURE.has(kind)) lastFurniture = x
-    const plant = !FURNITURE.has(kind) && kind !== 'can' && kind !== 'paper'
-    out.push({
+    joint += 3 + Math.floor(rnd() * 3)
+    if (spots.some((s) => Math.abs(s - x) < SPOT_CLEARANCE)) continue
+    const kind = pick(rnd)
+    const plant = kind !== 'can' && kind !== 'paper'
+    plants.push({
       kind,
       x,
       blades: kind === 'tuft' || kind === 'tall' ? makeBlades(rnd, kind === 'tall' ? 3 + Math.floor(rnd() * 2) : 4 + Math.floor(rnd() * 4), kind === 'tall') : [],
@@ -105,25 +128,24 @@ export function makeStreet(seed: number): Prop[] {
       scale: plant ? 0.85 + rnd() * 0.35 : 1,
       tone: plant ? rnd() * 0.4 : 0,
     })
-    joint += 3 + Math.floor(rnd() * 3)
   }
-  return out
+  return { plants, spots }
 }
 
 const STREET = makeStreet(59)
 
-/** Scene offsets at which a thing must be painted so it also shows where the strip wraps. */
-const WRAPS = [-SCENE_PERIOD, 0, SCENE_PERIOD]
+/** Offsets at which a thing must be painted so it also shows where the strip wraps. */
+const WRAPS = [-STREET_PERIOD, 0, STREET_PERIOD]
 
 /**
- * Paints one full period of the street onto a strip (see layers.ts), ground line at `ground`.
- * Called once per bake, never per frame, so nothing here needs to be cheap.
+ * Paints one full period of the street's plants onto a strip (see layers.ts), ground line at
+ * `ground`. Called once per bake, never per frame, so nothing here needs to be cheap.
  */
 export function paintStreet(ctx: CanvasRenderingContext2D, p: Palette, ground: number): void {
   ctx.save()
   ctx.lineCap = 'round'
   ctx.lineJoin = 'round'
-  for (const prop of STREET) {
+  for (const prop of STREET.plants) {
     // A plant's own greens: the palette's, nudged warmer or cooler for this one instance.
     const tinted: Palette =
       prop.tone > 0
@@ -135,12 +157,10 @@ export function paintStreet(ctx: CanvasRenderingContext2D, p: Palette, ground: n
         : p
     for (const base of WRAPS) {
       const x = prop.x + base
-      if (x < -30 || x > SCENE_PERIOD + 30) continue
-      // Plants root in an opened joint; furniture simply stands on the wall.
-      if (!FURNITURE.has(prop.kind)) {
-        ctx.fillStyle = p.groundLine
-        ctx.fillRect(x - 1.5, ground, 3, 6)
-      }
+      if (x < -30 || x > STREET_PERIOD + 30) continue
+      // Everything roots in an opened joint
+      ctx.fillStyle = p.groundLine
+      ctx.fillRect(x - 1.5, ground, 3, 6)
       ctx.save()
       ctx.translate(x, ground)
       ctx.scale(prop.mirror ? -prop.scale : prop.scale, prop.scale)
@@ -164,16 +184,84 @@ export function paintStreet(ctx: CanvasRenderingContext2D, p: Palette, ground: n
         case 'paper':
           drawPaper(ctx, p, 0, 0, prop.seed)
           break
-        case 'bench':
-          drawBench(ctx, p, 0, 0)
-          break
-        case 'postbox':
-          drawPostbox(ctx, p, 0, 0)
-          break
-        case 'bike':
-          drawBike(ctx, p, 0, 0, prop.seed)
-          break
       }
+      ctx.restore()
+    }
+  }
+  ctx.restore()
+}
+
+/** A number in [0, 1) for the n-th thing, the same every time it is asked for (lowbias32). */
+function hash(n: number): number {
+  let h = n >>> 0
+  h = Math.imul(h ^ (h >>> 16), 0x7feb352d)
+  h = Math.imul(h ^ (h >>> 15), 0x846ca68b)
+  h ^= h >>> 16
+  return (h >>> 0) / 4294967296
+}
+
+export interface Thing {
+  kind: Furniture
+  mirror: boolean
+}
+
+/**
+ * The things at the spots so far, made up on demand and kept, since the fixtures take turns and
+ * a turn depends on what came before. A few hundred entries even in a very long round.
+ */
+const schedule: (Thing | null)[] = []
+let placed = 0
+
+/** What stands at the n-th furniture spot since the start, if anything. */
+export function furnitureAt(n: number): Thing | null {
+  while (schedule.length <= n) {
+    const i = schedule.length
+    const roll = hash(i * 2)
+    const mirror = hash(i * 2 + 1) < 0.5
+    if (roll < EMPTY_CHANCE) schedule.push(null)
+    else if (roll < EMPTY_CHANCE + ANIMAL_CHANCE) schedule.push({ kind: roll < EMPTY_CHANCE + ANIMAL_CHANCE / 2 ? 'cat' : 'dog', mirror })
+    else schedule.push({ kind: FIXTURES[placed++ % FIXTURES.length], mirror })
+  }
+  return schedule[n]
+}
+
+const DRAW: Record<Furniture, (ctx: CanvasRenderingContext2D, p: Palette, x: number, base: number) => void> = {
+  bench: drawBench,
+  postbox: drawPostbox,
+  bin: drawBin,
+  cat: drawCat,
+  dog: drawDog,
+}
+
+/**
+ * The street furniture: a bench, a postbox, a bin, now and then a cat or a dog. Drawn live, not
+ * baked: only what is on screen is drawn, one or two things at most, and what each spot gets is
+ * decided from its number rather than a stored list, so the furniture never comes round.
+ * `origin` is the screen x of the strip for period `period`, as blitted; `round` picks the
+ * stretch of the schedule this round runs along.
+ */
+export function drawFurniture(
+  ctx: CanvasRenderingContext2D,
+  p: Palette,
+  origin: number,
+  period: number,
+  round: number,
+  width: number,
+  ground: number,
+): void {
+  ctx.save()
+  ctx.lineCap = 'round'
+  ctx.lineJoin = 'round'
+  for (let k = Math.max(0, period - 1); origin + (k - period) * STREET_PERIOD < width; k++) {
+    for (const [i, spot] of STREET.spots.entries()) {
+      const x = origin + (k - period) * STREET_PERIOD + spot
+      if (x < -SPOT_CLEARANCE || x > width + SPOT_CLEARANCE) continue
+      const thing = furnitureAt(round * ROUND_STRIDE + k * SPOTS_PER_PERIOD + i)
+      if (!thing) continue
+      ctx.save()
+      ctx.translate(x, ground)
+      if (thing.mirror) ctx.scale(-1, 1)
+      DRAW[thing.kind](ctx, p, 0, 0)
       ctx.restore()
     }
   }
@@ -373,78 +461,252 @@ function drawBench(ctx: CanvasRenderingContext2D, p: Palette, x: number, base: n
   }
 }
 
-/** A postbox on a post. Yellow, as they are here, in the palette's gold. */
+/**
+ * A postbox as they are here: a yellow box with a hooded top on a grey post, the slot under the
+ * hood, a small plate with the collection times. Big enough to be read as one.
+ */
 function drawPostbox(ctx: CanvasRenderingContext2D, p: Palette, x: number, base: number): void {
   ctx.lineWidth = OUTLINE
   ctx.strokeStyle = p.hippoDark
+  // Post with a foot
   ctx.fillStyle = p.hippoDark
-  ctx.fillRect(x - 1.2, base - 10, 2.4, 10.5)
+  ctx.fillRect(x - 1.4, base - 12, 2.8, 12.5)
+  ctx.beginPath()
+  ctx.roundRect(x - 3, base - 1.5, 6, 2, 0.8)
+  ctx.fill()
+  // Body
   ctx.fillStyle = p.postbox
   ctx.beginPath()
-  ctx.roundRect(x - 5, base - 21, 10, 12, 1.8)
+  ctx.roundRect(x - 6.5, base - 24, 13, 12.5, 1.2)
   ctx.fill()
   ctx.stroke()
-  // Lid ridge and slot
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.28)'
-  ctx.fillRect(x - 5, base - 21, 10, 2.4)
+  // The hood: an arch a little wider than the body, with a lit crown
+  ctx.beginPath()
+  ctx.moveTo(x - 7.5, base - 24)
+  ctx.quadraticCurveTo(x - 7.5, base - 29.5, x, base - 29.5)
+  ctx.quadraticCurveTo(x + 7.5, base - 29.5, x + 7.5, base - 24)
+  ctx.closePath()
+  ctx.fill()
+  ctx.stroke()
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.3)'
+  ctx.beginPath()
+  ctx.moveTo(x - 5.5, base - 24.5)
+  ctx.quadraticCurveTo(x - 4, base - 28, x, base - 28.3)
+  ctx.quadraticCurveTo(x + 2, base - 28.3, x + 3, base - 27.6)
+  ctx.lineTo(x + 2, base - 24.5)
+  ctx.closePath()
+  ctx.fill()
+  // Slot with a lip, and the plate below
   ctx.fillStyle = p.hippoDark
-  ctx.fillRect(x - 3, base - 16.5, 6, 1.4)
+  ctx.beginPath()
+  ctx.roundRect(x - 4.5, base - 22.5, 9, 1.8, 0.9)
+  ctx.fill()
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.35)'
+  ctx.fillRect(x - 4.5, base - 20.5, 9, 0.8)
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.16)'
+  ctx.beginPath()
+  ctx.roundRect(x - 3.5, base - 18.5, 7, 4.5, 0.8)
+  ctx.fill()
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.5)'
+  ctx.fillRect(x - 2.5, base - 17.3, 5, 0.7)
+  ctx.fillRect(x - 2.5, base - 15.8, 3.5, 0.7)
 }
 
-/** A bicycle on its stand, seen from the side. */
-function drawBike(ctx: CanvasRenderingContext2D, p: Palette, x: number, base: number, seed: number): void {
-  ctx.save()
-  if (seed > 0.5) {
-    ctx.translate(x, 0)
-    ctx.scale(-1, 1)
-    ctx.translate(-x, 0)
-  }
-  const y = base - 5
-  ctx.lineWidth = 1.4
+/** A litter bin: a dark cylinder with a rim and a slot in the lid. */
+function drawBin(ctx: CanvasRenderingContext2D, p: Palette, x: number, base: number): void {
+  ctx.lineWidth = OUTLINE
   ctx.strokeStyle = p.hippoDark
-  // Wheels with a hint of spokes
-  for (const wx of [x - 8, x + 8]) {
-    ctx.beginPath()
-    ctx.arc(wx, y, 5, 0, Math.PI * 2)
-    ctx.stroke()
-    ctx.strokeStyle = p.hippoBody
-    ctx.lineWidth = 0.8
-    ctx.beginPath()
-    for (let k = 0; k < 3; k++) {
-      const a = (k / 3) * Math.PI
-      ctx.moveTo(wx - Math.cos(a) * 4.2, y - Math.sin(a) * 4.2)
-      ctx.lineTo(wx + Math.cos(a) * 4.2, y + Math.sin(a) * 4.2)
-    }
-    ctx.stroke()
-    ctx.strokeStyle = p.hippoDark
-    ctx.lineWidth = 1.4
-  }
-  // Frame: rear hub → crank → seat, seat → head tube → front hub, top tube
+  ctx.fillStyle = p.hippoBody
   ctx.beginPath()
-  ctx.moveTo(x - 8, y)
-  ctx.lineTo(x - 1, y + 1)
-  ctx.lineTo(x - 3, y - 8)
-  ctx.lineTo(x - 8, y)
-  ctx.moveTo(x - 3, y - 8)
-  ctx.lineTo(x + 5, y - 8)
-  ctx.lineTo(x + 8, y)
-  ctx.moveTo(x - 1, y + 1)
-  ctx.lineTo(x + 5, y - 8)
-  ctx.moveTo(x - 3, y - 8)
-  ctx.lineTo(x - 4, y - 10.5)
-  ctx.moveTo(x + 5, y - 8)
-  ctx.lineTo(x + 6.5, y - 11)
+  ctx.roundRect(x - 5, base - 13, 10, 13.5, 1.2)
+  ctx.fill()
   ctx.stroke()
-  // Saddle, handlebar, crank
   ctx.fillStyle = p.hippoDark
   ctx.beginPath()
-  ctx.roundRect(x - 6.5, y - 12, 5, 1.8, 0.9)
+  ctx.roundRect(x - 6, base - 15, 12, 3, 1)
   ctx.fill()
+  ctx.fillStyle = p.hippoLight
+  ctx.fillRect(x - 3, base - 14, 6, 1)
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.14)'
+  ctx.fillRect(x + 1.5, base - 12, 2.5, 12)
+  ctx.fillStyle = p.hippoDark
+  for (const y of [base - 9, base - 5]) ctx.fillRect(x - 4, y, 8, 0.8)
+}
+
+/**
+ * A cat sitting up, tail curled round its feet, in the hippo's greys and with the hippo's eyes,
+ * so it belongs. Faces right; the caller may flip it.
+ */
+function drawCat(ctx: CanvasRenderingContext2D, p: Palette, x: number, base: number): void {
+  // The tail first, outlined by stroking it twice: dark and wide, then in the body colour.
+  const tail = new Path2D()
+  tail.moveTo(x - 3.5, base - 2.5)
+  tail.bezierCurveTo(x - 9, base - 1.5, x - 11.5, base - 6, x - 8, base - 10)
+  ctx.lineWidth = 2.4 + OUTLINE * 2
+  ctx.strokeStyle = p.hippoDark
+  ctx.stroke(tail)
+  ctx.lineWidth = 2.4
+  ctx.strokeStyle = p.hippoBody
+  ctx.stroke(tail)
+  ctx.lineWidth = OUTLINE
+  ctx.strokeStyle = p.hippoDark
+  // Body: a pear, wide at the haunches, the chest out
+  ctx.fillStyle = p.hippoBody
   ctx.beginPath()
-  ctx.roundRect(x + 5, y - 12, 4, 1.4, 0.7)
+  ctx.moveTo(x - 5.2, base)
+  ctx.bezierCurveTo(x - 7, base - 5, x - 5, base - 10.5, x - 0.5, base - 12)
+  ctx.bezierCurveTo(x + 2.5, base - 12.5, x + 4, base - 9.5, x + 4.2, base - 6.5)
+  ctx.bezierCurveTo(x + 4.6, base - 4, x + 4.8, base - 1.5, x + 4.6, base)
+  ctx.closePath()
   ctx.fill()
+  ctx.stroke()
+  ctx.fillStyle = p.hippoLight
   ctx.beginPath()
-  ctx.arc(x - 1, y + 1, 1.3, 0, Math.PI * 2)
+  ctx.ellipse(x + 1.8, base - 4.5, 2, 3.4, -0.15, 0, Math.PI * 2)
   ctx.fill()
-  ctx.restore()
+  // Front legs
+  ctx.fillStyle = p.hippoBody
+  for (const lx of [x + 0.3, x + 2.9]) {
+    ctx.beginPath()
+    ctx.roundRect(lx, base - 6, 2.5, 6, 1.1)
+    ctx.fill()
+    ctx.stroke()
+  }
+  // Ears, pink inside, then the head over their roots
+  ctx.beginPath()
+  ctx.moveTo(x - 4, base - 15)
+  ctx.lineTo(x - 3.6, base - 19.4)
+  ctx.lineTo(x - 0.4, base - 16.8)
+  ctx.closePath()
+  ctx.moveTo(x + 5, base - 15)
+  ctx.lineTo(x + 4.8, base - 19.4)
+  ctx.lineTo(x + 1.6, base - 16.8)
+  ctx.closePath()
+  ctx.fill()
+  ctx.stroke()
+  ctx.fillStyle = p.hippoEar
+  ctx.beginPath()
+  ctx.moveTo(x - 3, base - 15.8)
+  ctx.lineTo(x - 3, base - 18)
+  ctx.lineTo(x - 1.4, base - 16.7)
+  ctx.closePath()
+  ctx.moveTo(x + 4.2, base - 15.8)
+  ctx.lineTo(x + 4.2, base - 18)
+  ctx.lineTo(x + 2.6, base - 16.7)
+  ctx.closePath()
+  ctx.fill()
+  ctx.fillStyle = p.hippoBody
+  ctx.beginPath()
+  ctx.ellipse(x + 0.5, base - 13.6, 4.6, 3.9, 0, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.stroke()
+  // Eyes as the hippo's, nose, whiskers
+  drawEyes(ctx, p, x - 1.2, x + 2.2, base - 14, 1.1)
+  ctx.fillStyle = p.hippoEar
+  ctx.beginPath()
+  ctx.moveTo(x - 0.3, base - 12.4)
+  ctx.lineTo(x + 1.3, base - 12.4)
+  ctx.lineTo(x + 0.5, base - 11.5)
+  ctx.closePath()
+  ctx.fill()
+  ctx.strokeStyle = p.hippoDark
+  ctx.lineWidth = 0.5
+  ctx.beginPath()
+  for (const side of [-1, 1]) {
+    const cx = x + 0.5 + side * 1.6
+    ctx.moveTo(cx, base - 12.2)
+    ctx.lineTo(cx + side * 4.2, base - 12.9)
+    ctx.moveTo(cx, base - 11.7)
+    ctx.lineTo(cx + side * 4.2, base - 11.3)
+  }
+  ctx.stroke()
+}
+
+/** A small dog sitting, ears down, tail up, a collar in the bench's wood. Faces right. */
+function drawDog(ctx: CanvasRenderingContext2D, p: Palette, x: number, base: number): void {
+  const tail = new Path2D()
+  tail.moveTo(x - 4.5, base - 3)
+  tail.bezierCurveTo(x - 8, base - 3.5, x - 9.5, base - 7, x - 8, base - 10.5)
+  ctx.lineWidth = 2.2 + OUTLINE * 2
+  ctx.strokeStyle = p.hippoDark
+  ctx.stroke(tail)
+  ctx.lineWidth = 2.2
+  ctx.strokeStyle = p.hippoLight
+  ctx.stroke(tail)
+  ctx.lineWidth = OUTLINE
+  ctx.strokeStyle = p.hippoDark
+  // Body
+  ctx.fillStyle = p.hippoLight
+  ctx.beginPath()
+  ctx.moveTo(x - 6, base)
+  ctx.bezierCurveTo(x - 8, base - 5, x - 5.5, base - 10.5, x - 0.5, base - 12)
+  ctx.bezierCurveTo(x + 3, base - 12.5, x + 4.6, base - 9.5, x + 4.8, base - 6.5)
+  ctx.bezierCurveTo(x + 5.2, base - 4, x + 5.4, base - 1.5, x + 5.2, base)
+  ctx.closePath()
+  ctx.fill()
+  ctx.stroke()
+  ctx.fillStyle = p.wing
+  ctx.beginPath()
+  ctx.ellipse(x + 2.2, base - 4.5, 2.2, 3.4, -0.15, 0, Math.PI * 2)
+  ctx.fill()
+  // Front legs
+  ctx.fillStyle = p.hippoLight
+  for (const lx of [x + 0.6, x + 3.3]) {
+    ctx.beginPath()
+    ctx.roundRect(lx, base - 6.5, 2.6, 6.5, 1.2)
+    ctx.fill()
+    ctx.stroke()
+  }
+  // Collar; the ears hang behind the head; the muzzle sits low on the face with the nose on it
+  ctx.fillStyle = p.wood
+  ctx.beginPath()
+  ctx.roundRect(x - 3.4, base - 10.6, 7.4, 2.1, 1)
+  ctx.fill()
+  ctx.stroke()
+  ctx.fillStyle = p.hippoBody
+  for (const [ex, tilt] of [
+    [x - 4.4, 0.2],
+    [x + 6, -0.2],
+  ]) {
+    ctx.beginPath()
+    ctx.ellipse(ex, base - 13.6, 1.6, 3.4, tilt, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.stroke()
+  }
+  ctx.fillStyle = p.hippoLight
+  ctx.beginPath()
+  ctx.ellipse(x + 0.8, base - 14.4, 4.6, 4.1, 0, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.stroke()
+  ctx.fillStyle = p.wing
+  ctx.beginPath()
+  ctx.ellipse(x + 1.4, base - 11.8, 3, 2.1, 0, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.stroke()
+  drawEyes(ctx, p, x - 1, x + 2.6, base - 15.3, 1.1)
+  ctx.fillStyle = p.hippoDark
+  ctx.beginPath()
+  ctx.ellipse(x + 1.4, base - 12.9, 1.1, 0.85, 0, 0, Math.PI * 2)
+  ctx.fill()
+}
+
+/** Two of the hippo's eyes, small: white, outlined, a dark pupil a touch off centre. */
+function drawEyes(ctx: CanvasRenderingContext2D, p: Palette, left: number, right: number, y: number, r: number): void {
+  ctx.lineWidth = OUTLINE * 0.7
+  ctx.strokeStyle = p.hippoDark
+  ctx.fillStyle = p.wing
+  ctx.beginPath()
+  ctx.arc(left, y, r, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.stroke()
+  ctx.beginPath()
+  ctx.arc(right, y, r, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.stroke()
+  ctx.fillStyle = p.hippoDark
+  ctx.beginPath()
+  ctx.arc(left + r * 0.2, y + r * 0.15, r * 0.5, 0, Math.PI * 2)
+  ctx.arc(right + r * 0.2, y + r * 0.15, r * 0.5, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.lineWidth = OUTLINE
 }

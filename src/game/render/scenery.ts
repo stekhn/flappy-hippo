@@ -18,7 +18,7 @@ import type { GameState, Palette } from '../types.ts'
 import type { World } from '../world.ts'
 import { drawFireworks } from './effects.ts'
 import type { LayerCache } from './layers.ts'
-import { paintStreet, STREET_ABOVE } from './street.ts'
+import { drawFurniture, paintStreet, STREET_ABOVE, STREET_PERIOD } from './street.ts'
 
 // The backdrop: sky, sun or moon, stars, clouds, two skylines, a hedge line with lamps, and the
 // wall the game is played over. Everything that never changes between frames is baked into a
@@ -558,10 +558,15 @@ function paintBushes(ctx: CanvasRenderingContext2D, p: Palette, ground: number):
       ctx.translate(x + (bush.mirror ? bush.w * bush.scale : 0), ground)
       ctx.scale(bush.mirror ? -bush.scale : bush.scale, bush.scale)
 
+      // The base runs only between the outer lobes' centres, so the ends are always rounded by
+      // a lobe and never a bare corner of the rectangle.
+      const first = bush.lobes[0].dx
+      const last = bush.lobes[bush.lobes.length - 1].dx
+
       // Silhouette outline: every lobe again, a little larger, in the edge colour underneath.
       ctx.fillStyle = p.bushEdge
       ctx.beginPath()
-      ctx.rect(-EDGE, -bush.h, bush.w + EDGE * 2, bush.h)
+      ctx.rect(first - EDGE, -bush.h * 0.6, last - first + EDGE * 2, bush.h * 0.6 + EDGE)
       for (const lobe of bush.lobes) {
         ctx.moveTo(lobe.dx + lobe.r + EDGE, lobe.dy)
         ctx.arc(lobe.dx, lobe.dy, lobe.r + EDGE, 0, Math.PI * 2)
@@ -571,7 +576,7 @@ function paintBushes(ctx: CanvasRenderingContext2D, p: Palette, ground: number):
       // The body in shade, then the lit side: the same lobes shifted towards the light, clipped
       // to the body so nothing pokes out of the silhouette.
       const body = new Path2D()
-      body.rect(0, -bush.h, bush.w, bush.h)
+      body.rect(first, -bush.h * 0.6, last - first, bush.h * 0.6)
       for (const lobe of bush.lobes) {
         body.moveTo(lobe.dx + lobe.r, lobe.dy)
         body.arc(lobe.dx, lobe.dy, lobe.r, 0, Math.PI * 2)
@@ -599,10 +604,10 @@ function paintBushes(ctx: CanvasRenderingContext2D, p: Palette, ground: number):
   }
 }
 
-/** The wall: bricks with a bevel, the odd crack, and the street that stands on it. */
+/** The wall: bricks with a bevel, and the plants that stand on it. */
 function paintWall(ctx: CanvasRenderingContext2D, p: Palette, ground: number): void {
   ctx.fillStyle = p.ground
-  ctx.fillRect(0, ground, SCENE_PERIOD, GROUND_HEIGHT)
+  ctx.fillRect(0, ground, STREET_PERIOD, GROUND_HEIGHT)
 
   // Dark joints plus a light line inside each brick's top and left edge read as a bevel
   const joints = new Path2D()
@@ -610,11 +615,11 @@ function paintWall(ctx: CanvasRenderingContext2D, p: Palette, ground: number): v
   for (let row = 0; row * BRICK_HEIGHT < GROUND_HEIGHT; row++) {
     const y = ground + row * BRICK_HEIGHT + 0.5
     joints.moveTo(0, y)
-    joints.lineTo(SCENE_PERIOD, y)
+    joints.lineTo(STREET_PERIOD, y)
     edges.moveTo(0, y + 1)
-    edges.lineTo(SCENE_PERIOD, y + 1)
+    edges.lineTo(STREET_PERIOD, y + 1)
     const shift = (row % 2) * (BRICK_WIDTH / 2)
-    for (let x = shift - BRICK_WIDTH; x < SCENE_PERIOD; x += BRICK_WIDTH) {
+    for (let x = shift - BRICK_WIDTH; x < STREET_PERIOD; x += BRICK_WIDTH) {
       joints.moveTo(x + 0.5, y)
       joints.lineTo(x + 0.5, y + BRICK_HEIGHT)
       edges.moveTo(x + 1.5, y + 1)
@@ -630,14 +635,19 @@ function paintWall(ctx: CanvasRenderingContext2D, p: Palette, ground: number): v
   paintStreet(ctx, p, ground)
 }
 
-/** The wall and its street, baked together: they scroll as one at the field's own speed. */
+/**
+ * The wall and its plants, baked together, and the furniture on top: they scroll as one at the
+ * field's own speed.
+ */
 export function drawGround(
   ctx: CanvasRenderingContext2D,
   p: Palette,
   world: World,
   scrolled: number,
+  round: number,
   cache: LayerCache,
 ): void {
-  const wall = cache.layer('wall', STREET_ABOVE, GROUND_HEIGHT, (c, ground) => paintWall(c, p, ground))
-  cache.blit(ctx, wall, scrolled % SCENE_PERIOD, world.width)
+  const wall = cache.layer('wall', STREET_ABOVE, GROUND_HEIGHT, (c, ground) => paintWall(c, p, ground), STREET_PERIOD)
+  const origin = cache.blit(ctx, wall, scrolled % STREET_PERIOD, world.width)
+  drawFurniture(ctx, p, origin, Math.floor(scrolled / STREET_PERIOD), round, world.width, world.groundY)
 }

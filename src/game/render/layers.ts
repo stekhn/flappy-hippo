@@ -14,6 +14,8 @@ export interface Layer {
   above: number
   /** World units it reaches below it. */
   below: number
+  /** How wide the strip is before it repeats. */
+  period: number
 }
 
 export type Painter = (ctx: CanvasRenderingContext2D, ground: number) => void
@@ -36,33 +38,38 @@ export class LayerCache {
     this.skyGradient = null
   }
 
-  /** The strip for `name`, painted on first use. `paint` draws in world units with the ground line at `ground`. */
-  layer(name: string, above: number, below: number, paint: Painter): Layer {
+  /**
+   * The strip for `name`, painted on first use. `paint` draws in world units with the ground
+   * line at `ground`. A strip may repeat on a longer period than the scene's, for things that
+   * should not come round every few screens.
+   */
+  layer(name: string, above: number, below: number, paint: Painter, period = SCENE_PERIOD): Layer {
     const cached = this.layers.get(name)
     if (cached) return cached
     const canvas = document.createElement('canvas')
     const height = above + below
-    canvas.width = Math.ceil(SCENE_PERIOD * this.scale)
+    canvas.width = Math.ceil(period * this.scale)
     canvas.height = Math.ceil(height * this.scale)
     const ctx = canvas.getContext('2d')
     if (!ctx) throw new Error('Canvas 2D is not available')
     ctx.scale(this.scale, this.scale)
     paint(ctx, above)
-    const layer = { canvas, above, below }
+    const layer = { canvas, above, below, period }
     this.layers.set(name, layer)
     return layer
   }
 
-  /** Paints a strip across the field at the scroll offset, tiling as often as the width needs. */
-  blit(ctx: CanvasRenderingContext2D, layer: Layer, shift: number, width: number): void {
+  /**
+   * Paints a strip across the field at the scroll offset, tiling as often as the width needs.
+   * Returns where the first copy was placed, for anything drawn live that must line up with it.
+   */
+  blit(ctx: CanvasRenderingContext2D, layer: Layer, shift: number, width: number): number {
     const height = layer.above + layer.below
     const y = this.groundY - layer.above
     // Snapped to device pixels, so the bake is never resampled and stays crisp while scrolling.
-    let x = Math.round(-shift * this.scale) / this.scale
-    while (x < width) {
-      ctx.drawImage(layer.canvas, x, y, SCENE_PERIOD, height)
-      x += SCENE_PERIOD
-    }
+    const origin = Math.round(-shift * this.scale) / this.scale
+    for (let x = origin; x < width; x += layer.period) ctx.drawImage(layer.canvas, x, y, layer.period, height)
+    return origin
   }
 
   /** The sky's gradient, made once per palette and field height. */

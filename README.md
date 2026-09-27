@@ -100,7 +100,10 @@ Ein Side-Scroller zeigt jedes Bild dieselbe Kulisse, nur verschoben. Deshalb wer
 Ebenen (Skylines, Hecke mit Laternen, Mauer mit Straße) einmal in Bitmaps gebacken, eine
 Szenenperiode breit in Geräteauflösung, und pro Bild nur noch zwei-, dreimal an der Scrollposition
 eingeblendet ([src/game/render/layers.ts](src/game/render/layers.ts)). Gezeichnet wird pro Bild
-nur, was sich bewegt: Himmelskörper, Röhren, Sammelobjekte, das Nilpferd. Die Auflösung ist auf 2x
+nur, was sich bewegt: Himmelskörper, Röhren, Sammelobjekte, das Nilpferd, dazu das seltene
+Straßenmobiliar (Bank, Briefkasten, Mülleimer, ab und zu eine Katze oder ein Hund), das nicht
+gebacken wird, damit es sich nie wiederholt: Was an welcher Stelle steht, ergibt sich aus ihrer
+Nummer, nicht aus einer Liste. Die Auflösung ist auf 2x
 gedeckelt, und hält ein Gerät trotzdem keine 60 fps, geht sie stufenweise herunter.
 
 ### Das Spielfeld passt sich an
