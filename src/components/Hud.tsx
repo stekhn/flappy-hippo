@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import type { ReactNode, SVGProps } from 'react'
 import type { Snapshot } from '../game/runtime.ts'
 import { t } from '../i18n/index.ts'
 import {
@@ -20,6 +21,19 @@ interface HudProps {
 }
 
 const NOTICE_MS = 3200
+
+/**
+ * An icon with the same outline the HUD text carries: a copy in the sky colour, stroked wide,
+ * under the icon itself, so it reads on the scene like the number next to it.
+ */
+function Outlined({ icon: Icon }: { icon: (props: SVGProps<SVGSVGElement>) => ReactNode }) {
+  return (
+    <span className="relative inline-flex h-[22px] w-[22px]" aria-hidden="true">
+      <Icon width={22} height={22} className="text-sky absolute inset-0" strokeWidth={6} />
+      <Icon width={22} height={22} className="relative" />
+    </span>
+  )
+}
 
 /** A new stage called out for a moment: the player must know the rules just changed. */
 function StageNotice({ stage }: { stage: number }) {
@@ -76,7 +90,7 @@ export function Hud({ snapshot, sound, onToggleSound, onPause, onMenu }: HudProp
                     className="hud-text animate-pop flex items-center gap-1 text-base"
                     style={{ color: 'var(--game-gold)' }}
                   >
-                    <IconTrophy width={22} height={22} />
+                    <Outlined icon={IconTrophy} />
                     <span>{t.hud.record}</span>
                   </span>
                 )}
@@ -85,7 +99,7 @@ export function Hud({ snapshot, sound, onToggleSound, onPause, onMenu }: HudProp
                     className="hud-text flex items-center gap-1 text-base"
                     style={{ color: 'var(--game-melon)' }}
                   >
-                    <IconMelon width={22} height={22} />
+                    <Outlined icon={IconMelon} />
                     <span>{snapshot.melons}</span>
                   </span>
                 )}
@@ -94,7 +108,7 @@ export function Hud({ snapshot, sound, onToggleSound, onPause, onMenu }: HudProp
                     className="hud-text flex items-center gap-1 text-base"
                     style={{ color: 'var(--game-shield)' }}
                   >
-                    <IconShield width={22} height={22} />
+                    <Outlined icon={IconShield} />
                     <span>{t.hud.shield(snapshot.charges)}</span>
                   </span>
                 )}

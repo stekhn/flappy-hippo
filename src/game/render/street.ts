@@ -578,7 +578,7 @@ function routine(age: number, period: number, share: number, seed: number): numb
  * lifts a front paw to its face and licks it, eyes shut, head down to meet the paw. Faces right;
  * the caller may flip it.
  */
-function drawCat(ctx: CanvasRenderingContext2D, p: Palette, x: number, base: number, age: number, seed: number): void {
+export function drawCat(ctx: CanvasRenderingContext2D, p: Palette, x: number, base: number, age: number, seed: number): void {
   const coat = p.catCoat
   const line = p.catLine
   const lick = routine(age, 5, 0.3, seed)
@@ -703,13 +703,15 @@ function drawCat(ctx: CanvasRenderingContext2D, p: Palette, x: number, base: num
   ctx.strokeStyle = p.hippoDark
 }
 
+// The animals are exported for scripts/make-animal-svg.ts, which turns them into SVG files.
+
 /**
  * A small yellow dog after the classic cartoon: sitting up, a big round head with long ears
  * hanging either side, big eyes, a big black nose, a smile, a red collar with a tag. It keeps
  * still but for its tail, which wags, and its tongue, which comes out now and then to pant.
  * Faces right.
  */
-function drawDog(ctx: CanvasRenderingContext2D, p: Palette, x: number, base: number, age: number, seed: number): void {
+export function drawDog(ctx: CanvasRenderingContext2D, p: Palette, x: number, base: number, age: number, seed: number): void {
   const coat = p.postbox
   const light = p.dogLight
   const shade = p.dogShade
