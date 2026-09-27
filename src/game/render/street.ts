@@ -707,9 +707,8 @@ export function drawCat(ctx: CanvasRenderingContext2D, p: Palette, x: number, ba
 
 /**
  * A small yellow dog after the classic cartoon: sitting up, a big round head with long ears
- * hanging either side, big eyes, a big black nose, a smile, a red collar with a tag. It keeps
- * still but for its tail, which wags, and its tongue, which comes out now and then to pant.
- * Faces right.
+ * hanging behind it either side, big eyes, a big black nose, a smile. It keeps still but for
+ * its tail, which wags, and its tongue, which comes out now and then to pant. Faces right.
  */
 export function drawDog(ctx: CanvasRenderingContext2D, p: Palette, x: number, base: number, age: number, seed: number): void {
   const coat = p.postbox
@@ -732,7 +731,7 @@ export function drawDog(ctx: CanvasRenderingContext2D, p: Palette, x: number, ba
   ctx.stroke(tail)
   ctx.lineWidth = OUTLINE
   ctx.strokeStyle = p.hippoDark
-  // The far ear, behind everything
+  // Both ears hang behind the head
   const ear = (ex: number, tilt: number): void => {
     ctx.save()
     ctx.translate(ex, hy - 3.5)
@@ -749,6 +748,7 @@ export function drawDog(ctx: CanvasRenderingContext2D, p: Palette, x: number, ba
     ctx.restore()
   }
   ear(hx - 5.4, 0.35)
+  ear(hx + 5.6, -0.3)
   // Sitting: haunches wide at the bottom, the chest up, a hind paw peeking out, front legs straight
   ctx.fillStyle = coat
   ctx.beginPath()
@@ -774,7 +774,7 @@ export function drawDog(ctx: CanvasRenderingContext2D, p: Palette, x: number, ba
     ctx.fill()
     ctx.stroke()
   }
-  // The head; the near ear over it
+  // The head
   ctx.fillStyle = coat
   ctx.beginPath()
   ctx.arc(hx, hy, 6.4, 0, Math.PI * 2)
@@ -814,22 +814,6 @@ export function drawDog(ctx: CanvasRenderingContext2D, p: Palette, x: number, ba
     ctx.ellipse(ex + 0.6, hy - 2.4, r * 0.42, r * 0.55, 0, 0, Math.PI * 2)
     ctx.fill()
   }
-  ear(hx + 5.6, -0.3)
-  // The collar round the neck, in front, its tag hanging from it
-  ctx.save()
-  ctx.translate(x + 2.2, base - 13.6)
-  ctx.rotate(-0.15)
-  ctx.fillStyle = p.melonFlesh
-  ctx.beginPath()
-  ctx.roundRect(-5.2, -1.2, 10.4, 2.4, 1)
-  ctx.fill()
-  ctx.stroke()
-  ctx.fillStyle = p.hippoLight
-  ctx.beginPath()
-  ctx.arc(0.6, 2.6, 1.4, 0, Math.PI * 2)
-  ctx.fill()
-  ctx.stroke()
-  ctx.restore()
   // The tongue, red, lolling out of the front of the mouth under the nose, bobbing as it pants
   if (pant > 0) {
     const out = 1.8 + Math.min(pant * 6, 1) * 1.6 + Math.sin(pant * Math.PI * 9) * 0.5
