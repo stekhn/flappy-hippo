@@ -1,7 +1,10 @@
 import { BRICK_WIDTH, OUTLINE, SCENE_PERIOD } from '../constants.ts'
+import { mix } from '../palette.ts'
 import type { Palette } from '../types.ts'
-import type { World } from '../world.ts'
 import { seeded } from './scenery.ts'
+
+/** How far above the ground line the tallest thing on the street reaches (the postbox). */
+export const STREET_ABOVE = 28
 
 // The foreground: what stands on the wall and scrolls with it. A small vocabulary of plants and
 // street furniture, all rooted in the joints between the top row's bricks (the scene repeats on
@@ -33,8 +36,12 @@ interface Prop {
   kind: Kind
   x: number
   blades: Blade[]
-  /** Per-prop variation: a tilt, a flip, a stalk height. */
+  /** Per-prop variation: a tilt, a stalk height. */
   seed: number
+  /** …and for plants, a flip, a size and a shade warmer or cooler, so no two are the same. */
+  mirror: boolean
+  scale: number
+  tone: number
 }
 
 /** How often each thing turns up. Plants carry the rhythm; furniture is the exception. */
@@ -88,11 +95,15 @@ export function makeStreet(seed: number): Prop[] {
     const x = joint * BRICK_WIDTH
     if (FURNITURE.has(kind) && x - lastFurniture < FURNITURE_GAP) kind = 'tuft'
     if (FURNITURE.has(kind)) lastFurniture = x
+    const plant = !FURNITURE.has(kind) && kind !== 'can' && kind !== 'paper'
     out.push({
       kind,
       x,
       blades: kind === 'tuft' || kind === 'tall' ? makeBlades(rnd, kind === 'tall' ? 3 + Math.floor(rnd() * 2) : 4 + Math.floor(rnd() * 4), kind === 'tall') : [],
       seed: rnd(),
+      mirror: rnd() < 0.5,
+      scale: plant ? 0.85 + rnd() * 0.35 : 1,
+      tone: plant ? rnd() * 0.4 : 0,
     })
     joint += 1 + Math.floor(rnd() * 3)
   }
@@ -101,51 +112,69 @@ export function makeStreet(seed: number): Prop[] {
 
 const STREET = makeStreet(59)
 
-export function drawStreet(ctx: CanvasRenderingContext2D, p: Palette, world: World, scrolled: number): void {
-  const base = world.groundY
-  const shift = scrolled % SCENE_PERIOD
+/** Scene offsets at which a thing must be painted so it also shows where the strip wraps. */
+const WRAPS = [-SCENE_PERIOD, 0, SCENE_PERIOD]
+
+/**
+ * Paints one full period of the street onto a strip (see layers.ts), ground line at `ground`.
+ * Called once per bake, never per frame, so nothing here needs to be cheap.
+ */
+export function paintStreet(ctx: CanvasRenderingContext2D, p: Palette, ground: number): void {
   ctx.save()
   ctx.lineCap = 'round'
   ctx.lineJoin = 'round'
   for (const prop of STREET) {
-    for (const offset of [0, SCENE_PERIOD]) {
-      const x = prop.x - shift + offset
-      if (x < -30 || x > world.width + 30) continue
+    // A plant's own greens: the palette's, nudged warmer or cooler for this one instance.
+    const tinted: Palette =
+      prop.tone > 0
+        ? {
+            ...p,
+            grassLit: mix(p.grassLit, p.grassShade, prop.tone * 0.6),
+            grassShade: mix(p.grassShade, p.bushEdge, prop.tone * 0.5),
+          }
+        : p
+    for (const base of WRAPS) {
+      const x = prop.x + base
+      if (x < -30 || x > SCENE_PERIOD + 30) continue
       // Plants root in an opened joint; furniture simply stands on the wall.
       if (!FURNITURE.has(prop.kind)) {
         ctx.fillStyle = p.groundLine
-        ctx.fillRect(x - 1.5, base, 3, 6)
+        ctx.fillRect(x - 1.5, ground, 3, 6)
       }
+      ctx.save()
+      ctx.translate(x, ground)
+      ctx.scale(prop.mirror ? -prop.scale : prop.scale, prop.scale)
       switch (prop.kind) {
         case 'tuft':
         case 'tall':
-          drawBlades(ctx, p, x, base, prop.blades)
+          drawBlades(ctx, tinted, 0, 0, prop.blades)
           break
         case 'clover':
-          drawClover(ctx, p, x, base)
+          drawClover(ctx, tinted, 0, 0)
           break
         case 'dandelion':
-          drawDandelion(ctx, p, x, base, prop.seed)
+          drawDandelion(ctx, tinted, 0, 0, prop.seed)
           break
         case 'buttercups':
-          drawButtercups(ctx, p, x, base, prop.seed)
+          drawButtercups(ctx, tinted, 0, 0, prop.seed)
           break
         case 'can':
-          drawCan(ctx, p, x, base, prop.seed)
+          drawCan(ctx, p, 0, 0, prop.seed)
           break
         case 'paper':
-          drawPaper(ctx, p, x, base, prop.seed)
+          drawPaper(ctx, p, 0, 0, prop.seed)
           break
         case 'bench':
-          drawBench(ctx, p, x, base)
+          drawBench(ctx, p, 0, 0)
           break
         case 'postbox':
-          drawPostbox(ctx, p, x, base)
+          drawPostbox(ctx, p, 0, 0)
           break
         case 'bike':
-          drawBike(ctx, p, x, base, prop.seed)
+          drawBike(ctx, p, 0, 0, prop.seed)
           break
       }
+      ctx.restore()
     }
   }
   ctx.restore()

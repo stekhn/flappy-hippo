@@ -5,9 +5,9 @@ import { drawParticles } from './effects.ts'
 import { drawHippo } from './hippo.ts'
 import { drawPickups } from './pickups.ts'
 import { drawPipes } from './pipes.ts'
+import type { LayerCache } from './layers.ts'
 import type { SkyMotion } from './scenery.ts'
 import { drawGround, drawScenery, drawSky } from './scenery.ts'
-import { drawStreet } from './street.ts'
 
 /** The pose a knocked-out hippo settles into: body level, head hanging from the neck. */
 export const DEFEAT = { tilt: 0, headNod: 0.7, headDrop: 2 }
@@ -15,6 +15,7 @@ export const DEFEAT = { tilt: 0, headNod: 0.7, headDrop: 2 }
 /**
  * Paints one frame of the world. Everything that is not the scene lives in the DOM above it.
  * With `effects` off (the viewer asked for reduced motion) fireworks and particles stay unpainted.
+ * The still backdrop comes from `cache` as baked strips; only what moves is drawn as paths.
  */
 export function drawScene(
   ctx: CanvasRenderingContext2D,
@@ -23,14 +24,14 @@ export function drawScene(
   p: Palette,
   sky: SkyMotion,
   now: number,
-  effects = true,
+  effects: boolean,
+  cache: LayerCache,
 ): void {
-  drawSky(ctx, p, world)
-  drawScenery(ctx, p, state, world, now, sky, effects)
+  drawSky(ctx, p, world, cache)
+  drawScenery(ctx, p, state, world, now, sky, effects, cache)
   drawPipes(ctx, p, state.pipes, world)
   drawPickups(ctx, p, state.pickups, now)
-  drawGround(ctx, p, world, state.scrolled)
-  drawStreet(ctx, p, world, state.scrolled)
+  drawGround(ctx, p, world, state.scrolled, cache)
   if (effects) drawParticles(ctx, p, state.particles)
 
   const idle = state.phase === 'ready'

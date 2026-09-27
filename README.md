@@ -94,6 +94,15 @@ rendert nie ein Einzelbild — es bekommt nur dann einen Schnappschuss, wenn sic
 es anzeigt. Steht die Szene still (Pause, Menü, ausgeklungener Game-Over-Bildschirm), wird auch
 nichts mehr gezeichnet; wer weniger Bewegung eingestellt hat, bekommt sie auch im Canvas.
 
+### Zeichnen mit Budget
+
+Ein Side-Scroller zeigt jedes Bild dieselbe Kulisse, nur verschoben. Deshalb werden die stillen
+Ebenen (Skylines, Hecke mit Laternen, Mauer mit Straße) einmal in Bitmaps gebacken, eine
+Szenenperiode breit in Geräteauflösung, und pro Bild nur noch zwei-, dreimal an der Scrollposition
+eingeblendet ([src/game/render/layers.ts](src/game/render/layers.ts)). Gezeichnet wird pro Bild
+nur, was sich bewegt: Himmelskörper, Röhren, Sammelobjekte, das Nilpferd. Die Auflösung ist auf 2x
+gedeckelt, und hält ein Gerät trotzdem keine 60 fps, geht sie stufenweise herunter.
+
 ### Das Spielfeld passt sich an
 
 Statt ein festes 3:2-Bild in jedes Gerät zu quetschen, behält das Spielfeld **eine konstante kurze

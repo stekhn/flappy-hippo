@@ -68,3 +68,15 @@ export function resolvePalette(dark: boolean): Palette {
 export function tintColor(p: Palette, tint: 'melon' | 'bubble'): string {
   return tint === 'melon' ? p.melon : p.bubble
 }
+
+/** A colour between two hex colours, `t` of the way from `a` to `b`. For variants of one thing. */
+export function mix(a: string, b: string, t: number): string {
+  const pa = parseInt(a.slice(1), 16)
+  const pb = parseInt(b.slice(1), 16)
+  const ch = (shift: number) => {
+    const va = (pa >> shift) & 255
+    const vb = (pb >> shift) & 255
+    return Math.round(va + (vb - va) * t)
+  }
+  return `rgb(${ch(16)}, ${ch(8)}, ${ch(0)})`
+}

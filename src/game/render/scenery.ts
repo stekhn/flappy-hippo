@@ -6,15 +6,23 @@ import {
   CLOUD_RISE_OMEGA,
   CLOUD_SPIN,
   CLOUD_STAGGER_S,
+  GROUND_HEIGHT,
   HAZE_HEIGHT,
   HAZE_NEAR_HEIGHT,
   MOON_RADIUS,
   SCENE_PERIOD,
   SUN_RADIUS,
 } from '../constants.ts'
+import { mix } from '../palette.ts'
 import type { GameState, Palette } from '../types.ts'
 import type { World } from '../world.ts'
 import { drawFireworks } from './effects.ts'
+import type { LayerCache } from './layers.ts'
+import { paintStreet, STREET_ABOVE } from './street.ts'
+
+// The backdrop: sky, sun or moon, stars, clouds, two skylines, a hedge line with lamps, and the
+// wall the game is played over. Everything that never changes between frames is baked into a
+// strip by the LayerCache and blitted (see layers.ts); only the sky bodies are drawn live.
 
 interface Building {
   x: number
@@ -44,6 +52,37 @@ interface Star {
   y: number
   r: number
   phase: number
+}
+
+interface Lobe {
+  dx: number
+  dy: number
+  r: number
+}
+
+interface Bush {
+  x: number
+  w: number
+  h: number
+  lobes: Lobe[]
+  /** Small lit dabs on the shaded side: leaves catching the light. */
+  leaves: Lobe[]
+  /** Variation: flipped, a little bigger or smaller, a shade warmer or cooler. */
+  mirror: boolean
+  scale: number
+  tone: number
+}
+
+interface Lamp {
+  x: number
+  h: number
+  arms: 'left' | 'right' | 'both'
+}
+
+interface Crack {
+  x: number
+  y: number
+  points: { dx: number; dy: number }[]
 }
 
 const WINDOW_W = 3
@@ -108,28 +147,7 @@ function makeStars(seed: number, count: number): Star[] {
   }))
 }
 
-interface Lobe {
-  dx: number
-  dy: number
-  r: number
-}
-
-interface Bush {
-  x: number
-  w: number
-  h: number
-  lobes: Lobe[]
-  /** Small lit dabs on the shaded side: leaves catching the light. */
-  leaves: Lobe[]
-}
-
-interface Crack {
-  x: number
-  y: number
-  points: { dx: number; dy: number }[]
-}
-
-/** A hedge line one layer behind the pipes: clusters of rounded lobes, a bush every so often. */
+/** A hedge line one layer behind the pipes: clusters of rounded lobes, no two bushes alike. */
 function makeBushes(seed: number): Bush[] {
   const rnd = seeded(seed)
   const out: Bush[] = []
@@ -153,25 +171,26 @@ function makeBushes(seed: number): Bush[] {
       dy: -h * (0.15 + rnd() * 0.5),
       r: 1.2 + rnd() * 1,
     }))
-    out.push({ x, w, h, lobes, leaves })
+    out.push({ x, w, h, lobes, leaves, mirror: rnd() < 0.5, scale: 0.85 + rnd() * 0.35, tone: rnd() * 0.35 })
     x += w + 40 + Math.round(rnd() * 110)
   }
   return out
 }
 
-/** Lamp posts along the hedge line, every so often; they carry the height the hedge lacks. */
-function makeLamps(seed: number): number[] {
+/** Lamp posts along the hedge line, every so often; single arm either way, or a pair. */
+function makeLamps(seed: number): Lamp[] {
   const rnd = seeded(seed)
-  const out: number[] = []
+  const out: Lamp[] = []
   let x = 80 + rnd() * 120
   while (x < SCENE_PERIOD - 40) {
-    out.push(x)
+    const roll = rnd()
+    out.push({ x, h: 30 + Math.round(rnd() * 8), arms: roll < 0.4 ? 'right' : roll < 0.8 ? 'left' : 'both' })
     x += 250 + rnd() * 200
   }
   return out
 }
 
-/** Hairline cracks in the odd brick, scrolling with the wall. */
+/** Hairline cracks in the odd brick. */
 function makeCracks(seed: number): Crack[] {
   const rnd = seeded(seed)
   const out: Crack[] = []
@@ -201,8 +220,13 @@ const CITY_NEAR = makeSkyline(13, 24, 84, true)
 const CLOUDS = makeClouds(21, 7)
 const STARS = makeStars(37, 46)
 const BUSHES = makeBushes(43)
-const CRACKS = makeCracks(71)
 const LAMPS = makeLamps(83)
+const CRACKS = makeCracks(71)
+
+/** Scene offsets at which a thing must be painted so it also shows where the strip wraps. */
+const WRAPS = [-SCENE_PERIOD, 0, SCENE_PERIOD]
+
+// ---- the sky and what moves in it ---------------------------------------------------------------
 
 /** Indexed clouds first, sun or moon last. */
 export interface SkyMotion {
@@ -254,11 +278,8 @@ function skyPose(sky: SkyMotion, i: number): SkyPose {
   return { drop, alpha: 1 - fallen ** 3, spin: fallen * CLOUD_SPIN * (i % 2 ? 1 : -1) }
 }
 
-export function drawSky(ctx: CanvasRenderingContext2D, p: Palette, world: World): void {
-  const gradient = ctx.createLinearGradient(0, 0, 0, world.groundY)
-  gradient.addColorStop(0, p.sky)
-  gradient.addColorStop(1, p.skyLow)
-  ctx.fillStyle = gradient
+export function drawSky(ctx: CanvasRenderingContext2D, p: Palette, world: World, cache: LayerCache): void {
+  ctx.fillStyle = cache.sky(ctx, p, world.groundY)
   ctx.fillRect(0, 0, world.width, world.height)
 }
 
@@ -270,6 +291,7 @@ export function drawScenery(
   now: number,
   sky: SkyMotion,
   effects: boolean,
+  cache: LayerCache,
 ): void {
   const { scrolled } = state
   if (p.night) drawStars(ctx, p, world, scrolled, now)
@@ -297,12 +319,25 @@ export function drawScenery(
     }
   })
 
-  drawCity(ctx, p, CITY_FAR, world, (scrolled * 0.2) % SCENE_PERIOD, p.cityFar)
-  drawHaze(ctx, world, HAZE_HEIGHT, p.haze)
-  drawCity(ctx, p, CITY_NEAR, world, (scrolled * 0.45) % SCENE_PERIOD, p.cityNear)
-  drawHaze(ctx, world, HAZE_NEAR_HEIGHT, p.hazeNear)
-  drawLamps(ctx, p, world, (scrolled * 0.7) % SCENE_PERIOD)
-  drawBushes(ctx, p, world, (scrolled * 0.7) % SCENE_PERIOD)
+  // The three still strips, each baked once and shifted at its own pace.
+  const far = cache.layer('far', HAZE_HEIGHT, 0, (c, ground) => {
+    paintCity(c, p, CITY_FAR, ground, p.cityFar)
+    paintHaze(c, ground, HAZE_HEIGHT, p.haze)
+  })
+  cache.blit(ctx, far, (scrolled * 0.2) % SCENE_PERIOD, world.width)
+
+  const near = cache.layer('near', 112, 0, (c, ground) => {
+    paintCity(c, p, CITY_NEAR, ground, p.cityNear)
+    paintHaze(c, ground, HAZE_NEAR_HEIGHT, p.hazeNear)
+  })
+  cache.blit(ctx, near, (scrolled * 0.45) % SCENE_PERIOD, world.width)
+
+  const hedge = cache.layer('hedge', 84, 0, (c, ground) => {
+    paintLamps(c, p, ground)
+    paintBushes(c, p, ground)
+  })
+  cache.blit(ctx, hedge, (scrolled * 0.7) % SCENE_PERIOD, world.width)
+
   // In front of the skyline and its haze, behind the pipes: a party, not a rumour of one.
   if (effects) drawFireworks(ctx, p, state.fireworks, world, now)
 }
@@ -328,156 +363,6 @@ function drawStars(
     }
   }
   ctx.restore()
-}
-
-/**
- * Old-town lamps: a plinth, a slender post, an arm that swoops out and curls back on itself, and
- * a tapered lantern hanging from the tip. At night the lantern is lit and throws a soft glow.
- */
-function drawLamps(ctx: CanvasRenderingContext2D, p: Palette, world: World, shift: number): void {
-  const base = world.groundY
-  const top = base - 34
-  for (const lx of LAMPS) {
-    for (const offset of [0, SCENE_PERIOD]) {
-      const x = lx - shift + offset
-      if (x < -40 || x > world.width + 40) continue
-      // The lantern hangs from the arm's tip, a little out from the post.
-      const hx = x + 11
-      const hy = top - 3
-
-      if (p.night) {
-        const glow = ctx.createRadialGradient(hx, hy + 4, 2, hx, hy + 4, 30)
-        glow.addColorStop(0, p.sunHalo)
-        glow.addColorStop(1, 'rgba(255, 244, 226, 0)')
-        ctx.fillStyle = glow
-        ctx.fillRect(hx - 30, hy - 26, 60, 60)
-      }
-
-      ctx.save()
-      ctx.lineCap = 'round'
-      ctx.lineJoin = 'round'
-      ctx.strokeStyle = p.lamp
-      ctx.fillStyle = p.lamp
-
-      // Plinth and post, the post tapering a touch towards the top.
-      ctx.beginPath()
-      ctx.roundRect(x - 3.5, base - 3, 7, 3.5, 1)
-      ctx.fill()
-      ctx.beginPath()
-      ctx.moveTo(x - 1.6, base - 3)
-      ctx.lineTo(x + 1.6, base - 3)
-      ctx.lineTo(x + 1, top)
-      ctx.lineTo(x - 1, top)
-      ctx.closePath()
-      ctx.fill()
-      // A collar where the arm meets the post.
-      ctx.beginPath()
-      ctx.roundRect(x - 2.2, top - 1, 4.4, 2.6, 1)
-      ctx.fill()
-
-      // The arm: up and out in one swoop, then a curl back under it.
-      ctx.lineWidth = 1.7
-      ctx.beginPath()
-      ctx.moveTo(x, top)
-      ctx.bezierCurveTo(x + 1, top - 7, x + 7, top - 8, hx, hy - 3)
-      ctx.stroke()
-      ctx.lineWidth = 1.1
-      ctx.beginPath()
-      ctx.moveTo(x + 4.5, top - 5.2)
-      ctx.bezierCurveTo(x + 8, top - 5.5, x + 8.5, top - 1, x + 5.5, top - 1.5)
-      ctx.stroke()
-
-      // The lantern: a cap, a tapered glass body, a finial.
-      ctx.beginPath()
-      ctx.moveTo(hx, hy - 3)
-      ctx.lineTo(hx, hy - 1)
-      ctx.stroke()
-      ctx.beginPath()
-      ctx.moveTo(hx - 4.2, hy + 1)
-      ctx.lineTo(hx, hy - 1.5)
-      ctx.lineTo(hx + 4.2, hy + 1)
-      ctx.closePath()
-      ctx.fill()
-      ctx.fillStyle = p.night ? p.sun : p.flower
-      ctx.beginPath()
-      ctx.moveTo(hx - 3.4, hy + 1)
-      ctx.lineTo(hx + 3.4, hy + 1)
-      ctx.lineTo(hx + 2.4, hy + 8)
-      ctx.lineTo(hx - 2.4, hy + 8)
-      ctx.closePath()
-      ctx.fill()
-      ctx.strokeStyle = p.lamp
-      ctx.lineWidth = 1
-      ctx.stroke()
-      ctx.fillStyle = p.lamp
-      ctx.beginPath()
-      ctx.roundRect(hx - 3, hy + 8, 6, 1.6, 0.8)
-      ctx.fill()
-      ctx.beginPath()
-      ctx.arc(hx, hy + 10.6, 1, 0, Math.PI * 2)
-      ctx.fill()
-      ctx.restore()
-    }
-  }
-}
-
-function drawBushes(ctx: CanvasRenderingContext2D, p: Palette, world: World, shift: number): void {
-  const base = world.groundY
-  const EDGE = 1.3
-  for (const bush of BUSHES) {
-    for (const offset of [0, SCENE_PERIOD]) {
-      const x = bush.x - shift + offset
-      if (x + bush.w + 12 < 0 || x - 12 > world.width) continue
-
-      // Silhouette outline: every lobe again, a little larger, in the edge colour underneath.
-      ctx.fillStyle = p.bushEdge
-      ctx.beginPath()
-      ctx.rect(x - EDGE, base - bush.h, bush.w + EDGE * 2, bush.h)
-      for (const lobe of bush.lobes) {
-        ctx.moveTo(x + lobe.dx + lobe.r + EDGE, base + lobe.dy)
-        ctx.arc(x + lobe.dx, base + lobe.dy, lobe.r + EDGE, 0, Math.PI * 2)
-      }
-      ctx.fill()
-
-      // The body in shade, then the lit side: the same lobes shifted towards the light, clipped
-      // to the body so nothing pokes out of the silhouette.
-      const body = new Path2D()
-      body.rect(x, base - bush.h, bush.w, bush.h)
-      for (const lobe of bush.lobes) {
-        body.moveTo(x + lobe.dx + lobe.r, base + lobe.dy)
-        body.arc(x + lobe.dx, base + lobe.dy, lobe.r, 0, Math.PI * 2)
-      }
-      ctx.fillStyle = p.bushShade
-      ctx.fill(body)
-      ctx.save()
-      ctx.clip(body)
-      ctx.fillStyle = p.bushLit
-      ctx.beginPath()
-      for (const lobe of bush.lobes) {
-        const r = lobe.r * 0.72
-        ctx.moveTo(x + lobe.dx - lobe.r * 0.2 + r, base + lobe.dy - lobe.r * 0.28)
-        ctx.arc(x + lobe.dx - lobe.r * 0.2, base + lobe.dy - lobe.r * 0.28, r, 0, Math.PI * 2)
-      }
-      ctx.fill()
-      // A few leaves catching light on the shaded side.
-      ctx.globalAlpha = 0.8
-      ctx.beginPath()
-      for (const leaf of bush.leaves) {
-        ctx.moveTo(x + leaf.dx + leaf.r, base + leaf.dy)
-        ctx.ellipse(x + leaf.dx, base + leaf.dy, leaf.r, leaf.r * 0.6, -0.5, 0, Math.PI * 2)
-      }
-      ctx.fill()
-      ctx.restore()
-    }
-  }
-}
-
-function drawHaze(ctx: CanvasRenderingContext2D, world: World, height: number, color: string): void {
-  const haze = ctx.createLinearGradient(0, world.groundY - height, 0, world.groundY)
-  haze.addColorStop(0, 'rgba(255, 255, 255, 0)')
-  haze.addColorStop(1, color)
-  ctx.fillStyle = haze
-  ctx.fillRect(0, world.groundY - height, world.width, height)
 }
 
 function drawOrb(ctx: CanvasRenderingContext2D, p: Palette, world: World, pose: SkyPose): void {
@@ -521,28 +406,37 @@ function drawMoon(ctx: CanvasRenderingContext2D, p: Palette): void {
   ctx.fillRect(-r * 2.6, -r * 2.6, r * 5.2, r * 5.2)
 }
 
-function drawCity(
+// ---- painters: draw one full period of a strip, in world units, ground line at `ground` -------
+
+function paintHaze(ctx: CanvasRenderingContext2D, ground: number, height: number, color: string): void {
+  const haze = ctx.createLinearGradient(0, ground - height, 0, ground)
+  haze.addColorStop(0, 'rgba(255, 255, 255, 0)')
+  haze.addColorStop(1, color)
+  ctx.fillStyle = haze
+  ctx.fillRect(0, ground - height, SCENE_PERIOD, height)
+}
+
+function paintCity(
   ctx: CanvasRenderingContext2D,
   p: Palette,
   buildings: Building[],
-  world: World,
-  shift: number,
+  ground: number,
   color: string,
 ): void {
   for (const b of buildings) {
-    for (const base of [0, SCENE_PERIOD]) {
-      const x = Math.round(b.x - shift + base)
-      if (x + b.w + 4 < 0 || x - 4 > world.width) continue
-      const top = world.groundY - b.h
+    for (const base of WRAPS) {
+      const x = Math.round(b.x + base)
+      if (x + b.w + 4 < 0 || x - 4 > SCENE_PERIOD) continue
+      const top = ground - b.h
       ctx.fillStyle = color
       ctx.fillRect(x, top, b.w, b.h)
-      drawRoof(ctx, b, x, top)
-      if (b.cols > 0) drawWindows(ctx, p, b, x, top)
+      paintRoof(ctx, b, x, top)
+      if (b.cols > 0) paintWindows(ctx, p, b, x, top)
     }
   }
 }
 
-function drawRoof(ctx: CanvasRenderingContext2D, b: Building, x: number, top: number): void {
+function paintRoof(ctx: CanvasRenderingContext2D, b: Building, x: number, top: number): void {
   const mid = x + b.w / 2
   switch (b.roof) {
     case 'step': {
@@ -566,7 +460,7 @@ function drawRoof(ctx: CanvasRenderingContext2D, b: Building, x: number, top: nu
   }
 }
 
-function drawWindows(
+function paintWindows(
   ctx: CanvasRenderingContext2D,
   p: Palette,
   b: Building,
@@ -589,30 +483,170 @@ function drawWindows(
   }
 }
 
-export function drawGround(
-  ctx: CanvasRenderingContext2D,
-  p: Palette,
-  world: World,
-  scrolled: number,
-): void {
-  const offset = scrolled % BRICK_WIDTH
-  const top = world.groundY
-  const height = world.height - top
+/**
+ * Old-town lamps: a plinth, a slender post, an arm that swoops out and curls back on itself, and
+ * a tapered lantern hanging from the tip. Some carry the arm to the left, some to the right, some
+ * one each way. At night the lanterns are lit and throw a soft glow.
+ */
+function paintLamps(ctx: CanvasRenderingContext2D, p: Palette, ground: number): void {
+  for (const lamp of LAMPS) {
+    for (const base of WRAPS) {
+      const x = lamp.x + base
+      if (x < -40 || x > SCENE_PERIOD + 40) continue
+      const top = ground - lamp.h
+      const sides = lamp.arms === 'both' ? [1, -1] : lamp.arms === 'right' ? [1] : [-1]
+
+      if (p.night) {
+        for (const side of sides) {
+          const hx = x + 11 * side
+          const glow = ctx.createRadialGradient(hx, top + 1, 2, hx, top + 1, 30)
+          glow.addColorStop(0, p.sunHalo)
+          glow.addColorStop(1, 'rgba(255, 244, 226, 0)')
+          ctx.fillStyle = glow
+          ctx.fillRect(hx - 30, top - 29, 60, 60)
+        }
+      }
+
+      ctx.save()
+      ctx.lineCap = 'round'
+      ctx.lineJoin = 'round'
+      ctx.strokeStyle = p.lamp
+      ctx.fillStyle = p.lamp
+      // Plinth and post, the post tapering a touch towards the top.
+      ctx.beginPath()
+      ctx.roundRect(x - 3.5, ground - 3, 7, 3.5, 1)
+      ctx.fill()
+      ctx.beginPath()
+      ctx.moveTo(x - 1.6, ground - 3)
+      ctx.lineTo(x + 1.6, ground - 3)
+      ctx.lineTo(x + 1, top)
+      ctx.lineTo(x - 1, top)
+      ctx.closePath()
+      ctx.fill()
+      ctx.beginPath()
+      ctx.roundRect(x - 2.2, top - 1, 4.4, 2.6, 1)
+      ctx.fill()
+
+      for (const side of sides) {
+        ctx.save()
+        ctx.translate(x, top)
+        ctx.scale(side, 1)
+        // The arm: up and out in one swoop, then a curl back under it.
+        ctx.lineWidth = 1.7
+        ctx.beginPath()
+        ctx.moveTo(0, 0)
+        ctx.bezierCurveTo(1, -7, 7, -8, 11, -6)
+        ctx.stroke()
+        ctx.lineWidth = 1.1
+        ctx.beginPath()
+        ctx.moveTo(4.5, -5.2)
+        ctx.bezierCurveTo(8, -5.5, 8.5, -1, 5.5, -1.5)
+        ctx.stroke()
+        // The lantern: a cap, a tapered glass body, a finial.
+        ctx.beginPath()
+        ctx.moveTo(11, -6)
+        ctx.lineTo(11, -4)
+        ctx.stroke()
+        ctx.beginPath()
+        ctx.moveTo(6.8, -2)
+        ctx.lineTo(11, -4.5)
+        ctx.lineTo(15.2, -2)
+        ctx.closePath()
+        ctx.fill()
+        ctx.fillStyle = p.night ? p.sun : p.flower
+        ctx.beginPath()
+        ctx.moveTo(7.6, -2)
+        ctx.lineTo(14.4, -2)
+        ctx.lineTo(13.4, 5)
+        ctx.lineTo(8.6, 5)
+        ctx.closePath()
+        ctx.fill()
+        ctx.lineWidth = 1
+        ctx.stroke()
+        ctx.fillStyle = p.lamp
+        ctx.beginPath()
+        ctx.roundRect(8, 5, 6, 1.6, 0.8)
+        ctx.fill()
+        ctx.beginPath()
+        ctx.arc(11, 7.6, 1, 0, Math.PI * 2)
+        ctx.fill()
+        ctx.restore()
+      }
+      ctx.restore()
+    }
+  }
+}
+
+function paintBushes(ctx: CanvasRenderingContext2D, p: Palette, ground: number): void {
+  const EDGE = 1.3
+  for (const bush of BUSHES) {
+    const lit = mix(p.bushLit, p.bushShade, bush.tone)
+    const shade = mix(p.bushShade, p.bushEdge, bush.tone * 0.5)
+    for (const base of WRAPS) {
+      const x = bush.x + base
+      if (x + bush.w * bush.scale + 12 < 0 || x - 12 > SCENE_PERIOD) continue
+      ctx.save()
+      // Each bush is its own instance: flipped or not, scaled about its foot.
+      ctx.translate(x + (bush.mirror ? bush.w * bush.scale : 0), ground)
+      ctx.scale(bush.mirror ? -bush.scale : bush.scale, bush.scale)
+
+      // Silhouette outline: every lobe again, a little larger, in the edge colour underneath.
+      ctx.fillStyle = p.bushEdge
+      ctx.beginPath()
+      ctx.rect(-EDGE, -bush.h, bush.w + EDGE * 2, bush.h)
+      for (const lobe of bush.lobes) {
+        ctx.moveTo(lobe.dx + lobe.r + EDGE, lobe.dy)
+        ctx.arc(lobe.dx, lobe.dy, lobe.r + EDGE, 0, Math.PI * 2)
+      }
+      ctx.fill()
+
+      // The body in shade, then the lit side: the same lobes shifted towards the light, clipped
+      // to the body so nothing pokes out of the silhouette.
+      const body = new Path2D()
+      body.rect(0, -bush.h, bush.w, bush.h)
+      for (const lobe of bush.lobes) {
+        body.moveTo(lobe.dx + lobe.r, lobe.dy)
+        body.arc(lobe.dx, lobe.dy, lobe.r, 0, Math.PI * 2)
+      }
+      ctx.fillStyle = shade
+      ctx.fill(body)
+      ctx.clip(body)
+      ctx.fillStyle = lit
+      ctx.beginPath()
+      for (const lobe of bush.lobes) {
+        const r = lobe.r * 0.72
+        ctx.moveTo(lobe.dx - lobe.r * 0.2 + r, lobe.dy - lobe.r * 0.28)
+        ctx.arc(lobe.dx - lobe.r * 0.2, lobe.dy - lobe.r * 0.28, r, 0, Math.PI * 2)
+      }
+      ctx.fill()
+      ctx.globalAlpha = 0.8
+      ctx.beginPath()
+      for (const leaf of bush.leaves) {
+        ctx.moveTo(leaf.dx + leaf.r, leaf.dy)
+        ctx.ellipse(leaf.dx, leaf.dy, leaf.r, leaf.r * 0.6, -0.5, 0, Math.PI * 2)
+      }
+      ctx.fill()
+      ctx.restore()
+    }
+  }
+}
+
+/** The wall: bricks with a bevel, the odd crack, and the street that stands on it. */
+function paintWall(ctx: CanvasRenderingContext2D, p: Palette, ground: number): void {
   ctx.fillStyle = p.ground
-  ctx.fillRect(0, top, world.width, height)
+  ctx.fillRect(0, ground, SCENE_PERIOD, GROUND_HEIGHT)
 
   // Dark joints plus a light line inside each brick's top and left edge read as a bevel
   const joints = new Path2D()
   const edges = new Path2D()
-  for (let row = 0; row * BRICK_HEIGHT < height; row++) {
-    const y = top + row * BRICK_HEIGHT + 0.5
+  for (let row = 0; row * BRICK_HEIGHT < GROUND_HEIGHT; row++) {
+    const y = ground + row * BRICK_HEIGHT + 0.5
     joints.moveTo(0, y)
-    joints.lineTo(world.width, y)
+    joints.lineTo(SCENE_PERIOD, y)
     edges.moveTo(0, y + 1)
-    edges.lineTo(world.width, y + 1)
-    const shift = (row % 2) * (BRICK_WIDTH / 2) - offset
-    const start = (((shift % BRICK_WIDTH) + BRICK_WIDTH) % BRICK_WIDTH) - BRICK_WIDTH
-    for (let x = start; x < world.width; x += BRICK_WIDTH) {
+    edges.lineTo(SCENE_PERIOD, y + 1)
+    const shift = (row % 2) * (BRICK_WIDTH / 2)
+    for (let x = shift - BRICK_WIDTH; x < SCENE_PERIOD; x += BRICK_WIDTH) {
       joints.moveTo(x + 0.5, y)
       joints.lineTo(x + 0.5, y + BRICK_HEIGHT)
       edges.moveTo(x + 1.5, y + 1)
@@ -626,17 +660,29 @@ export function drawGround(
   ctx.stroke(edges)
 
   // A hairline crack in the odd brick: texture, not a feature.
-  const shift = scrolled % SCENE_PERIOD
   ctx.strokeStyle = p.groundLine
-  ctx.lineWidth = 1
   ctx.beginPath()
   for (const crack of CRACKS) {
-    for (const base of [0, SCENE_PERIOD]) {
-      const x = crack.x - shift + base
-      if (x < -20 || x > world.width) continue
-      ctx.moveTo(x, top + crack.y)
-      for (const point of crack.points) ctx.lineTo(x + point.dx, top + crack.y + point.dy)
+    for (const base of WRAPS) {
+      const x = crack.x + base
+      if (x < -20 || x > SCENE_PERIOD) continue
+      ctx.moveTo(x, ground + crack.y)
+      for (const point of crack.points) ctx.lineTo(x + point.dx, ground + crack.y + point.dy)
     }
   }
   ctx.stroke()
+
+  paintStreet(ctx, p, ground)
+}
+
+/** The wall and its street, baked together: they scroll as one at the field's own speed. */
+export function drawGround(
+  ctx: CanvasRenderingContext2D,
+  p: Palette,
+  world: World,
+  scrolled: number,
+  cache: LayerCache,
+): void {
+  const wall = cache.layer('wall', STREET_ABOVE, GROUND_HEIGHT, (c, ground) => paintWall(c, p, ground))
+  cache.blit(ctx, wall, scrolled % SCENE_PERIOD, world.width)
 }

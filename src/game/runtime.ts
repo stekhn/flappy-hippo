@@ -4,6 +4,7 @@ import { COUNTDOWN_MS, MAX_FRAME_S, OVER_SETTLE_MS, RESTART_DELAY_MS } from './c
 import { difficultyById } from './difficulty.ts'
 import type { Difficulty, DifficultyId } from './difficulty.ts'
 import { resolvePalette } from './palette.ts'
+import { LayerCache } from './render/layers.ts'
 import { drawScene } from './render/scene.ts'
 import { animateSky, initialSky } from './render/scenery.ts'
 import type { SkyMotion } from './render/scenery.ts'
@@ -55,6 +56,19 @@ export interface RuntimeOptions {
   onEvent: (event: GameEvent) => void
 }
 
+/**
+ * Resolution governor. The canvas is repainted whole every frame, so fill rate is the one cost
+ * that scales with the device: a 3x phone would push three million pixels a frame for a cartoon
+ * that reads fine at 2x. The cap starts at 2 and, if frames still run long for a while, steps
+ * down — the dynamic-resolution trick console games use to hold their frame rate.
+ */
+const DPR_CAP = 2
+const DPR_FLOOR = 1
+/** A frame longer than this missed 60 fps. */
+const SLOW_FRAME_S = 0.019
+/** This many slow frames in a row (about a second and a half) and the resolution steps down. */
+const SLOW_STREAK = 90
+
 function buzz(enabled: boolean, pattern: number | number[]): void {
   if (!enabled || typeof navigator === 'undefined' || !navigator.vibrate) return
   try {
@@ -89,6 +103,12 @@ export class GameRuntime {
   private difficulty: Difficulty
   private state: GameState
   private sky: SkyMotion = initialSky()
+  /** Baked backdrop strips; see render/layers.ts. */
+  private readonly cache = new LayerCache()
+  /** World units to device pixels, for baking at full resolution. */
+  private scale = 1
+  private dprCap = DPR_CAP
+  private slowFrames = 0
   private events: GameEvent[] = []
   private frame = 0
   private last = 0
@@ -162,7 +182,7 @@ export class GameRuntime {
     if (width < 1 || height < 1) return
     const next = fitWorld(width, height)
     const size = canvasSize(next, width, height)
-    const dpr = Math.min(window.devicePixelRatio || 1, 3)
+    const dpr = Math.min(window.devicePixelRatio || 1, this.dprCap)
     this.canvas.style.width = `${size.width}px`
     this.canvas.style.height = `${size.height}px`
     // Short of filling the box, the board reads as a framed card rather than a cropped screen.
@@ -170,6 +190,7 @@ export class GameRuntime {
     this.canvas.width = Math.round(size.width * dpr)
     this.canvas.height = Math.round(size.height * dpr)
     const scale = size.scale * dpr
+    this.scale = scale
     this.ctx.setTransform(scale, 0, 0, scale, 0, 0)
     // A field that grew or shrank must not leave the hippo or the pipes outside it.
     const ratio = next.groundY / this.world.groundY
@@ -345,9 +366,11 @@ export class GameRuntime {
   }
 
   private step(now: number): void {
-    const dt = Math.min((now - this.last) / 1000, MAX_FRAME_S)
+    const elapsed = (now - this.last) / 1000
+    const dt = Math.min(elapsed, MAX_FRAME_S)
     this.last = now
     if (!this.live(now) && !this.dirty) return
+    this.govern(elapsed)
 
     // Suspended (the menu is up), paused, or counting back in: nothing moves, but a frame that
     // was marked dirty — a theme switch made from that very menu — is still painted once.
@@ -357,9 +380,24 @@ export class GameRuntime {
       this.drain()
     }
     if (this.effects && !this.suspended) animateSky(this.sky, this.state, now, dt)
-    drawScene(this.ctx, this.state, this.world, this.palette, this.sky, now, this.effects)
+    this.cache.prepare(this.scale, this.palette, this.world.groundY)
+    drawScene(this.ctx, this.state, this.world, this.palette, this.sky, now, this.effects, this.cache)
     this.dirty = false
     this.push(now)
+  }
+
+  /** Steps the resolution down when the device has not kept 60 fps for a while. */
+  private govern(elapsed: number): void {
+    if (this.state.phase !== 'running' || this.paused) return
+    if (elapsed <= SLOW_FRAME_S) {
+      this.slowFrames = 0
+      return
+    }
+    this.slowFrames += 1
+    if (this.slowFrames < SLOW_STREAK || this.dprCap <= DPR_FLOOR) return
+    this.dprCap = Math.max(DPR_FLOOR, this.dprCap - 0.5)
+    this.slowFrames = 0
+    this.measure()
   }
 
   private drain(): void {
