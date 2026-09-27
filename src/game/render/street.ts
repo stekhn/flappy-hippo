@@ -1,6 +1,7 @@
 import { BRICK_WIDTH, OUTLINE, SCENE_PERIOD } from '../constants.ts'
 import { mix } from '../palette.ts'
 import type { Palette } from '../types.ts'
+import type { LayerCache } from './layers.ts'
 import { seeded } from './scenery.ts'
 
 /** How far above the ground line the tallest plant on the street reaches (a tall tuft, full size). */
@@ -257,6 +258,7 @@ export function drawFurniture(
   width: number,
   ground: number,
   time: number,
+  cache: LayerCache,
 ): void {
   ctx.save()
   ctx.lineCap = 'round'
@@ -267,15 +269,31 @@ export function drawFurniture(
       if (x < -SPOT_CLEARANCE || x > width + SPOT_CLEARANCE) continue
       const thing = furnitureAt(round * ROUND_STRIDE + k * SPOTS_PER_PERIOD + i)
       if (!thing) continue
+      const still = STILL[thing.kind]
+      if (still) {
+        // A fixture never moves: painted once, stamped from then on
+        const sprite = cache.sprite(`furniture-${thing.kind}`, still.left, still.top, still.width, still.height, (c) =>
+          DRAW[thing.kind](c, p, 0, 0, 0, 0),
+        )
+        cache.stamp(ctx, sprite, x, ground, 0, thing.mirror)
+        continue
+      }
+      thing.seenAt ??= time
       ctx.save()
       ctx.translate(x, ground)
       if (thing.mirror) ctx.scale(-1, 1)
-      thing.seenAt ??= time
       DRAW[thing.kind](ctx, p, 0, 0, time - thing.seenAt, thing.seed)
       ctx.restore()
     }
   }
   ctx.restore()
+}
+
+/** Bounds of the fixtures about their foot, for their sprites; the animals are drawn live. */
+const STILL: Partial<Record<Furniture, { left: number; top: number; width: number; height: number }>> = {
+  bench: { left: -16, top: -21, width: 32, height: 22.5 },
+  postbox: { left: -9.5, top: -32, width: 19, height: 33.5 },
+  bin: { left: -8, top: -17, width: 16, height: 18 },
 }
 
 function drawBlades(ctx: CanvasRenderingContext2D, p: Palette, x: number, base: number, blades: Blade[]): void {
@@ -561,8 +579,8 @@ function routine(age: number, period: number, share: number, seed: number): numb
  * the caller may flip it.
  */
 function drawCat(ctx: CanvasRenderingContext2D, p: Palette, x: number, base: number, age: number, seed: number): void {
-  const coat = mix(p.hippoDark, '#000000', 0.5)
-  const line = mix(p.hippoDark, '#000000', 0.78)
+  const coat = p.catCoat
+  const line = p.catLine
   const lick = routine(age, 5, 0.3, seed)
   const licking = lick > 0
   // The tail first, outlined by stroking it twice; its tip sways
@@ -686,119 +704,170 @@ function drawCat(ctx: CanvasRenderingContext2D, p: Palette, x: number, base: num
 }
 
 /**
- * A small yellow dog standing, in the bench's wood: a capsule of a body on four short legs, a
- * round head with a floppy ear, a red collar with a tag, tail up and wagging. Every so often it
- * lifts a hind leg against nothing in particular. Faces right.
+ * A small yellow dog after the classic cartoon: sitting up, a big round head with long ears
+ * hanging either side, big eyes, a big black nose, a smile, a red collar with a tag, tail up
+ * and wagging. Every so often it gets up, lifts a hind leg against nothing in particular, and
+ * sits back down. Faces right.
  */
 function drawDog(ctx: CanvasRenderingContext2D, p: Palette, x: number, base: number, age: number, seed: number): void {
-  const coat = p.wood
-  const light = mix(p.wood, '#ffffff', 0.45)
-  const shade = mix(p.wood, p.hippoDark, 0.16)
-  const dark = mix(p.wood, p.hippoDark, 0.32)
+  const coat = p.postbox
+  const light = p.dogLight
+  const shade = p.dogShade
   const pee = routine(age, 6, 0.33, seed)
-  const peeing = pee > 0
-  const wag = Math.sin(age * 6 + seed * 9) * (peeing ? 0.5 : 1.4)
+  const standing = pee > 0
+  const wag = Math.sin(age * 6 + seed * 9) * (standing ? 0.5 : 1.4)
   ctx.lineWidth = OUTLINE
   ctx.strokeStyle = p.hippoDark
   // Tail up, wagging, outlined by stroking it twice
   const tail = new Path2D()
-  tail.moveTo(x - 7, base - 10.5)
-  tail.quadraticCurveTo(x - 10 + wag, base - 12.5, x - 9.5 + wag, base - 16)
-  ctx.lineWidth = 2.2 + OUTLINE * 2
+  tail.moveTo(x - 7, base - 7)
+  tail.quadraticCurveTo(x - 10.5 + wag, base - 10, x - 10 + wag, base - 14.5)
+  ctx.lineWidth = 2.4 + OUTLINE * 2
   ctx.stroke(tail)
-  ctx.lineWidth = 2.2
+  ctx.lineWidth = 2.4
   ctx.strokeStyle = coat
   ctx.stroke(tail)
   ctx.lineWidth = OUTLINE
   ctx.strokeStyle = p.hippoDark
-  // Legs: the far pair a shade darker, then the body, then the near pair over it
-  const leg = (lx: number, color: string): void => {
+  const leg = (lx: number, top: number, color: string): void => {
     ctx.fillStyle = color
     ctx.beginPath()
-    ctx.roundRect(lx, base - 8, 2.8, 8, [1, 1, 1.4, 1.4])
+    ctx.roundRect(lx, top, 3, base - top, [1.2, 1.2, 1.5, 1.5])
     ctx.fill()
     ctx.stroke()
   }
-  leg(x - 4.2, shade)
-  leg(x + 2.4, shade)
-  ctx.fillStyle = coat
-  ctx.beginPath()
-  ctx.roundRect(x - 8.5, base - 14.5, 17, 9, 4.5)
-  ctx.fill()
-  ctx.stroke()
-  ctx.fillStyle = light
-  ctx.beginPath()
-  ctx.ellipse(x + 0.5, base - 7.6, 5.5, 1.9, 0, 0, Math.PI * 2)
-  ctx.fill()
-  leg(x + 4.6, coat)
-  ctx.save()
-  if (peeing) {
-    ctx.translate(x - 5.4, base - 8)
+  if (standing) {
+    // On its feet: a capsule of a body on four legs, the near hind leg up
+    leg(x - 5, base - 8, shade)
+    leg(x + 2.6, base - 8, shade)
+    ctx.fillStyle = coat
+    ctx.beginPath()
+    ctx.roundRect(x - 9, base - 15, 17.5, 9, 4.5)
+    ctx.fill()
+    ctx.stroke()
+    leg(x + 4.6, base - 8, coat)
+    ctx.save()
+    ctx.translate(x - 5.6, base - 8.5)
     ctx.rotate(1.45 + Math.sin(pee * Math.PI * 4) * 0.05)
-    ctx.translate(-1.4, 0)
-    leg(0, coat)
-  } else {
-    leg(x - 6.8, coat)
-  }
-  ctx.restore()
-  if (peeing) {
-    const stream = mix(p.gold, '#ffffff', 0.35)
-    ctx.strokeStyle = stream
+    ctx.beginPath()
+    ctx.roundRect(-1.5, 0, 3, 7.5, 1.3)
+    ctx.fillStyle = coat
+    ctx.fill()
+    ctx.stroke()
+    ctx.restore()
+    ctx.strokeStyle = p.stream
     ctx.lineWidth = 1
     ctx.globalAlpha = 0.9
     ctx.beginPath()
-    ctx.moveTo(x - 3.5, base - 6.5)
-    ctx.quadraticCurveTo(x - 8, base - 7, x - 10.5, base - 0.6)
+    ctx.moveTo(x - 4, base - 7)
+    ctx.quadraticCurveTo(x - 9, base - 7.5, x - 11.5, base - 0.6)
     ctx.stroke()
-    ctx.fillStyle = stream
+    ctx.fillStyle = p.stream
     ctx.globalAlpha = 0.55
     ctx.beginPath()
-    ctx.ellipse(x - 11, base - 0.4, 1.5 + pee * 2.5, 0.7, 0, 0, Math.PI * 2)
+    ctx.ellipse(x - 12, base - 0.4, 1.5 + pee * 2.5, 0.7, 0, 0, Math.PI * 2)
     ctx.fill()
     ctx.globalAlpha = 1
     ctx.lineWidth = OUTLINE
     ctx.strokeStyle = p.hippoDark
+  } else {
+    // Sitting: haunches wide at the bottom, the chest up, the front legs straight
+    ctx.fillStyle = coat
+    ctx.beginPath()
+    ctx.moveTo(x - 8.5, base)
+    ctx.bezierCurveTo(x - 10, base - 7, x - 6, base - 13, x - 1, base - 15)
+    ctx.bezierCurveTo(x + 3, base - 16, x + 6.5, base - 13, x + 7, base - 8)
+    ctx.bezierCurveTo(x + 7.3, base - 5, x + 7.5, base - 2, x + 7.2, base)
+    ctx.closePath()
+    ctx.fill()
+    ctx.stroke()
+    ctx.fillStyle = light
+    ctx.beginPath()
+    ctx.ellipse(x + 3, base - 6, 2.6, 4.2, -0.1, 0, Math.PI * 2)
+    ctx.fill()
+    // The hind paw peeking out in front of the haunch, then the two front legs
+    ctx.fillStyle = coat
+    ctx.beginPath()
+    ctx.roundRect(x - 7.5, base - 2.6, 5, 2.6, 1.2)
+    ctx.fill()
+    ctx.stroke()
+    leg(x + 0.6, base - 8.5, coat)
+    leg(x + 4.4, base - 8.5, coat)
   }
-  // Collar behind the head, the head, the muzzle with its nose, the eye, the ear over the head
-  ctx.fillStyle = p.melonFlesh
-  ctx.beginPath()
-  ctx.roundRect(x + 5.4, base - 14.2, 2.6, 5, 1)
-  ctx.fill()
-  ctx.stroke()
-  ctx.fillStyle = p.gold
-  ctx.beginPath()
-  ctx.arc(x + 6.7, base - 8.8, 1, 0, Math.PI * 2)
-  ctx.fill()
-  ctx.stroke()
+  // The head, big and round, the far ear behind it and the near ear over it
+  const hx = x + 3
+  const hy = base - 20.5
+  const ear = (ex: number, tilt: number): void => {
+    ctx.save()
+    ctx.translate(ex, hy - 3.5)
+    ctx.rotate(tilt)
+    ctx.fillStyle = shade
+    ctx.beginPath()
+    ctx.moveTo(-1.6, 0)
+    ctx.bezierCurveTo(-3.2, 4, -3.2, 9, -1.4, 11)
+    ctx.bezierCurveTo(0, 12.4, 2.4, 11.4, 2.2, 9)
+    ctx.bezierCurveTo(2, 6, 1.6, 2.5, 1.6, 0)
+    ctx.closePath()
+    ctx.fill()
+    ctx.stroke()
+    ctx.restore()
+  }
+  ear(hx - 5.4, 0.35)
   ctx.fillStyle = coat
   ctx.beginPath()
-  ctx.arc(x + 9.2, base - 15.2, 4.4, 0, Math.PI * 2)
+  ctx.arc(hx, hy, 6.4, 0, Math.PI * 2)
   ctx.fill()
   ctx.stroke()
+  // Muzzle with the smile, the nose on top with its highlight
   ctx.fillStyle = light
   ctx.beginPath()
-  ctx.ellipse(x + 11.8, base - 13.4, 2.9, 2.2, 0, 0, Math.PI * 2)
+  ctx.ellipse(hx + 2.6, hy + 2.4, 4.2, 3.1, 0, 0, Math.PI * 2)
   ctx.fill()
   ctx.stroke()
-  ctx.fillStyle = p.hippoDark
+  ctx.lineWidth = 0.9
   ctx.beginPath()
-  ctx.ellipse(x + 13.8, base - 14.3, 1.1, 0.85, 0, 0, Math.PI * 2)
-  ctx.fill()
-  ctx.lineWidth = 0.8
-  ctx.beginPath()
-  ctx.arc(x + 12.2, base - 12.6, 1.2, Math.PI * 0.15, Math.PI * 0.75)
+  ctx.arc(hx + 2.8, hy + 2.4, 2.4, Math.PI * 0.15, Math.PI * 0.85)
   ctx.stroke()
   ctx.lineWidth = OUTLINE
-  drawEye(ctx, p.wing, p.hippoDark, x + 10.2, base - 16.6, 1.05)
-  ctx.fillStyle = dark
+  ctx.fillStyle = p.hippoDark
   ctx.beginPath()
-  ctx.moveTo(x + 8, base - 19.2)
-  ctx.quadraticCurveTo(x + 4.6, base - 18.4, x + 5, base - 13)
-  ctx.quadraticCurveTo(x + 5.3, base - 11, x + 7.2, base - 12)
-  ctx.quadraticCurveTo(x + 8.8, base - 14.5, x + 8, base - 19.2)
-  ctx.closePath()
+  ctx.ellipse(hx + 4.4, hy + 0.2, 2.4, 1.7, 0, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.fillStyle = p.wing
+  ctx.beginPath()
+  ctx.ellipse(hx + 3.6, hy - 0.4, 0.9, 0.5, 0, 0, Math.PI * 2)
+  ctx.fill()
+  // Big eyes close together, the pupils toward where it is looking
+  for (const [ex, r] of [
+    [hx - 0.6, 2],
+    [hx + 3, 2],
+  ]) {
+    ctx.fillStyle = p.wing
+    ctx.beginPath()
+    ctx.ellipse(ex, hy - 2.6, r, r * 1.25, 0, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.stroke()
+    ctx.fillStyle = p.hippoDark
+    ctx.beginPath()
+    ctx.ellipse(ex + 0.6, hy - 2.4, r * 0.42, r * 0.55, 0, 0, Math.PI * 2)
+    ctx.fill()
+  }
+  ear(hx + 5.6, -0.3)
+  // The collar round the neck, in front, its tag hanging from it
+  ctx.save()
+  ctx.translate(x + 2.2, base - 13.6)
+  ctx.rotate(-0.15)
+  ctx.fillStyle = p.melonFlesh
+  ctx.beginPath()
+  ctx.roundRect(-5.2, -1.2, 10.4, 2.4, 1)
   ctx.fill()
   ctx.stroke()
+  ctx.fillStyle = p.hippoLight
+  ctx.beginPath()
+  ctx.arc(0.6, 2.6, 1.4, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.stroke()
+  ctx.restore()
 }
 
 /** One of the hippo's eyes, small: white, outlined, a dark pupil a touch off centre. */

@@ -11,8 +11,6 @@ export const de: Messages = {
   pointsWord: (n) => p(n, 'Punkt', 'Punkte'),
   melonsWord: (n) => p(n, 'Melone', 'Melonen'),
   start: {
-    tapToFly: 'Tippen lässt das Nilpferd fliegen.',
-    clickToFly: 'Klick oder Leertaste lässt das Nilpferd fliegen.',
     difficulty: 'Schwierigkeit',
     record: 'Rekord',
     play: 'Spielen',

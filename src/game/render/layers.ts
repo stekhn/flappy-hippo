@@ -7,6 +7,10 @@ import type { Palette } from '../types.ts'
  * strip is rasterised once, one scene period wide at device resolution, and then blitted at the
  * scroll offset — two or three `drawImage` calls a frame in place of every path in the layer.
  * The bake is thrown away when the resolution, the palette or the field height changes.
+ *
+ * The same idea, smaller: sprites for the still things that move as a whole (a pot, a balcony,
+ * a bench, a pipe's cap) and gradients for the live things drawn about their own origin, both
+ * made once per resolution and palette.
  */
 export interface Layer {
   canvas: HTMLCanvasElement
@@ -18,6 +22,17 @@ export interface Layer {
   period: number
 }
 
+/** A still drawing rasterised once: its canvas, where it sits about its origin (world units), its resolution. */
+export interface Sprite {
+  canvas: HTMLCanvasElement
+  left: number
+  top: number
+  width: number
+  height: number
+  /** Device pixels per world unit it was painted at. */
+  scale: number
+}
+
 export type Painter = (ctx: CanvasRenderingContext2D, ground: number) => void
 
 export class LayerCache {
@@ -25,12 +40,19 @@ export class LayerCache {
   private palette: Palette | null = null
   private groundY = 0
   private layers = new Map<string, Layer>()
+  private sprites = new Map<string, Sprite>()
+  private gradients = new Map<string, CanvasGradient>()
   private skyGradient: CanvasGradient | null = null
   private skyHeight = 0
 
-  /** Call once per frame; a change in resolution, palette or field drops every bake. */
+  /** Call once per frame; a change in resolution, palette or field drops the bakes that depend on it. */
   prepare(scale: number, palette: Palette, groundY: number): void {
     if (scale === this.scale && palette === this.palette && groundY === this.groundY) return
+    // The strips follow the field's height; sprites and gradients only resolution and palette.
+    if (scale !== this.scale || palette !== this.palette) {
+      this.sprites.clear()
+      this.gradients.clear()
+    }
     this.scale = scale
     this.palette = palette
     this.groundY = groundY
@@ -70,6 +92,61 @@ export class LayerCache {
     const origin = Math.round(-shift * this.scale) / this.scale
     for (let x = origin; x < width; x += layer.period) ctx.drawImage(layer.canvas, x, y, layer.period, height)
     return origin
+  }
+
+  /**
+   * The sprite for `name`, painted on first use. `paint` draws about the sprite's origin in world
+   * units; `left`, `top`, `width` and `height` bound it, with a little room left for the outline.
+   */
+  sprite(
+    name: string,
+    left: number,
+    top: number,
+    width: number,
+    height: number,
+    paint: (ctx: CanvasRenderingContext2D) => void,
+  ): Sprite {
+    const cached = this.sprites.get(name)
+    if (cached) return cached
+    const canvas = document.createElement('canvas')
+    canvas.width = Math.ceil(width * this.scale)
+    canvas.height = Math.ceil(height * this.scale)
+    const ctx = canvas.getContext('2d')
+    if (!ctx) throw new Error('Canvas 2D is not available')
+    ctx.scale(this.scale, this.scale)
+    ctx.translate(-left, -top)
+    ctx.lineJoin = 'round'
+    ctx.lineCap = 'round'
+    paint(ctx)
+    const sprite = { canvas, left, top, width, height, scale: this.scale }
+    this.sprites.set(name, sprite)
+    return sprite
+  }
+
+  /** Draws a sprite with its origin at (x, y), turned by `rotation` and mirrored if `flip`. */
+  stamp(ctx: CanvasRenderingContext2D, sprite: Sprite, x: number, y: number, rotation = 0, flip = false): void {
+    if (rotation === 0 && !flip) {
+      // Snapped to device pixels, as the strips are, so an upright sprite stays crisp.
+      const px = Math.round((x + sprite.left) * this.scale) / this.scale
+      const py = Math.round((y + sprite.top) * this.scale) / this.scale
+      ctx.drawImage(sprite.canvas, px, py, sprite.width, sprite.height)
+      return
+    }
+    ctx.save()
+    ctx.translate(x, y)
+    if (rotation !== 0) ctx.rotate(rotation)
+    if (flip) ctx.scale(-1, 1)
+    ctx.drawImage(sprite.canvas, sprite.left, sprite.top, sprite.width, sprite.height)
+    ctx.restore()
+  }
+
+  /** A gradient made once per palette, for things drawn live about their own origin. */
+  gradient(name: string, make: () => CanvasGradient): CanvasGradient {
+    const cached = this.gradients.get(name)
+    if (cached) return cached
+    const gradient = make()
+    this.gradients.set(name, gradient)
+    return gradient
   }
 
   /** The sky's gradient, made once per palette and field height. */

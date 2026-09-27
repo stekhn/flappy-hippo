@@ -11,37 +11,50 @@ import {
 } from '../constants.ts'
 import type { Palette, Pipe } from '../types.ts'
 import type { World } from '../world.ts'
+import type { LayerCache, Sprite } from './layers.ts'
 
 /**
  * Pipes in the same soft hand as the hippo: a round shading across the body instead of hard
- * bands, a thin edge, rounded caps. They must be read at a glance, not shout.
+ * bands, a thin edge, rounded caps. They must be read at a glance, not shout. Two sprites do
+ * every pipe: a body as tall as the field, cropped to the segment pixel for pixel (a short strip
+ * stretched instead would blur into transparency at its ends), and the cap.
  */
 export function drawPipes(
   ctx: CanvasRenderingContext2D,
   p: Palette,
   pipes: Pipe[],
   world: World,
+  cache: LayerCache,
 ): void {
+  const tall = world.height + PIPE_OVERRUN * 2
+  const body = cache.sprite(`pipe-body-${tall}`, 0, 0, PIPE_WIDTH, tall, (c) => paintBody(c, p, tall))
+  const cap = cache.sprite('pipe-cap', 0, 0, PIPE_WIDTH + PIPE_CAP_OVERHANG * 2, PIPE_CAP_HEIGHT, (c) =>
+    paintBlock(c, p, 0, 0, PIPE_WIDTH + PIPE_CAP_OVERHANG * 2, PIPE_CAP_HEIGHT, 2),
+  )
   for (const pipe of pipes) {
     // Whole pixels keep the outline crisp while the pipe scrolls
     const x = Math.round(pipe.x)
-    drawPipeSegment(ctx, p, x, 0, pipe.gapY - pipe.half, true)
-    drawPipeSegment(ctx, p, x, pipe.gapY + pipe.half, world.groundY, false)
+    drawSegment(ctx, body, cap, x, 0, pipe.gapY - pipe.half, true)
+    drawSegment(ctx, body, cap, x, pipe.gapY + pipe.half, world.groundY, false)
   }
 }
 
-function drawPipeSegment(
+function drawSegment(
   ctx: CanvasRenderingContext2D,
-  p: Palette,
+  body: Sprite,
+  cap: Sprite,
   x: number,
   top: number,
   bottom: number,
   capAtBottom: boolean,
 ): void {
   if (bottom <= top) return
+  // Bodies run past the frame edge and into the ground so no end line shows
   const bodyTop = capAtBottom ? top - PIPE_OVERRUN : top
   const bodyBottom = capAtBottom ? bottom : bottom + PIPE_OVERRUN
-  drawPipeBlock(ctx, p, x, bodyTop, PIPE_WIDTH, bodyBottom - bodyTop, 0)
+  // Cropped from the tall body at its own resolution, so nothing is resampled
+  const rows = Math.min(body.canvas.height, Math.max(1, Math.round((bodyBottom - bodyTop) * body.scale)))
+  ctx.drawImage(body.canvas, 0, 0, body.canvas.width, rows, x, bodyTop, PIPE_WIDTH, rows / body.scale)
 
   const capY = capAtBottom ? bottom - PIPE_CAP_HEIGHT : top
   ctx.fillStyle = CAP_SHADOW
@@ -51,18 +64,40 @@ function drawPipeSegment(
     PIPE_WIDTH,
     CAP_SHADOW_HEIGHT,
   )
-  drawPipeBlock(
-    ctx,
-    p,
-    x - PIPE_CAP_OVERHANG,
-    capY,
-    PIPE_WIDTH + PIPE_CAP_OVERHANG * 2,
-    PIPE_CAP_HEIGHT,
-    2,
-  )
+  ctx.drawImage(cap.canvas, x - PIPE_CAP_OVERHANG, capY, cap.width, cap.height)
 }
 
-function drawPipeBlock(
+/** A cylinder's light: bright a third of the way in from the left, darkening toward the right. */
+function shading(ctx: CanvasRenderingContext2D, p: Palette, x: number, w: number): CanvasGradient {
+  const gradient = ctx.createLinearGradient(x, 0, x + w, 0)
+  gradient.addColorStop(0, p.pipe)
+  gradient.addColorStop(0.28, p.pipeLight)
+  gradient.addColorStop(0.62, p.pipe)
+  gradient.addColorStop(1, p.pipe)
+  return gradient
+}
+
+/** The body: shading, highlight and shade, and the two long edges; the caps cover its ends. */
+function paintBody(ctx: CanvasRenderingContext2D, p: Palette, height: number): void {
+  const w = PIPE_WIDTH
+  ctx.fillStyle = shading(ctx, p, 0, w)
+  ctx.fillRect(0, 0, w, height)
+  ctx.fillStyle = PIPE_HIGHLIGHT
+  ctx.fillRect(w * 0.2, 0, w * 0.12, height)
+  ctx.fillStyle = PIPE_SHADE
+  ctx.fillRect(w * 0.74, 0, w * 0.26, height)
+  ctx.strokeStyle = p.pipeEdge
+  ctx.lineWidth = PIPE_OUTLINE
+  ctx.lineCap = 'butt'
+  ctx.beginPath()
+  ctx.moveTo(PIPE_OUTLINE / 2, 0)
+  ctx.lineTo(PIPE_OUTLINE / 2, height)
+  ctx.moveTo(w - PIPE_OUTLINE / 2, 0)
+  ctx.lineTo(w - PIPE_OUTLINE / 2, height)
+  ctx.stroke()
+}
+
+function paintBlock(
   ctx: CanvasRenderingContext2D,
   p: Palette,
   x: number,
@@ -71,13 +106,7 @@ function drawPipeBlock(
   h: number,
   radius: number,
 ): void {
-  // A cylinder's light: bright a third of the way in from the left, darkening toward the right.
-  const shading = ctx.createLinearGradient(x, 0, x + w, 0)
-  shading.addColorStop(0, p.pipe)
-  shading.addColorStop(0.28, p.pipeLight)
-  shading.addColorStop(0.62, p.pipe)
-  shading.addColorStop(1, p.pipe)
-  ctx.fillStyle = shading
+  ctx.fillStyle = shading(ctx, p, x, w)
   ctx.beginPath()
   ctx.roundRect(x, y, w, h, radius)
   ctx.fill()

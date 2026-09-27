@@ -1,4 +1,4 @@
-import { mix, tintColor } from '../palette.ts'
+import { tintColor } from '../palette.ts'
 import type { Confetti, Palette, Particle } from '../types.ts'
 
 /**
@@ -10,15 +10,15 @@ export function drawConfetti(ctx: CanvasRenderingContext2D, p: Palette, pieces: 
   ctx.save()
   ctx.lineWidth = 0.6
   for (const piece of pieces) {
-    const color = p.confetti[piece.tint % p.confetti.length]
+    const tint = piece.tint % p.confetti.length
     const face = Math.cos(piece.flip)
     const thin = Math.max(Math.abs(face), 0.15)
     ctx.globalAlpha = Math.min(piece.life / 0.5, 1)
     ctx.save()
     ctx.translate(piece.x, piece.y)
     ctx.rotate(piece.angle)
-    ctx.fillStyle = face >= 0 ? color : mix(color, '#000000', 0.22)
-    ctx.strokeStyle = mix(color, '#000000', 0.42)
+    ctx.fillStyle = face >= 0 ? p.confetti[tint] : p.confettiBack[tint]
+    ctx.strokeStyle = p.confettiEdge[tint]
     ctx.beginPath()
     if (piece.round) ctx.ellipse(0, 0, piece.w / 2, (piece.h / 2) * thin, 0, 0, Math.PI * 2)
     else ctx.rect(-piece.w / 2, (-piece.h / 2) * thin, piece.w, piece.h * thin)

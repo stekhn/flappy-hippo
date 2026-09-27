@@ -322,8 +322,7 @@ body {
     2px 2px 0 var(--game-sky),
     -2px 2px 0 var(--game-sky),
     2px -2px 0 var(--game-sky),
-    -2px -2px 0 var(--game-sky),
-    0 6px 14px var(--game-shadow);
+    -2px -2px 0 var(--game-sky);
 }
 
 /* Keeps content clear of the notch, the home indicator and rounded corners. */

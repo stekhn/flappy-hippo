@@ -33,7 +33,14 @@ export function StartCard({
       <h1 id="start-title" className="t-title text-brand">
         Flappy Hippo
       </h1>
-      <p className="mt-2">{touch ? t.start.tapToFly : t.start.clickToFly}</p>
+
+      {best > 0 && (
+        <p className="mt-2">
+          <Stat icon={<IconTrophy width={18} height={18} />} tone="gold">
+            {t.start.record} <span className="t-number">{best}</span>
+          </Stat>
+        </p>
+      )}
 
       <div className="mt-5">
         <Segmented
@@ -43,14 +50,6 @@ export function StartCard({
           onChange={onDifficulty}
         />
       </div>
-
-      {best > 0 && (
-        <p className="mt-4">
-          <Stat icon={<IconTrophy width={18} height={18} />} tone="gold">
-            {t.start.record} <span className="t-number">{best}</span>
-          </Stat>
-        </p>
-      )}
 
       <button type="button" className="btn-primary mt-5 w-full" onClick={onStart}>
         <IconPlay width={22} height={22} />

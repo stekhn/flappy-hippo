@@ -1,7 +1,7 @@
 import { HIPPO_DRAW_SCALE, HIPPO_OUTLINE, HIPPO_RADIUS, INNER_LINE } from '../constants.ts'
-import { alpha } from '../palette.ts'
 import type { Palette } from '../types.ts'
 import { drawBubbleSkin } from './bubble.ts'
+import type { LayerCache } from './layers.ts'
 import { drawEllipse, drawShadedEllipse } from './shapes.ts'
 
 /** The bubble's radius: the drawn hippo, snout and feet included, with a little air around it. */
@@ -36,6 +36,7 @@ export function drawHippo(
   p: Palette,
   pose: HippoPose,
   now: number,
+  cache?: LayerCache,
 ): void {
   const flick = pose.defeated ? 0 : Math.sin(pose.flap * Math.PI)
   // In defeat everything that was held up hangs down. The wing's rest angle is 0.5 and a
@@ -45,7 +46,7 @@ export function drawHippo(
   const kick = pose.defeated ? 0.35 : (flick - 0.5) * 0.5
 
   if (pose.pop > 0) drawCrack(ctx, p, pose)
-  if (pose.shield > 0) drawGlow(ctx, p, pose)
+  if (pose.shield > 0) drawGlow(ctx, p, pose, cache)
 
   ctx.save()
   ctx.translate(pose.x, pose.y)
@@ -113,20 +114,24 @@ export function drawHippo(
 
   ctx.restore()
 
-  if (pose.shield > 0) drawBubble(ctx, p, pose, now)
+  if (pose.shield > 0) drawBubble(ctx, p, pose, now, cache)
 }
 
 /** A soft violet halo behind a shielded hippo: "this one can take a hit", visible at a glance. */
-function drawGlow(ctx: CanvasRenderingContext2D, p: Palette, pose: HippoPose): void {
+function drawGlow(ctx: CanvasRenderingContext2D, p: Palette, pose: HippoPose, cache?: LayerCache): void {
   const r = BUBBLE_RADIUS * 1.9
-  const glow = ctx.createRadialGradient(pose.x, pose.y, HIPPO_RADIUS, pose.x, pose.y, r)
-  glow.addColorStop(0, alpha(p.bubbleEdge, 0.5))
-  glow.addColorStop(1, alpha(p.bubbleEdge, 0))
+  const make = () => {
+    const glow = ctx.createRadialGradient(0, 0, HIPPO_RADIUS, 0, 0, r)
+    glow.addColorStop(0, p.bubbleGlow)
+    glow.addColorStop(1, 'rgba(0, 0, 0, 0)')
+    return glow
+  }
   ctx.save()
+  ctx.translate(pose.x, pose.y)
   // Faint: the bubble is clear now, and a strong halo would fog it up again
   ctx.globalAlpha = 0.25 * pose.shieldIn
-  ctx.fillStyle = glow
-  ctx.fillRect(pose.x - r, pose.y - r, r * 2, r * 2)
+  ctx.fillStyle = cache ? cache.gradient('shield-glow', make) : make()
+  ctx.fillRect(-r, -r, r * 2, r * 2)
   ctx.restore()
 }
 
@@ -160,6 +165,7 @@ function drawBubble(
   p: Palette,
   pose: HippoPose,
   now: number,
+  cache?: LayerCache,
 ): void {
   // Grows in with a little overshoot when just picked up (ease-out-back).
   const t = Math.min(Math.max(pose.shieldIn, 0), 1) - 1
@@ -167,12 +173,12 @@ function drawBubble(
   const r = (BUBBLE_RADIUS + Math.sin(now / 320) * 1.2) * Math.max(grow, 0.05)
   ctx.save()
   ctx.translate(pose.x, pose.y)
-  drawBubbleSkin(ctx, p, r, now / 900)
+  drawBubbleSkin(ctx, p, r, now / 900, cache)
   for (let i = 1; i < pose.shield; i++) {
     const bob = Math.sin(now / 340 + i * 1.7) * 2
     ctx.save()
     ctx.translate(-r - 5 - (i - 1) * 12, 9 + (i - 1) * 4 + bob)
-    drawBubbleSkin(ctx, p, 5.2, now / 700 + i)
+    drawBubbleSkin(ctx, p, 5.2, now / 700 + i, cache)
     ctx.restore()
   }
   ctx.restore()

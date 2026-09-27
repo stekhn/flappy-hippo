@@ -205,6 +205,23 @@ export interface Palette {
   melonSeed: string
   /** The shield's colour: the bubble's rim, its glow, its shards, its emblem. */
   bubbleEdge: string
+  /** Derived from it once, for what is drawn live every frame: the bubble's skin, rim and glow. */
+  bubbleSkin: string
+  bubbleSkinInner: string
+  bubbleGlow: string
+  bubbleLilac: string
+  bubbleEmblem: string
+  /** Each confetti colour's back side and edge. */
+  confettiBack: string[]
+  confettiEdge: string[]
+  /** The animals' coats, derived from the hippo's greys and the bench's wood. */
+  catCoat: string
+  catLine: string
+  dogLight: string
+  dogShade: string
+  dogDark: string
+  /** What the dog leaves behind. */
+  stream: string
   hippoBody: string
   hippoShade: string
   hippoDark: string

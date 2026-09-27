@@ -16,8 +16,6 @@ export const en = {
   pointsWord: (n: number) => p(n, 'point', 'points'),
   melonsWord: (n: number) => p(n, 'melon', 'melons'),
   start: {
-    tapToFly: 'Tap to make the hippo fly.',
-    clickToFly: 'Click or press Space to make the hippo fly.',
     difficulty: 'Difficulty',
     record: 'Record',
     play: 'Play',

@@ -6,7 +6,7 @@ import { canShare } from '../platform.ts'
 import { CardShell } from './CardShell.tsx'
 import { Keycap } from './Keycap.tsx'
 import { Stat } from './Stat.tsx'
-import { HippoMark, IconChart, IconMelon, IconRestart, IconShare, IconTrophy } from './icons.tsx'
+import { IconChart, IconMelon, IconRestart, IconShare, IconTrophy } from './icons.tsx'
 import type { MenuTab } from './MenuSheet.tsx'
 
 interface OverCardProps {
@@ -40,7 +40,6 @@ export function OverCard({ snapshot, touch, onRestart, onOpenMenu }: OverCardPro
 
   return (
     <CardShell onBackdropTap={onRestart} labelledBy="over-title">
-      <HippoMark asleep width={44} height={43} className="mx-auto mb-1" />
       <h2 id="over-title" className="t-heading">
         {t.over.titles[snapshot.round % t.over.titles.length]}
       </h2>

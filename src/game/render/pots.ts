@@ -1,6 +1,7 @@
 import { BRICK_HEIGHT, BRICK_WIDTH, OUTLINE } from '../constants.ts'
 import { mix } from '../palette.ts'
 import type { Palette, Pot } from '../types.ts'
+import type { LayerCache } from './layers.ts'
 
 /** The balcony a pot stands on: a brick parapet hanging from the top edge, a stone cap, a slab. */
 const BALCONY_WIDTH = 46
@@ -12,26 +13,28 @@ const SLAB_HEIGHT = 3.5
  * Flower pots and the balconies they come off. A balcony is a bit of the same brickwork as the
  * street wall, hanging from the top edge; the pot stands on its cap, wobbles, then tips off and
  * tumbles. The balcony stays and scrolls by, pot or no pot. Terracotta is the bench's wood and
- * the plant the street's greens, so they belong to the world they fall into.
+ * the plant the street's greens, so they belong to the world they fall into. Both are sprites:
+ * painted once, stamped every frame, the pot turned as it tumbles.
  */
-export function drawPots(ctx: CanvasRenderingContext2D, p: Palette, pots: Pot[]): void {
-  ctx.save()
-  ctx.lineJoin = 'round'
-  ctx.lineCap = 'round'
-  for (const pot of pots) drawBalcony(ctx, p, Math.round(pot.x))
-  for (const pot of pots) {
-    if (pot.smashed) continue
-    ctx.save()
-    ctx.translate(Math.round(pot.x), pot.y)
-    ctx.rotate(pot.spin)
-    drawPot(ctx, p)
-    ctx.restore()
+export function drawPots(ctx: CanvasRenderingContext2D, p: Palette, pots: Pot[], cache: LayerCache): void {
+  const balcony = cache.sprite(
+    'balcony',
+    -BALCONY_WIDTH / 2 - 3,
+    0,
+    BALCONY_WIDTH + 6,
+    PARAPET_HEIGHT + CAP_HEIGHT + SLAB_HEIGHT + 1.5,
+    (c) => paintBalcony(c, p),
+  )
+  const pot = cache.sprite('pot', -10, -20.5, 20, 31.5, (c) => paintPot(c, p))
+  for (const each of pots) cache.stamp(ctx, balcony, Math.round(each.x), 0)
+  for (const each of pots) {
+    if (each.smashed) continue
+    cache.stamp(ctx, pot, Math.round(each.x), each.y, each.spin)
   }
-  ctx.restore()
 }
 
-function drawBalcony(ctx: CanvasRenderingContext2D, p: Palette, x: number): void {
-  const left = x - BALCONY_WIDTH / 2
+function paintBalcony(ctx: CanvasRenderingContext2D, p: Palette): void {
+  const left = -BALCONY_WIDTH / 2
   // The parapet: the wall's bricks, bevelled the same way
   ctx.fillStyle = p.ground
   ctx.fillRect(left, 0, BALCONY_WIDTH, PARAPET_HEIGHT)
@@ -81,7 +84,7 @@ function drawBalcony(ctx: CanvasRenderingContext2D, p: Palette, x: number): void
   ctx.stroke()
 }
 
-function drawPot(ctx: CanvasRenderingContext2D, p: Palette): void {
+function paintPot(ctx: CanvasRenderingContext2D, p: Palette): void {
   // Soil above the rim, then the plant out of it: three leaves and one small flower
   ctx.fillStyle = mix(p.wood, '#000000', 0.55)
   ctx.beginPath()

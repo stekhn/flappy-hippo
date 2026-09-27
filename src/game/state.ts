@@ -37,6 +37,14 @@ import type { Difficulty, Tuning } from './difficulty.ts'
 import type { Confetti, GameEvent, GameState, Particle, Pipe, Pot, Tint } from './types.ts'
 import type { World } from './world.ts'
 
+/** Drops the items that fail `test`, in place: no fresh array every frame for the collector to chase. */
+function keep<T>(items: T[], test: (item: T) => boolean): T[] {
+  let n = 0
+  for (const item of items) if (test(item)) items[n++] = item
+  items.length = n
+  return items
+}
+
 /** Where a pipe enters the field, just out of sight on the right. */
 function spawnX(world: World): number {
   return world.width + PIPE_WIDTH
@@ -238,7 +246,7 @@ function stepPots(state: GameState, dt: number, dx: number, world: World, tuning
     const ddy = pot.y - state.hippoY
     if (ddx * ddx + ddy * ddy < reach * reach) struck = pot
   }
-  state.pots = state.pots.filter((pot) => pot.x > -60)
+  keep(state.pots, (pot) => pot.x > -60)
   return struck
 }
 
@@ -311,7 +319,7 @@ function stepConfetti(pieces: Confetti[], dt: number): Confetti[] {
     piece.angle += piece.spin * dt
     piece.flip += piece.flipRate * dt
   }
-  return pieces.filter((piece) => piece.life > 0)
+  return keep(pieces, (piece) => piece.life > 0)
 }
 
 /** Everything that may follow a point: a new stage, confetti every ten, and the moment a record falls. */
@@ -342,7 +350,7 @@ function stepParticles(particles: Particle[], dt: number): Particle[] {
     p.vy += 520 * p.weight * dt
     p.vx *= 1 - 1.2 * dt
   }
-  return particles.filter((p) => p.life > 0)
+  return keep(particles, (p) => p.life > 0)
 }
 
 /** Pipe or floor in the way? The ceiling is a wall, not a death — see `advance`. */
@@ -411,7 +419,7 @@ export function advance(
 ): void {
   state.particles = stepParticles(state.particles, dt)
   state.confetti = stepConfetti(state.confetti, dt)
-  state.floaters = state.floaters.filter((f) => now - f.born < FLOATER_MS)
+  keep(state.floaters, (f) => now - f.born < FLOATER_MS)
   // Knocked out, the hippo stays exactly where it was hit; only the sky reacts.
   if (state.phase !== 'running') return
 
@@ -450,11 +458,11 @@ export function advance(
     events.push({ type: 'score', score: state.score })
     celebrate(state, world, now, events)
   }
-  state.pipes = state.pipes.filter((pipe) => pipe.x + PIPE_WIDTH > -10)
+  keep(state.pipes, (pipe) => pipe.x + PIPE_WIDTH > -10)
 
   for (const pickup of state.pickups) pickup.x -= dx
   for (const floater of state.floaters) floater.x -= dx
-  state.pickups = state.pickups.filter((p) => !p.taken && p.x > -PICKUP_RADIUS * 2)
+  keep(state.pickups, (p) => !p.taken && p.x > -PICKUP_RADIUS * 2)
 
   collect(state, world, now, events)
   const struck = stepPots(state, dt, dx, world, tuning, events)

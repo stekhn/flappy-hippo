@@ -1,6 +1,9 @@
 import { createSfx } from './audio.ts'
 import type { Sfx } from './audio.ts'
 import { COUNTDOWN_MS, MAX_FRAME_S, OVER_SETTLE_MS, RESTART_DELAY_MS } from './constants.ts'
+
+/** How long a run of resizes must be quiet before the canvas is refitted. */
+const RESIZE_SETTLE_MS = 120
 import { difficultyById } from './difficulty.ts'
 import type { Difficulty, DifficultyId } from './difficulty.ts'
 import { resolvePalette } from './palette.ts'
@@ -129,6 +132,9 @@ export class GameRuntime {
   private haptics: boolean
   private snapshot: Snapshot
   private observer: ResizeObserver | null = null
+  private resizeTimer = 0
+  /** The box and pixel ratio the canvas was last fitted to. */
+  private fitted = { width: 0, height: 0, dpr: 0 }
 
   // Switching apps, tabs or windows must not cost the round.
   private readonly onHidden = () => {
@@ -156,7 +162,11 @@ export class GameRuntime {
 
   start(): void {
     this.measure()
-    this.observer = new ResizeObserver(() => this.measure())
+    // A phone's address bar slides away over a dozen frames, each one a resize: refit once it settles.
+    this.observer = new ResizeObserver(() => {
+      clearTimeout(this.resizeTimer)
+      this.resizeTimer = window.setTimeout(() => this.measure(), RESIZE_SETTLE_MS)
+    })
     this.observer.observe(this.options.box)
     document.addEventListener('visibilitychange', this.onHidden)
     window.addEventListener('blur', this.onBlur)
@@ -172,6 +182,7 @@ export class GameRuntime {
 
   destroy(): void {
     cancelAnimationFrame(this.frame)
+    clearTimeout(this.resizeTimer)
     document.removeEventListener('visibilitychange', this.onHidden)
     window.removeEventListener('blur', this.onBlur)
     this.options.box.removeEventListener('pointerup', this.onActivate)
@@ -185,9 +196,12 @@ export class GameRuntime {
   measure(): void {
     const { width, height } = this.options.box.getBoundingClientRect()
     if (width < 1 || height < 1) return
+    const dpr = Math.min(window.devicePixelRatio || 1, this.dprCap)
+    // Setting a canvas' size clears it and costs a fresh backing store: only for a real change
+    if (width === this.fitted.width && height === this.fitted.height && dpr === this.fitted.dpr) return
+    this.fitted = { width, height, dpr }
     const next = fitWorld(width, height)
     const size = canvasSize(next, width, height)
-    const dpr = Math.min(window.devicePixelRatio || 1, this.dprCap)
     this.canvas.style.width = `${size.width}px`
     this.canvas.style.height = `${size.height}px`
     // Short of filling the box, the board reads as a framed card rather than a cropped screen.
@@ -494,23 +508,24 @@ export class GameRuntime {
   }
 
   /** React only hears from the loop when something it renders actually changed. */
-  private push(now?: number): void {
-    const next = this.readSnapshot(now)
+  private push(now = performance.now()): void {
+    const s = this.state
     const prev = this.snapshot
+    // Compared field by field before anything is allocated: this runs every frame
     const same =
-      next.phase === prev.phase &&
-      next.paused === prev.paused &&
-      next.countdown === prev.countdown &&
-      next.score === prev.score &&
-      next.best === prev.best &&
-      next.newBest === prev.newBest &&
-      next.charges === prev.charges &&
-      next.melons === prev.melons &&
-      next.round === prev.round &&
-      next.difficulty === prev.difficulty &&
-      next.stage === prev.stage
+      s.phase === prev.phase &&
+      this.paused === prev.paused &&
+      this.countdown(now) === prev.countdown &&
+      s.score === prev.score &&
+      s.best === prev.best &&
+      s.newBest === prev.newBest &&
+      s.charges === prev.charges &&
+      s.melons === prev.melons &&
+      s.round === prev.round &&
+      this.difficulty.id === prev.difficulty &&
+      s.stage === prev.stage
     if (same) return
-    this.snapshot = next
-    this.options.onSnapshot(next)
+    this.snapshot = this.readSnapshot(now)
+    this.options.onSnapshot(this.snapshot)
   }
 }

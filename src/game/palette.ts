@@ -15,6 +15,12 @@ export function resolvePalette(dark: boolean): Palette {
   const melon = cssVar('--game-melon', dark ? '#7fe0a0' : '#178a48')
   // A step lighter than the brand and a softer edge: pipes must read, not dominate.
   const pipe = mix(brand, dark ? '#9cc4ff' : '#dbe9ff', 0.14)
+  // The shield is the one violet thing in the game: leaning to magenta, a good way round the
+  // wheel from the pipes' blue and short of the melon's red.
+  const bubbleEdge = cssVar('--game-shield', dark ? '#d6a5ff' : '#ad4bf2')
+  const wood = dark ? '#8a6f45' : '#d2a86a'
+  const hippoDark = dark ? '#5f6a78' : '#5c6774'
+  const confetti = [gold, pipe, melon]
   return {
     night: dark,
     sky: cssVar('--game-sky', dark ? '#111a26' : '#e5f0ff'),
@@ -25,7 +31,7 @@ export function resolvePalette(dark: boolean): Palette {
     moonGlow: 'rgba(255, 255, 255, 0.1)',
     star: 'rgba(255, 255, 255, 0.85)',
     // The reward's gold, the world's blue, the melon's green: a party in the game's own paper.
-    confetti: [gold, pipe, melon],
+    confetti,
     cloud: dark ? 'rgba(255, 255, 255, 0.07)' : 'rgba(255, 255, 255, 0.72)',
     cityFar: cssVar('--game-city-far', dark ? '#1b2533' : '#d9e8fe'),
     cityNear: cssVar('--game-city-near', dark ? '#26313f' : '#c6dcfd'),
@@ -46,7 +52,7 @@ export function resolvePalette(dark: boolean): Palette {
     bushEdge: mix(dark ? '#1e4232' : '#3d8a5e', dark ? '#111a26' : '#e5f0ff', 0.18),
     flower: dark ? '#e8ecf2' : '#ffffff',
     flowerCenter: cssVar('--game-gold', '#e8930c'),
-    wood: dark ? '#8a6f45' : '#d2a86a',
+    wood,
     postbox: dark ? '#c99a2e' : '#e9b83d',
     lamp: dark ? '#3e4b5c' : '#8a97ab',
     pipe,
@@ -59,12 +65,23 @@ export function resolvePalette(dark: boolean): Palette {
     melonFlesh: cssVar('--game-melon-flesh', dark ? '#ff7a9a' : '#e8395f'),
     melonRind: '#2f8a4a',
     melonSeed: 'rgba(38, 30, 34, 0.85)',
-    // The shield is the one violet thing in the game: leaning to magenta, a good way round the
-    // wheel from the pipes' blue and short of the melon's red.
-    bubbleEdge: cssVar('--game-shield', dark ? '#d6a5ff' : '#ad4bf2'),
+    bubbleEdge,
+    bubbleSkin: alpha(bubbleEdge, 0.22),
+    bubbleSkinInner: alpha(bubbleEdge, 0.05),
+    bubbleGlow: alpha(bubbleEdge, 0.5),
+    bubbleLilac: mix(bubbleEdge, '#ffffff', 0.65),
+    bubbleEmblem: alpha(bubbleEdge, 0.3),
+    confettiBack: confetti.map((color) => mix(color, '#000000', 0.22)),
+    confettiEdge: confetti.map((color) => mix(color, '#000000', 0.42)),
+    catCoat: mix(hippoDark, '#000000', 0.5),
+    catLine: mix(hippoDark, '#000000', 0.78),
+    dogLight: mix(wood, '#ffffff', 0.45),
+    dogShade: mix(wood, hippoDark, 0.16),
+    dogDark: mix(wood, hippoDark, 0.32),
+    stream: mix(gold, '#ffffff', 0.35),
     hippoBody: dark ? '#9aa6b8' : '#93a1b5',
     hippoShade: dark ? 'rgba(95, 106, 120, 0.26)' : 'rgba(92, 103, 116, 0.26)',
-    hippoDark: dark ? '#5f6a78' : '#5c6774',
+    hippoDark,
     hippoLight: dark ? '#bcc7d6' : '#b6c1d1',
     hippoEar: '#e8a2b0',
     wing: dark ? '#e8ecf2' : '#f4f6f9',
