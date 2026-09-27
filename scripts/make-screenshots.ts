@@ -137,36 +137,11 @@ async function flight(page: Page): Promise<void> {
   await sleep(80)
 }
 
-/** The round ends on a new record with a gold medal, and an achievement toast pops. */
-async function over(page: Page): Promise<void> {
-  await page.evaluate(() => {
-    const runtime = (window as Window & { __flappyHippo?: { flap(): void; inspect(): { state: any; world: any } } }).__flappyHippo!
-    runtime.flap()
-    const { state, world } = runtime.inspect()
-    state.score = 52
-    state.pipesCleared = 49
-    state.melons = 1
-    state.hippoY = world.groundY - 30
-    state.velocity = 400
-    state.pipes = []
-  })
-  await sleep(1400)
-}
-
-async function awards(page: Page): Promise<void> {
-  await page.click('button[aria-label="Open menu"]')
-  await sleep(300)
-  await page.click('[role="tab"]:nth-child(3)')
-  await sleep(500)
-}
-
+// One in-game scene per form factor, which is what the install dialogs ask for: the phone's at
+// night, the desktop's by day, so the pair shows both themes.
 const SCENES: Scene[] = [
-  { file: 'narrow-title', form: 'narrow', dark: false, stage: async () => {} },
-  { file: 'narrow-flight', form: 'narrow', dark: false, stage: flight },
-  { file: 'narrow-over', form: 'narrow', dark: true, stage: over },
-  { file: 'narrow-awards', form: 'narrow', dark: true, stage: awards },
+  { file: 'narrow-flight', form: 'narrow', dark: true, stage: flight },
   { file: 'wide-flight', form: 'wide', dark: false, stage: flight },
-  { file: 'wide-title', form: 'wide', dark: true, stage: async () => {} },
 ]
 
 const server = spawn('npx', ['vite', '--port', String(PORT), '--strictPort'], { cwd: root, stdio: 'ignore' })

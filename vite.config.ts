@@ -56,46 +56,18 @@ export default defineConfig(({ command, isPreview }) => ({
         // in the desktop install dialog, the narrow ones on Android; one aspect ratio each.
         screenshots: [
           {
-            src: 'screenshots/narrow-title.png',
-            sizes: '1080x1920',
-            type: 'image/png',
-            form_factor: 'narrow',
-            label: 'The title screen with the difficulty choice and the record',
-          },
-          {
             src: 'screenshots/narrow-flight.png',
             sizes: '1080x1920',
             type: 'image/png',
             form_factor: 'narrow',
-            label: 'The hippo in flight, shielded, ahead of a melon',
-          },
-          {
-            src: 'screenshots/narrow-over.png',
-            sizes: '1080x1920',
-            type: 'image/png',
-            form_factor: 'narrow',
-            label: 'End of a round with a gold medal, a new record and an unlocked achievement',
-          },
-          {
-            src: 'screenshots/narrow-awards.png',
-            sizes: '1080x1920',
-            type: 'image/png',
-            form_factor: 'narrow',
-            label: 'The list of achievements in the menu',
+            label: 'The hippo in flight at night, shielded, between moving pipes and falling flower pots',
           },
           {
             src: 'screenshots/wide-flight.png',
             sizes: '1920x1080',
             type: 'image/png',
             form_factor: 'wide',
-            label: 'The hippo in flight, shielded, ahead of a melon',
-          },
-          {
-            src: 'screenshots/wide-title.png',
-            sizes: '1920x1080',
-            type: 'image/png',
-            form_factor: 'wide',
-            label: 'The title screen at night',
+            label: 'The hippo in flight by day, shielded, between moving pipes and falling flower pots',
           },
         ],
         shortcuts: [

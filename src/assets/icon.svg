@@ -1,25 +1,31 @@
-<!-- Flappy Hippo app icon: the hippo's face on a blue tile with a little depth — a gradient, a
-     sheen from the top left, a soft shadow under the head. Same face as HippoMark in
-     src/components/icons.tsx and public/favicon.svg. Rendered to PNG by scripts/make-assets.ts. -->
+<!-- Flappy Hippo app icon (purpose "any"): the hippo's face on the game's sky, two flat
+     clouds low in the frame. Same face as HippoMark in src/components/icons.tsx and
+     public/favicon.svg, at the favicon's line weight so it reads at 48 px on a home screen.
+     Rendered to PNG by scripts/make-assets.ts. -->
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
   <defs>
-    <linearGradient id="tile" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#2f8cff"/>
-      <stop offset="1" stop-color="#0055cc"/>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#4fa4ff"/>
+      <stop offset="1" stop-color="#0057d4"/>
     </linearGradient>
-    <radialGradient id="sheen" cx="0.3" cy="0.12" r="0.85">
-      <stop offset="0" stop-color="#ffffff" stop-opacity="0.3"/>
-      <stop offset="0.6" stop-color="#ffffff" stop-opacity="0"/>
-    </radialGradient>
-    <filter id="soft" x="-30%" y="-30%" width="160%" height="160%">
-      <feGaussianBlur stdDeviation="0.55"/>
-    </filter>
+    <clipPath id="tile">
+      <rect width="24" height="24" rx="5.5"/>
+    </clipPath>
   </defs>
-  <rect width="24" height="24" rx="5.5" fill="url(#tile)"/>
-  <rect width="24" height="24" rx="5.5" fill="url(#sheen)"/>
-  <g transform="translate(12 12.4) scale(1.05) translate(-12 -12.4)">
-    <ellipse cx="12" cy="13.7" rx="7.4" ry="6.2" fill="#002a6b" opacity="0.35" filter="url(#soft)"/>
-    <g stroke="#5c6774" stroke-width="0.45">
+  <rect width="24" height="24" rx="5.5" fill="url(#sky)"/>
+  <g clip-path="url(#tile)">
+    <g fill="#ffffff" opacity="0.9">
+      <circle cx="2.6" cy="20.6" r="2"/>
+      <circle cx="5" cy="19.2" r="2.6"/>
+      <circle cx="7.6" cy="20.5" r="2"/>
+      <rect x="2.6" y="20" width="5" height="4"/>
+      <circle cx="17" cy="21.2" r="1.8"/>
+      <circle cx="19.4" cy="19.8" r="2.4"/>
+      <circle cx="21.9" cy="21" r="1.9"/>
+      <rect x="17" y="20.6" width="4.9" height="3.4"/>
+    </g>
+    <g transform="translate(12 12) scale(1.2) translate(-12 -12.4)" stroke="#5c6774" stroke-width="0.9" stroke-linejoin="round">
+      <ellipse cx="12" cy="13.8" rx="7" ry="5.9" fill="#002d6e" opacity="0.4" stroke="none"/>
       <circle cx="7.9" cy="7.4" r="1.9" fill="#93a1b5"/>
       <circle cx="16.1" cy="7.4" r="1.9" fill="#93a1b5"/>
       <circle cx="7.9" cy="7.6" r="0.9" fill="#e8a2b0" stroke="none"/>
