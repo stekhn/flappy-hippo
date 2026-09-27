@@ -27,7 +27,7 @@ export function StartCard({
 }: StartCardProps) {
   return (
     <CardShell onBackdropTap={onStart} labelledBy="start-title">
-      <HippoMark className="animate-wobble mx-auto -mt-1 mb-1" />
+      <HippoMark width={56} height={54} className="animate-wobble mx-auto -mt-1 mb-1" />
       <h1 id="start-title" className="t-title text-brand">
         Flappy Hippo
       </h1>

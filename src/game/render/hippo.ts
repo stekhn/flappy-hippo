@@ -1,4 +1,4 @@
-import { HIPPO_RADIUS, INNER_LINE, OUTLINE } from '../constants.ts'
+import { HIPPO_DRAW_SCALE, HIPPO_OUTLINE, HIPPO_RADIUS, INNER_LINE } from '../constants.ts'
 import type { Palette } from '../types.ts'
 import { drawEllipse, drawShadedEllipse } from './shapes.ts'
 
@@ -12,6 +12,12 @@ export interface HippoPose {
   defeated: boolean
   /** Shield charges in hand: one bubble, and a fainter ring for each one beyond the first. */
   shield: number
+  /** 0..1 as a freshly picked-up bubble grows in; 1 once it is there. */
+  shieldIn: number
+  /** 0..1 through the crack ring of a bubble that just popped; 0 when none is popping. */
+  pop: number
+  /** Squash-and-stretch: negative on the beat of a flap (wide and flat), positive in a dive (tall). */
+  stretch: number
   /** How far the head nods forward around the neck, in radians. 0 in flight. */
   headNod: number
   /** How far the head hangs below its normal place, in world units. 0 in flight. */
@@ -33,12 +39,17 @@ export function drawHippo(
   const earDroop = pose.defeated ? 0.6 : 0
   const kick = pose.defeated ? 0.35 : (flick - 0.5) * 0.5
 
+  if (pose.pop > 0) drawCrack(ctx, p, pose)
+  if (pose.shield > 0) drawGlow(ctx, p, pose)
+
   ctx.save()
   ctx.translate(pose.x, pose.y)
   // Just after a shield pops the hippo blinks, the way an arcade sprite signals "still invincible".
   if (pose.sparkle > 0) ctx.globalAlpha = 0.45 + 0.55 * Math.abs(Math.sin(now / 70))
   ctx.rotate(pose.tilt)
-  ctx.lineWidth = OUTLINE
+  // Drawn a touch larger than the hitbox, and squashed or stretched with the motion.
+  ctx.scale(HIPPO_DRAW_SCALE * (1 - pose.stretch * 0.5), HIPPO_DRAW_SCALE * (1 + pose.stretch))
+  ctx.lineWidth = HIPPO_OUTLINE
   ctx.strokeStyle = p.hippoDark
 
   ctx.fillStyle = p.hippoDark
@@ -100,6 +111,43 @@ export function drawHippo(
   if (pose.shield > 0) drawBubble(ctx, p, pose, now)
 }
 
+/** A soft violet halo behind a shielded hippo: "this one can take a hit", visible at a glance. */
+function drawGlow(ctx: CanvasRenderingContext2D, p: Palette, pose: HippoPose): void {
+  const r = (HIPPO_RADIUS + 9) * 1.9
+  const glow = ctx.createRadialGradient(pose.x, pose.y, HIPPO_RADIUS, pose.x, pose.y, r)
+  glow.addColorStop(0, p.bubble)
+  glow.addColorStop(1, 'rgba(124, 77, 255, 0)')
+  ctx.save()
+  ctx.globalAlpha = 0.55 * pose.shieldIn
+  ctx.fillStyle = glow
+  ctx.fillRect(pose.x - r, pose.y - r, r * 2, r * 2)
+  ctx.restore()
+}
+
+/** The bubble breaking: a ring that flashes out and fades, with a few splinters along it. */
+function drawCrack(ctx: CanvasRenderingContext2D, p: Palette, pose: HippoPose): void {
+  const t = pose.pop
+  const r = HIPPO_RADIUS + 9 + t * 22
+  ctx.save()
+  ctx.translate(pose.x, pose.y)
+  ctx.globalAlpha = (1 - t) * 0.9
+  ctx.strokeStyle = p.bubbleEdge
+  ctx.lineWidth = 3 * (1 - t) + 0.5
+  ctx.beginPath()
+  ctx.arc(0, 0, r, 0, Math.PI * 2)
+  ctx.stroke()
+  ctx.strokeStyle = '#ffffff'
+  ctx.lineWidth = 1.5
+  ctx.beginPath()
+  for (let k = 0; k < 6; k++) {
+    const a = (k / 6) * Math.PI * 2 + 0.4
+    ctx.moveTo(Math.cos(a) * (r - 6), Math.sin(a) * (r - 6))
+    ctx.lineTo(Math.cos(a + 0.18) * (r + 2), Math.sin(a + 0.18) * (r + 2))
+  }
+  ctx.stroke()
+  ctx.restore()
+}
+
 /** The shield: a soap bubble with a drifting highlight, so it reads as a skin and not a ring. */
 function drawBubble(
   ctx: CanvasRenderingContext2D,
@@ -107,7 +155,9 @@ function drawBubble(
   pose: HippoPose,
   now: number,
 ): void {
-  const r = HIPPO_RADIUS + 9 + Math.sin(now / 320) * 1.2
+  // Grows in with a little overshoot when just picked up.
+  const grow = pose.shieldIn < 1 ? 1.15 - 0.15 * Math.cos(pose.shieldIn * Math.PI) - (1 - pose.shieldIn) * 1.15 : 1
+  const r = (HIPPO_RADIUS + 9 + Math.sin(now / 320) * 1.2) * Math.max(grow, 0.05)
   ctx.save()
   ctx.translate(pose.x, pose.y)
   const skin = ctx.createRadialGradient(0, 0, r * 0.55, 0, 0, r)
@@ -166,5 +216,5 @@ function drawWing(ctx: CanvasRenderingContext2D): void {
   ctx.moveTo(0.81, 0.43)
   ctx.bezierCurveTo(-1.85, 0.43, -4.98, 1.16, -6.5, 3.5)
   ctx.stroke()
-  ctx.lineWidth = OUTLINE
+  ctx.lineWidth = HIPPO_OUTLINE
 }

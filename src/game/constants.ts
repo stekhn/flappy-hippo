@@ -18,14 +18,24 @@ export const FLAP_VELOCITY = -420
 export const MAX_FALL_SPEED = 620
 
 export const HIPPO_RADIUS = 14
+/** The hippo is drawn a little larger than its hitbox: the anchor of the scene, and a fair hitbox. */
+export const HIPPO_DRAW_SCALE = 1.1
+/**
+ * The hippo's line. With the draw scale it lands at ~1.65 — heavier than a pipe's 1.2, so the
+ * hippo reads first, but still in proportion to a 30-unit character: line weight follows role,
+ * it does not replace it.
+ */
+export const HIPPO_OUTLINE = 1.5
 /** Horizontal position of the hippo as a share of the field width, clamped to these bounds. */
 export const HIPPO_X_RATIO = 0.26
 export const HIPPO_X_MIN = 62
 export const HIPPO_X_MAX = 116
 
-export const GROUND_HEIGHT = 26
-export const BRICK_WIDTH = 32
-export const BRICK_HEIGHT = 12
+/** A slim wall — two rows of small bricks — so the field keeps its height for flying. */
+export const GROUND_HEIGHT = 16
+/** The brick grid: SCENE_PERIOD must be a multiple of the width, the street roots in its joints. */
+export const BRICK_WIDTH = 20
+export const BRICK_HEIGHT = 8
 
 export const PIPE_WIDTH = 56
 export const PIPE_CAP_HEIGHT = 12
@@ -40,10 +50,12 @@ export const GAP_MARGIN = 30
 
 export const OUTLINE = 1.5
 export const INNER_LINE = 1.1
-// Light comes from the top left: highlight bands left, shade bands right
-export const PIPE_HIGHLIGHT = 'rgba(255, 255, 255, 0.22)'
-export const PIPE_SHADE = 'rgba(0, 0, 0, 0.16)'
-export const CAP_SHADOW = 'rgba(0, 0, 0, 0.14)'
+/** Pipes are drawn with a lighter hand than the hippo: a thinner edge, soft round shading. */
+export const PIPE_OUTLINE = 1.2
+// Light comes from the top left: a soft highlight on the left, a soft shade on the right
+export const PIPE_HIGHLIGHT = 'rgba(255, 255, 255, 0.2)'
+export const PIPE_SHADE = 'rgba(0, 0, 0, 0.1)'
+export const CAP_SHADOW = 'rgba(0, 0, 0, 0.1)'
 
 export const PICKUP_RADIUS = 11
 /** Score a melon is worth. */
@@ -57,6 +69,14 @@ export const SHIELD_EARLIEST_PIPE = 5
 export const MAX_SHIELDS = 3
 /** How long a popped shield keeps the hippo solid, so it can fly clear of the pipe. */
 export const INVULNERABLE_MS = 1000
+/** The bubble grows in over this long when a shield is picked up… */
+export const SHIELD_IN_MS = 240
+/** …and the crack ring rings out over this long when one pops. */
+export const SHIELD_POP_MS = 320
+/** Little numbers that rise from a pickup: how long they live. */
+export const FLOATER_MS = 800
+/** The screen shudders for this long on a crash. */
+export const SHAKE_MS = 260
 
 /** The scenery repeats every two short sides, so the parallax loop is never visible. */
 export const SCENE_PERIOD = SHORT_SIDE * 2

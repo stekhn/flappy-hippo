@@ -1,4 +1,11 @@
-import { FLAP_ANIMATION_MS, INVULNERABLE_MS } from '../constants.ts'
+import {
+  FLAP_ANIMATION_MS,
+  FLOATER_MS,
+  INVULNERABLE_MS,
+  SHAKE_MS,
+  SHIELD_IN_MS,
+  SHIELD_POP_MS,
+} from '../constants.ts'
 import type { GameState, Palette } from '../types.ts'
 import type { World } from '../world.ts'
 import { drawParticles } from './effects.ts'
@@ -27,6 +34,11 @@ export function drawScene(
   effects: boolean,
   cache: LayerCache,
 ): void {
+  // A crash shudders the whole scene for a moment.
+  const shake = effects && state.phase === 'over' ? Math.max(0, 1 - (now - state.overAt) / SHAKE_MS) : 0
+  ctx.save()
+  if (shake > 0) ctx.translate(Math.sin(now / 9) * 4 * shake, Math.cos(now / 7) * 3 * shake)
+
   drawSky(ctx, p, world, cache)
   drawScenery(ctx, p, state, world, now, sky, effects, cache)
   drawPipes(ctx, p, state.pipes, world)
@@ -34,8 +46,15 @@ export function drawScene(
   drawGround(ctx, p, world, state.scrolled, cache)
   if (effects) drawParticles(ctx, p, state.particles)
 
+  if (effects) drawFloaters(ctx, p, state, now)
+
   const idle = state.phase === 'ready'
   const defeated = state.phase === 'over'
+  // The beat of a flap flattens the hippo a touch; a long dive stretches it a touch. Kept small:
+  // a hippo is not a rubber ball.
+  const beat = idle || defeated ? 0 : Math.sin(Math.min((now - state.flappedAt) / FLAP_ANIMATION_MS, 1) * Math.PI)
+  const dive = idle || defeated ? 0 : Math.max(0, state.velocity - 250) / 4600
+  const stretch = -beat * 0.05 + dive
   const solidLeft = Math.max(state.solidUntil - now, 0)
   // Nose follows the velocity in flight. Knocked out, the body settles level and the head
   // sinks over the next third of a second — see DEFEAT for the pose it settles into.
@@ -56,8 +75,33 @@ export function drawScene(
       headNod: DEFEAT.headNod * sink,
       headDrop: DEFEAT.headDrop * sink,
       shield: state.charges,
+      shieldIn: Math.min((now - state.shieldAt) / SHIELD_IN_MS, 1),
+      pop: state.poppedAt > 0 ? Math.max(0, 1 - (now - state.poppedAt) / SHIELD_POP_MS) : 0,
+      stretch,
       sparkle: solidLeft / INVULNERABLE_MS,
     },
     now,
   )
+  ctx.restore()
+}
+
+/** "+3" and friends, rising and fading from where they were earned. */
+function drawFloaters(ctx: CanvasRenderingContext2D, p: Palette, state: GameState, now: number): void {
+  if (state.floaters.length === 0) return
+  ctx.save()
+  ctx.font = "700 13px Fredoka, 'Nunito', sans-serif"
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+  ctx.lineJoin = 'round'
+  for (const floater of state.floaters) {
+    const t = Math.min((now - floater.born) / FLOATER_MS, 1)
+    const y = floater.y - t * 26
+    ctx.globalAlpha = 1 - t * t
+    ctx.lineWidth = 3
+    ctx.strokeStyle = p.sky
+    ctx.strokeText(floater.text, floater.x, y)
+    ctx.fillStyle = floater.tint === 'melon' ? p.melon : p.bubbleEdge
+    ctx.fillText(floater.text, floater.x, y)
+  }
+  ctx.restore()
 }

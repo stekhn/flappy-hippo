@@ -12,7 +12,11 @@ export function drawPickups(
     const bob = Math.sin(now / 420 + pickup.seed) * 3
     ctx.save()
     ctx.translate(pickup.x, pickup.y + bob)
-    if (pickup.kind === 'melon') drawMelon(ctx, p, Math.sin(now / 700 + pickup.seed) * 0.25)
+    if (pickup.kind === 'melon') {
+      const pulse = 1 + Math.sin(now / 240 + pickup.seed) * 0.06
+      ctx.scale(pulse, pulse)
+      drawMelon(ctx, p, Math.sin(now / 700 + pickup.seed) * 0.25)
+    }
     else drawShieldOrb(ctx, p, now, pickup.seed)
     ctx.restore()
   }
@@ -22,8 +26,8 @@ export function drawPickups(
 function drawMelon(ctx: CanvasRenderingContext2D, p: Palette, tilt: number): void {
   const r = PICKUP_RADIUS
   ctx.rotate(tilt)
-  ctx.lineWidth = OUTLINE
-  ctx.strokeStyle = 'rgba(24, 58, 36, 0.55)'
+  ctx.lineWidth = OUTLINE + 0.3
+  ctx.strokeStyle = 'rgba(24, 58, 36, 0.7)'
 
   ctx.fillStyle = p.melonRind
   ctx.beginPath()

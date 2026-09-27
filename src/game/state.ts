@@ -1,6 +1,7 @@
 import {
   FIREWORK_MAX,
   FIREWORK_STEP,
+  FLOATER_MS,
   FLAP_VELOCITY,
   GAP_MARGIN,
   GRAVITY,
@@ -80,6 +81,9 @@ export function initialState({ world, difficulty, best, round = 0 }: InitOptions
     saves: 0,
     charges: 0,
     solidUntil: 0,
+    shieldAt: 0,
+    poppedAt: 0,
+    floaters: [],
     best,
     newBest: false,
     round,
@@ -223,14 +227,17 @@ function collect(state: GameState, world: World, now: number, events: GameEvent[
     if (pickup.kind === 'melon') {
       state.melons += 1
       state.score += MELON_POINTS
-      burst(state, pickup.x, pickup.y, 10, 'melon', 90, 1)
+      burst(state, pickup.x, pickup.y, 14, 'melon', 110, 1)
+      state.floaters.push({ text: `+${MELON_POINTS}`, x: pickup.x, y: pickup.y - 6, born: now, tint: 'melon' })
       events.push({ type: 'melon', score: state.score })
       celebrate(state, world, now, events)
       continue
     }
     state.shields += 1
     state.charges += 1
+    state.shieldAt = now
     burst(state, pickup.x, pickup.y, 12, 'bubble', 70, 0)
+    state.floaters.push({ text: 'Schild', x: pickup.x, y: pickup.y - 6, born: now, tint: 'shield' })
     events.push({ type: 'shield' })
   }
 }
@@ -260,6 +267,7 @@ export function advance(
   events: GameEvent[],
 ): void {
   state.particles = stepParticles(state.particles, dt)
+  state.floaters = state.floaters.filter((f) => now - f.born < FLOATER_MS)
   // Knocked out, the hippo stays exactly where it was hit; only the sky reacts.
   if (state.phase !== 'running') return
 
@@ -298,6 +306,7 @@ export function advance(
   state.pipes = state.pipes.filter((pipe) => pipe.x + PIPE_WIDTH > -10)
 
   for (const pickup of state.pickups) pickup.x -= dx
+  for (const floater of state.floaters) floater.x -= dx
   state.pickups = state.pickups.filter((p) => !p.taken && p.x > -PICKUP_RADIUS * 2)
 
   collect(state, world, now, events)
@@ -310,6 +319,7 @@ export function advance(
     state.charges -= 1
     state.saves += 1
     state.solidUntil = now + INVULNERABLE_MS
+    state.poppedAt = now
     state.hippoY = Math.min(state.hippoY, world.groundY - HIPPO_RADIUS)
     state.velocity = FLAP_VELOCITY * 0.75
     burst(state, world.hippoX, state.hippoY, 16, 'bubble', 110, 0)

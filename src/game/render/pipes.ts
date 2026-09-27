@@ -1,12 +1,10 @@
 import {
   CAP_SHADOW,
   CAP_SHADOW_HEIGHT,
-  OUTLINE,
-  PIPE_BAND_INSET,
-  PIPE_BAND_WIDTH,
   PIPE_CAP_HEIGHT,
   PIPE_CAP_OVERHANG,
   PIPE_HIGHLIGHT,
+  PIPE_OUTLINE,
   PIPE_OVERRUN,
   PIPE_SHADE,
   PIPE_WIDTH,
@@ -14,6 +12,10 @@ import {
 import type { Palette, Pipe } from '../types.ts'
 import type { World } from '../world.ts'
 
+/**
+ * Pipes in the same soft hand as the hippo: a round shading across the body instead of hard
+ * bands, a thin edge, rounded caps. They must be read at a glance, not shout.
+ */
 export function drawPipes(
   ctx: CanvasRenderingContext2D,
   p: Palette,
@@ -39,7 +41,7 @@ function drawPipeSegment(
   if (bottom <= top) return
   const bodyTop = capAtBottom ? top - PIPE_OVERRUN : top
   const bodyBottom = capAtBottom ? bottom : bottom + PIPE_OVERRUN
-  drawPipeBlock(ctx, p, x, bodyTop, PIPE_WIDTH, bodyBottom - bodyTop)
+  drawPipeBlock(ctx, p, x, bodyTop, PIPE_WIDTH, bodyBottom - bodyTop, 0)
 
   const capY = capAtBottom ? bottom - PIPE_CAP_HEIGHT : top
   ctx.fillStyle = CAP_SHADOW
@@ -56,6 +58,7 @@ function drawPipeSegment(
     capY,
     PIPE_WIDTH + PIPE_CAP_OVERHANG * 2,
     PIPE_CAP_HEIGHT,
+    2,
   )
 }
 
@@ -66,14 +69,29 @@ function drawPipeBlock(
   y: number,
   w: number,
   h: number,
+  radius: number,
 ): void {
-  ctx.fillStyle = p.pipe
-  ctx.fillRect(x, y, w, h)
+  // A cylinder's light: bright a third of the way in from the left, darkening toward the right.
+  const shading = ctx.createLinearGradient(x, 0, x + w, 0)
+  shading.addColorStop(0, p.pipe)
+  shading.addColorStop(0.28, p.pipeLight)
+  shading.addColorStop(0.62, p.pipe)
+  shading.addColorStop(1, p.pipe)
+  ctx.fillStyle = shading
+  ctx.beginPath()
+  ctx.roundRect(x, y, w, h, radius)
+  ctx.fill()
   ctx.fillStyle = PIPE_HIGHLIGHT
-  ctx.fillRect(x + PIPE_BAND_INSET, y, PIPE_BAND_WIDTH, h)
+  ctx.beginPath()
+  ctx.roundRect(x + w * 0.2, y, w * 0.12, h, 1)
+  ctx.fill()
   ctx.fillStyle = PIPE_SHADE
-  ctx.fillRect(x + w - PIPE_BAND_INSET - PIPE_BAND_WIDTH, y, PIPE_BAND_WIDTH, h)
+  ctx.beginPath()
+  ctx.roundRect(x + w * 0.74, y, w * 0.26, h, radius)
+  ctx.fill()
   ctx.strokeStyle = p.pipeEdge
-  ctx.lineWidth = OUTLINE
-  ctx.strokeRect(x + OUTLINE / 2, y + OUTLINE / 2, w - OUTLINE, h - OUTLINE)
+  ctx.lineWidth = PIPE_OUTLINE
+  ctx.beginPath()
+  ctx.roundRect(x + PIPE_OUTLINE / 2, y + PIPE_OUTLINE / 2, w - PIPE_OUTLINE, h - PIPE_OUTLINE, radius)
+  ctx.stroke()
 }

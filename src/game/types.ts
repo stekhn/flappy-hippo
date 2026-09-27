@@ -55,6 +55,15 @@ export interface Particle {
   weight: number
 }
 
+/** A little label rising from where something was picked up: "+3", "Schild". */
+export interface Floater {
+  text: string
+  x: number
+  y: number
+  born: number
+  tint: 'melon' | 'shield'
+}
+
 export interface GameState {
   phase: Phase
   hippoY: number
@@ -76,6 +85,10 @@ export interface GameState {
   charges: number
   /** Timestamp until which collisions are ignored, right after a shield pops. */
   solidUntil: number
+  /** When the latest shield was picked up (the bubble grows in) and when one last popped. */
+  shieldAt: number
+  poppedAt: number
+  floaters: Floater[]
   best: number
   newBest: boolean
   round: number
@@ -135,6 +148,8 @@ export interface Palette {
   lamp: string
   pipe: string
   pipeEdge: string
+  /** The pipe's soft highlight side. */
+  pipeLight: string
   text: string
   brand: string
   gold: string

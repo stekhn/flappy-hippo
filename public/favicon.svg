@@ -1,7 +1,7 @@
 <!-- The browser-tab mark: just the hippo's face, as on the title card (HippoMark in
      src/components/icons.tsx). The home-screen icons in assets/ keep a blue tile behind it. -->
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="4 4.5 16 15.5" width="64" height="62">
-  <g stroke="#5c6774" stroke-width="0.45">
+  <g stroke="#5c6774" stroke-width="0.9">
     <circle cx="7.9" cy="7.4" r="1.9" fill="#93a1b5"/>
     <circle cx="16.1" cy="7.4" r="1.9" fill="#93a1b5"/>
     <circle cx="7.9" cy="7.6" r="0.9" fill="#e8a2b0" stroke="none"/>

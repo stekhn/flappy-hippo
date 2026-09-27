@@ -79,12 +79,6 @@ interface Lamp {
   arms: 'left' | 'right' | 'both'
 }
 
-interface Crack {
-  x: number
-  y: number
-  points: { dx: number; dy: number }[]
-}
-
 const WINDOW_W = 3
 const WINDOW_H = 4
 const WINDOW_GAP = 3
@@ -172,7 +166,7 @@ function makeBushes(seed: number): Bush[] {
       r: 1.2 + rnd() * 1,
     }))
     out.push({ x, w, h, lobes, leaves, mirror: rnd() < 0.5, scale: 0.85 + rnd() * 0.35, tone: rnd() * 0.35 })
-    x += w + 40 + Math.round(rnd() * 110)
+    x += w + 70 + Math.round(rnd() * 140)
   }
   return out
 }
@@ -190,38 +184,12 @@ function makeLamps(seed: number): Lamp[] {
   return out
 }
 
-/** Hairline cracks in the odd brick. */
-function makeCracks(seed: number): Crack[] {
-  const rnd = seeded(seed)
-  const out: Crack[] = []
-  const bricks = SCENE_PERIOD / BRICK_WIDTH
-  for (let b = 0; b < bricks; b++) {
-    if (rnd() > 0.16) continue
-    const row = Math.floor(rnd() * 2)
-    const points = []
-    let dx = 0
-    let dy = 0
-    for (let k = 0; k < 3 + Math.floor(rnd() * 2); k++) {
-      dx += 3 + rnd() * 5
-      dy += (rnd() - 0.5) * 4
-      points.push({ dx, dy })
-    }
-    out.push({
-      x: b * BRICK_WIDTH + (row % 2) * (BRICK_WIDTH / 2) + 4 + rnd() * 12,
-      y: row * BRICK_HEIGHT + 2 + rnd() * (BRICK_HEIGHT - 5),
-      points,
-    })
-  }
-  return out
-}
-
 const CITY_FAR = makeSkyline(7, 28, 78, false)
 const CITY_NEAR = makeSkyline(13, 24, 84, true)
 const CLOUDS = makeClouds(21, 7)
 const STARS = makeStars(37, 46)
 const BUSHES = makeBushes(43)
 const LAMPS = makeLamps(83)
-const CRACKS = makeCracks(71)
 
 /** Scene offsets at which a thing must be painted so it also shows where the strip wraps. */
 const WRAPS = [-SCENE_PERIOD, 0, SCENE_PERIOD]
@@ -658,19 +626,6 @@ function paintWall(ctx: CanvasRenderingContext2D, p: Palette, ground: number): v
   ctx.stroke(joints)
   ctx.strokeStyle = p.groundHighlight
   ctx.stroke(edges)
-
-  // A hairline crack in the odd brick: texture, not a feature.
-  ctx.strokeStyle = p.groundLine
-  ctx.beginPath()
-  for (const crack of CRACKS) {
-    for (const base of WRAPS) {
-      const x = crack.x + base
-      if (x < -20 || x > SCENE_PERIOD) continue
-      ctx.moveTo(x, ground + crack.y)
-      for (const point of crack.points) ctx.lineTo(x + point.dx, ground + crack.y + point.dy)
-    }
-  }
-  ctx.stroke()
 
   paintStreet(ctx, p, ground)
 }

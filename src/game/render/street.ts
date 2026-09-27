@@ -59,7 +59,7 @@ const WEIGHTS: [Kind, number][] = [
 ]
 const FURNITURE = new Set<Kind>(['bench', 'postbox', 'bike'])
 /** Two pieces of furniture never share a screen. */
-const FURNITURE_GAP = 360
+const FURNITURE_GAP = 480
 
 function pick(rnd: () => number): Kind {
   const total = WEIGHTS.reduce((sum, [, w]) => sum + w, 0)
@@ -105,7 +105,7 @@ export function makeStreet(seed: number): Prop[] {
       scale: plant ? 0.85 + rnd() * 0.35 : 1,
       tone: plant ? rnd() * 0.4 : 0,
     })
-    joint += 1 + Math.floor(rnd() * 3)
+    joint += 3 + Math.floor(rnd() * 3)
   }
   return out
 }

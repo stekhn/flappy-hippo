@@ -36,16 +36,19 @@ export function resolvePalette(dark: boolean): Palette {
     grassLit: dark ? '#57a875' : '#63c57f',
     grassShade: dark ? '#2b6a48' : '#2f9058',
     grassShadow: dark ? 'rgba(0, 0, 0, 0.28)' : 'rgba(22, 62, 44, 0.14)',
-    bushLit: dark ? '#4c8a63' : '#93d3a6',
-    bushShade: dark ? '#2f5e46' : '#5fb07d',
-    bushEdge: dark ? '#1e4232' : '#3d8a5e',
+    // The hedge sits behind the pipes and should stay there: a step toward the sky's own colour.
+    bushLit: mix(dark ? '#4c8a63' : '#93d3a6', dark ? '#111a26' : '#e5f0ff', 0.18),
+    bushShade: mix(dark ? '#2f5e46' : '#5fb07d', dark ? '#111a26' : '#e5f0ff', 0.18),
+    bushEdge: mix(dark ? '#1e4232' : '#3d8a5e', dark ? '#111a26' : '#e5f0ff', 0.18),
     flower: dark ? '#e8ecf2' : '#ffffff',
     flowerCenter: cssVar('--game-gold', '#e8930c'),
     wood: dark ? '#8a6f45' : '#d2a86a',
     postbox: dark ? '#c99a2e' : '#e9b83d',
     lamp: dark ? '#3e4b5c' : '#8a97ab',
-    pipe: brand,
-    pipeEdge: cssVar('--game-pipe-edge', dark ? '#1f4f9e' : '#00479f'),
+    // A step lighter than the brand and a softer edge: pipes must read, not dominate.
+    pipe: mix(brand, dark ? '#9cc4ff' : '#dbe9ff', 0.14),
+    pipeEdge: mix(cssVar('--game-pipe-edge', dark ? '#1f4f9e' : '#00479f'), brand, 0.3),
+    pipeLight: mix(brand, '#ffffff', 0.34),
     text: cssVar('--game-text', dark ? '#dde3ec' : '#1f2430'),
     brand,
     gold: cssVar('--game-gold', '#f5a524'),
@@ -71,6 +74,7 @@ export function tintColor(p: Palette, tint: 'melon' | 'bubble'): string {
 
 /** A colour between two hex colours, `t` of the way from `a` to `b`. For variants of one thing. */
 export function mix(a: string, b: string, t: number): string {
+  if (!/^#[0-9a-f]{6}$/i.test(a) || !/^#[0-9a-f]{6}$/i.test(b)) return a
   const pa = parseInt(a.slice(1), 16)
   const pb = parseInt(b.slice(1), 16)
   const ch = (shift: number) => {

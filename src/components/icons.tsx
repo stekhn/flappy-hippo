@@ -202,8 +202,11 @@ export function IconHome(props: IconProps) {
   )
 }
 
-/** The hippo's face from the app icon, for the title card. Mirrors assets/icon.svg. */
-export function HippoMark(props: IconProps) {
+/**
+ * The hippo's face from the app icon, for the cards. Mirrors assets/icon.svg. Asleep, the eyes
+ * are shut the way the knocked-out sprite's are.
+ */
+export function HippoMark({ asleep = false, ...props }: IconProps & { asleep?: boolean }) {
   return (
     <svg
       viewBox="4 4.5 16 15.5"
@@ -213,7 +216,8 @@ export function HippoMark(props: IconProps) {
       focusable="false"
       {...props}
     >
-      <g stroke="#5c6774" strokeWidth="0.45">
+      {/* A firmer line than the app icon's: at card size a hairline would vanish. */}
+      <g stroke="#5c6774" strokeWidth="0.8">
         <circle cx="7.9" cy="7.4" r="1.9" fill="#93a1b5" />
         <circle cx="16.1" cy="7.4" r="1.9" fill="#93a1b5" />
         <circle cx="7.9" cy="7.6" r="0.9" fill="#e8a2b0" stroke="none" />
@@ -222,10 +226,19 @@ export function HippoMark(props: IconProps) {
         <ellipse cx="12" cy="15.6" rx="5.1" ry="3.5" fill="#b6c1d1" />
         <ellipse cx="9.9" cy="15.1" rx="0.85" ry="1.1" fill="#3e4753" stroke="none" />
         <ellipse cx="14.1" cy="15.1" rx="0.85" ry="1.1" fill="#3e4753" stroke="none" />
-        <circle cx="9.5" cy="10.4" r="1.5" fill="#ffffff" />
-        <circle cx="14.5" cy="10.4" r="1.5" fill="#ffffff" />
-        <circle cx="9.8" cy="10.6" r="0.7" fill="#3e4753" stroke="none" />
-        <circle cx="14.2" cy="10.6" r="0.7" fill="#3e4753" stroke="none" />
+        {asleep ? (
+          <g fill="none" strokeWidth="1" strokeLinecap="round">
+            <path d="M8 10.6q1.5 1.4 3 0" />
+            <path d="M13 10.6q1.5 1.4 3 0" />
+          </g>
+        ) : (
+          <>
+            <circle cx="9.5" cy="10.4" r="1.5" fill="#ffffff" />
+            <circle cx="14.5" cy="10.4" r="1.5" fill="#ffffff" />
+            <circle cx="9.8" cy="10.6" r="0.7" fill="#3e4753" stroke="none" />
+            <circle cx="14.2" cy="10.6" r="0.7" fill="#3e4753" stroke="none" />
+          </>
+        )}
       </g>
     </svg>
   )

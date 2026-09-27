@@ -30,7 +30,7 @@ export function CardShell({ children, onBackdropTap, align = 'center', labelledB
         role="dialog"
         aria-modal="false"
         aria-labelledby={labelledBy}
-        className="card animate-pop max-h-full w-full max-w-[22rem] overflow-y-auto p-6 text-center"
+        className="card animate-pop max-h-full w-full max-w-[20rem] overflow-y-auto p-5 text-center"
         onPointerDown={(event) => event.stopPropagation()}
       >
         {children}

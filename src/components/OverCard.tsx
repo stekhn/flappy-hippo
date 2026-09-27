@@ -5,7 +5,7 @@ import { canShare } from '../platform.ts'
 import { CardShell } from './CardShell.tsx'
 import { Keycap } from './Keycap.tsx'
 import { Stat } from './Stat.tsx'
-import { IconChart, IconMelon, IconRestart, IconShare, IconTrophy } from './icons.tsx'
+import { HippoMark, IconChart, IconMelon, IconRestart, IconShare, IconTrophy } from './icons.tsx'
 import type { MenuTab } from './MenuSheet.tsx'
 
 interface OverCardProps {
@@ -41,13 +41,14 @@ export function OverCard({ snapshot, touch, onRestart, onOpenMenu }: OverCardPro
 
   return (
     <CardShell onBackdropTap={onRestart} labelledBy="over-title">
+      <HippoMark asleep width={44} height={43} className="mx-auto mb-1" />
       <h2 id="over-title" className="t-heading">
         {snapshot.overTitle}
       </h2>
 
       {medal && (
         <div
-          className="animate-pop mx-auto mt-4 flex h-[4.5rem] w-[4.5rem] flex-col items-center justify-center rounded-full border-[3px]"
+          className="animate-pop mx-auto mt-3 flex h-16 w-16 flex-col items-center justify-center rounded-full border-[3px]"
           style={{
             borderColor: medal.color,
             background: medal.background,
@@ -62,7 +63,7 @@ export function OverCard({ snapshot, touch, onRestart, onOpenMenu }: OverCardPro
 
       <p className="mt-4">
         <span
-          className={`t-number block text-[4rem] ${snapshot.newBest ? 'text-gold' : 'text-brand'}`}
+          className={`t-number block text-[3.5rem] ${snapshot.newBest ? 'text-gold' : 'text-brand'}`}
         >
           {snapshot.score}
         </span>
