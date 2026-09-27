@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 import { ThemeContext, defaultTheme, persistTheme, systemPrefersDark } from '../theme.ts'
 import type { ThemePref } from '../theme.ts'
@@ -19,7 +19,9 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   const resolved = theme === 'system' ? (systemDark ? 'dark' : 'light') : theme
 
-  useEffect(() => {
+  // A layout effect, deliberately: children re-read the CSS palette in their own effects, and
+  // React runs all layout effects before any passive one — so the attribute is there in time.
+  useLayoutEffect(() => {
     document.documentElement.dataset.theme = resolved
     // Keep the browser chrome (status bar, address bar) in step with the sky.
     const meta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]')

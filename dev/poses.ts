@@ -18,7 +18,7 @@ const FLIGHT: HippoPose = {
   tilt: 0,
   flap: 0.1,
   defeated: false,
-  shielded: false,
+  shield: 0,
   sparkle: 0,
   headNod: 0,
   headDrop: 0,

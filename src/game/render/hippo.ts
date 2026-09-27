@@ -10,11 +10,12 @@ export interface HippoPose {
   flap: number
   /** Knocked out: wings and ears droop, legs dangle, eyes shut. */
   defeated: boolean
+  /** Shield charges in hand: one bubble, and a fainter ring for each one beyond the first. */
+  shield: number
   /** How far the head nods forward around the neck, in radians. 0 in flight. */
   headNod: number
   /** How far the head hangs below its normal place, in world units. 0 in flight. */
   headDrop: number
-  shielded: boolean
   /** 0..1 of the invulnerability window left after a shield popped. */
   sparkle: number
 }
@@ -96,7 +97,7 @@ export function drawHippo(
 
   ctx.restore()
 
-  if (pose.shielded) drawBubble(ctx, p, pose, now)
+  if (pose.shield > 0) drawBubble(ctx, p, pose, now)
 }
 
 /** The shield: a soap bubble with a drifting highlight, so it reads as a skin and not a ring. */
@@ -126,6 +127,15 @@ function drawBubble(
   const sheen = now / 900
   ctx.arc(0, 0, r - 2.5, sheen, sheen + 0.7)
   ctx.stroke()
+  // Spare charges show as thin rings outside the bubble.
+  ctx.strokeStyle = p.bubbleEdge
+  ctx.lineWidth = 1.2
+  for (let i = 1; i < pose.shield; i++) {
+    ctx.globalAlpha = 0.55 - i * 0.12
+    ctx.beginPath()
+    ctx.arc(0, 0, r + 3.5 * i, 0, Math.PI * 2)
+    ctx.stroke()
+  }
   ctx.restore()
 }
 

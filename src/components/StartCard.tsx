@@ -2,6 +2,7 @@ import { DIFFICULTIES } from '../game/difficulty.ts'
 import type { DifficultyId } from '../game/difficulty.ts'
 import { CardShell } from './CardShell.tsx'
 import { Segmented } from './Segmented.tsx'
+import { Keycap } from './Keycap.tsx'
 import { Stat } from './Stat.tsx'
 import { HippoMark, IconChart, IconGear, IconPlay, IconTrophy } from './icons.tsx'
 import type { MenuTab } from './MenuSheet.tsx'
@@ -54,6 +55,7 @@ export function StartCard({
       <button type="button" className="btn-primary mt-5 w-full" onClick={onStart}>
         <IconPlay width={22} height={22} />
         Spielen
+        {!touch && <Keycap />}
       </button>
 
       <div className="mt-3 flex justify-center gap-1">

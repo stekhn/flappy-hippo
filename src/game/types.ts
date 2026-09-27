@@ -72,8 +72,8 @@ export interface GameState {
   shields: number
   /** Hits a shield absorbed this round. */
   saves: number
-  /** A shield in hand absorbs the next hit. */
-  shielded: boolean
+  /** Shield charges in hand; each absorbs one hit. */
+  charges: number
   /** Timestamp until which collisions are ignored, right after a shield pops. */
   solidUntil: number
   best: number
@@ -120,6 +120,15 @@ export interface Palette {
   ground: string
   groundLine: string
   groundHighlight: string
+  /** Greenery: lit side warm and yellow, shade side cool and blue, as a painter would mix it. */
+  grassLit: string
+  grassShade: string
+  grassShadow: string
+  bushLit: string
+  bushShade: string
+  bushEdge: string
+  flower: string
+  flowerCenter: string
   pipe: string
   pipeEdge: string
   text: string

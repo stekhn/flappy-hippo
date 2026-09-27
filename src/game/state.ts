@@ -7,6 +7,7 @@ import {
   HIPPO_RADIUS,
   INVULNERABLE_MS,
   MAX_FALL_SPEED,
+  MAX_SHIELDS,
   MELON_CHANCE,
   MELON_POINTS,
   OVER_TITLES,
@@ -77,7 +78,7 @@ export function initialState({ world, difficulty, best, round = 0 }: InitOptions
     melons: 0,
     shields: 0,
     saves: 0,
-    shielded: false,
+    charges: 0,
     solidUntil: 0,
     best,
     newBest: false,
@@ -99,7 +100,7 @@ export function flap(state: GameState, now: number): void {
 }
 
 function spawnPickup(state: GameState, world: World, pipe: Pipe, tuning: Tuning): void {
-  const eligible = state.pipesCleared >= SHIELD_EARLIEST_PIPE && !state.shielded
+  const eligible = state.pipesCleared >= SHIELD_EARLIEST_PIPE && state.charges < MAX_SHIELDS
   if (eligible && Math.random() < SHIELD_CHANCE) {
     // A shield sits in the gap the player is aiming for anyway — a reward for precision, not a detour.
     state.pickups.push({
@@ -228,7 +229,7 @@ function collect(state: GameState, world: World, now: number, events: GameEvent[
       continue
     }
     state.shields += 1
-    state.shielded = true
+    state.charges += 1
     burst(state, pickup.x, pickup.y, 12, 'bubble', 70, 0)
     events.push({ type: 'shield' })
   }
@@ -303,10 +304,10 @@ export function advance(
 
   if (!hasCollision(state, world)) return
   if (now < state.solidUntil) return
-  if (state.shielded) {
-    // The bubble takes the hit: it pops, the hippo is nudged clear and stays solid long enough
+  if (state.charges > 0) {
+    // One bubble takes the hit: it pops, the hippo is nudged clear and stays solid long enough
     // to fly out of the pipe it is standing in.
-    state.shielded = false
+    state.charges -= 1
     state.saves += 1
     state.solidUntil = now + INVULNERABLE_MS
     state.hippoY = Math.min(state.hippoY, world.groundY - HIPPO_RADIUS)

@@ -20,9 +20,8 @@ export function resolvePalette(dark: boolean): Palette {
     moon: 'rgba(223, 227, 234, 0.9)',
     moonGlow: 'rgba(255, 255, 255, 0.1)',
     star: 'rgba(255, 255, 255, 0.85)',
-    fireworks: dark
-      ? ['#ffc65c', '#7db0ff', '#ff6b8f', '#4ade80', '#c4b5fd']
-      : ['#f5a524', '#006aff', '#f2426b', '#22a05a', '#8b5cf6'],
+    // Gold for the reward, violet for the magic, white for the sparkle: the palette's own accents.
+    fireworks: dark ? ['#ffc65c', '#c4b5fd', '#ffffff'] : ['#f5a524', '#8b5cf6', '#ffffff'],
     cloud: dark ? 'rgba(255, 255, 255, 0.07)' : 'rgba(255, 255, 255, 0.72)',
     cityFar: cssVar('--game-city-far', dark ? '#1b2533' : '#d9e8fe'),
     cityNear: cssVar('--game-city-near', dark ? '#26313f' : '#c6dcfd'),
@@ -32,17 +31,27 @@ export function resolvePalette(dark: boolean): Palette {
     ground: cssVar('--game-ground', dark ? '#2c3646' : '#dee2e6'),
     groundLine: dark ? 'rgba(0, 0, 0, 0.32)' : 'rgba(0, 0, 0, 0.09)',
     groundHighlight: dark ? 'rgba(255, 255, 255, 0.07)' : 'rgba(255, 255, 255, 0.5)',
+    // Greenery. The grass is foreground: saturated, dark enough to read on the bricks. The hedge
+    // sits one layer back: a step paler and cooler. Lit tones lean yellow, shade tones lean blue.
+    grassLit: dark ? '#57a875' : '#63c57f',
+    grassShade: dark ? '#2b6a48' : '#2f9058',
+    grassShadow: dark ? 'rgba(0, 0, 0, 0.28)' : 'rgba(22, 62, 44, 0.14)',
+    bushLit: dark ? '#4c8a63' : '#93d3a6',
+    bushShade: dark ? '#2f5e46' : '#5fb07d',
+    bushEdge: dark ? '#1e4232' : '#3d8a5e',
+    flower: dark ? '#e8ecf2' : '#ffffff',
+    flowerCenter: cssVar('--game-gold', '#e8930c'),
     pipe: brand,
     pipeEdge: cssVar('--game-pipe-edge', dark ? '#1f4f9e' : '#00479f'),
     text: cssVar('--game-text', dark ? '#dde3ec' : '#1f2430'),
     brand,
     gold: cssVar('--game-gold', '#f5a524'),
-    melon: '#f2426b',
+    melon: cssVar('--game-melon', dark ? '#ff7a9a' : '#e8395f'),
     melonRind: '#2f8a4a',
     melonSeed: 'rgba(38, 30, 34, 0.85)',
-    // Tinted rather than white: a white bubble disappears against the daytime sky.
-    bubble: dark ? 'rgba(150, 214, 255, 0.5)' : 'rgba(96, 170, 255, 0.42)',
-    bubbleEdge: dark ? 'rgba(190, 230, 255, 0.85)' : 'rgba(58, 138, 235, 0.7)',
+    // The shield is the one violet thing in the game, so it can never be mistaken for a pipe.
+    bubble: dark ? 'rgba(196, 181, 253, 0.42)' : 'rgba(139, 92, 246, 0.32)',
+    bubbleEdge: cssVar('--game-shield', dark ? '#c4b5fd' : '#7c4dff'),
     hippoBody: dark ? '#9aa6b8' : '#93a1b5',
     hippoShade: dark ? 'rgba(95, 106, 120, 0.26)' : 'rgba(92, 103, 116, 0.26)',
     hippoDark: dark ? '#5f6a78' : '#5c6774',

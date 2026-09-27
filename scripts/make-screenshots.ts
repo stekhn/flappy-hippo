@@ -96,7 +96,7 @@ async function flight(page: Page): Promise<void> {
     state.score = 27
     state.pipesCleared = 24
     state.melons = 1
-    state.shielded = true
+    state.charges = 2
     state.hippoY = world.groundY * 0.5
     state.velocity = -150
     const gap = state.hippoY

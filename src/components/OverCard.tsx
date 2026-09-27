@@ -3,6 +3,7 @@ import { medalFor, nextMedal } from '../game/medals.ts'
 import type { Snapshot } from '../game/runtime.ts'
 import { canShare } from '../platform.ts'
 import { CardShell } from './CardShell.tsx'
+import { Keycap } from './Keycap.tsx'
 import { Stat } from './Stat.tsx'
 import { IconChart, IconMelon, IconRestart, IconShare, IconTrophy } from './icons.tsx'
 import type { MenuTab } from './MenuSheet.tsx'
@@ -96,9 +97,9 @@ export function OverCard({ snapshot, touch, onRestart, onOpenMenu }: OverCardPro
       <button type="button" className="btn-primary mt-5 w-full" onClick={onRestart}>
         <IconRestart width={22} height={22} />
         Nochmal
+        {!touch && <Keycap />}
       </button>
-      <p className="t-hint mt-2">{touch ? 'Oder irgendwo tippen' : 'Oder Leertaste drücken'}</p>
-      <div className="mt-2 flex justify-center gap-1">
+      <div className="mt-3 flex justify-center gap-1">
         <button type="button" className="btn-ghost" onClick={() => onOpenMenu('scores')}>
           <IconChart width={20} height={20} />
           Rekorde

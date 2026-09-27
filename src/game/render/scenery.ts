@@ -108,10 +108,137 @@ function makeStars(seed: number, count: number): Star[] {
   }))
 }
 
+interface Lobe {
+  dx: number
+  dy: number
+  r: number
+}
+
+interface Bush {
+  x: number
+  w: number
+  h: number
+  lobes: Lobe[]
+  /** Small lit dabs on the shaded side: leaves catching the light. */
+  leaves: Lobe[]
+}
+
+interface Blade {
+  dx: number
+  h: number
+  lean: number
+  w: number
+  lit: boolean
+}
+
+interface Tuft {
+  /** Scene x, always on a joint of the top brick row, so the weed grows out of the crack. */
+  x: number
+  blades: Blade[]
+  /** One in five tufts carries a flower at the tip of its tallest blade. */
+  flower: boolean
+  /** One in four is a low clover instead of blades. */
+  clover: boolean
+}
+
+interface Crack {
+  x: number
+  y: number
+  points: { dx: number; dy: number }[]
+}
+
+/** A hedge line one layer behind the pipes: clusters of rounded lobes, a bush every so often. */
+function makeBushes(seed: number): Bush[] {
+  const rnd = seeded(seed)
+  const out: Bush[] = []
+  let x = rnd() * 60
+  while (x < SCENE_PERIOD) {
+    const w = 26 + Math.round(rnd() * 36)
+    const h = 11 + Math.round(rnd() * 9)
+    const count = 3 + Math.floor(rnd() * 3)
+    const lobes: Lobe[] = Array.from({ length: count }, (_, k) => {
+      const t = (k + 0.5) / count
+      // Taller in the middle, so the silhouette is a mound and not a row of balls.
+      const rise = 1 - Math.abs(t - 0.5) * 1.2
+      return {
+        dx: t * w + (rnd() - 0.5) * 5,
+        dy: -h * (0.45 + rise * 0.35),
+        r: h * (0.55 + rnd() * 0.3) * (0.8 + rise * 0.35),
+      }
+    })
+    const leaves: Lobe[] = Array.from({ length: 2 + Math.floor(rnd() * 3) }, () => ({
+      dx: w * (0.15 + rnd() * 0.7),
+      dy: -h * (0.15 + rnd() * 0.5),
+      r: 1.2 + rnd() * 1,
+    }))
+    out.push({ x, w, h, lobes, leaves })
+    x += w + 40 + Math.round(rnd() * 110)
+  }
+  return out
+}
+
+/**
+ * Weeds on the wall: tufts of four to seven blades, rooted in the joints between the top row's
+ * bricks (the joints are BRICK_WIDTH apart and the scene repeats on a multiple of it, so the
+ * roots stay in the cracks however far the wall has scrolled). Never a lawn.
+ */
+function makeTufts(seed: number): Tuft[] {
+  const rnd = seeded(seed)
+  const out: Tuft[] = []
+  let joint = 1
+  const joints = SCENE_PERIOD / BRICK_WIDTH
+  while (joint < joints) {
+    const count = 4 + Math.floor(rnd() * 4)
+    const blades: Blade[] = Array.from({ length: count }, (_, k) => {
+      const spread = k - (count - 1) / 2
+      return {
+        dx: spread * 2 + (rnd() - 0.5) * 1.2,
+        h: 6 + rnd() * 8,
+        // Outer blades splay outward; every blade has a little lean of its own.
+        lean: spread * 0.22 + (rnd() - 0.5) * 0.9,
+        w: 1.3 + rnd() * 1,
+        lit: rnd() > 0.45,
+      }
+    })
+    const clover = rnd() < 0.25
+    out.push({ x: joint * BRICK_WIDTH, blades, flower: !clover && rnd() < 0.2, clover })
+    joint += 1 + Math.floor(rnd() * 2.6)
+  }
+  return out
+}
+
+/** Hairline cracks in the odd brick, scrolling with the wall. */
+function makeCracks(seed: number): Crack[] {
+  const rnd = seeded(seed)
+  const out: Crack[] = []
+  const bricks = SCENE_PERIOD / BRICK_WIDTH
+  for (let b = 0; b < bricks; b++) {
+    if (rnd() > 0.16) continue
+    const row = Math.floor(rnd() * 2)
+    const points = []
+    let dx = 0
+    let dy = 0
+    for (let k = 0; k < 3 + Math.floor(rnd() * 2); k++) {
+      dx += 3 + rnd() * 5
+      dy += (rnd() - 0.5) * 4
+      points.push({ dx, dy })
+    }
+    out.push({
+      x: b * BRICK_WIDTH + (row % 2) * (BRICK_WIDTH / 2) + 4 + rnd() * 12,
+      y: row * BRICK_HEIGHT + 2 + rnd() * (BRICK_HEIGHT - 5),
+      points,
+    })
+  }
+  return out
+}
+
 const CITY_FAR = makeSkyline(7, 28, 78, false)
 const CITY_NEAR = makeSkyline(13, 24, 84, true)
 const CLOUDS = makeClouds(21, 7)
 const STARS = makeStars(37, 46)
+const BUSHES = makeBushes(43)
+const TUFTS = makeTufts(59)
+const CRACKS = makeCracks(71)
 
 /** Indexed clouds first, sun or moon last. */
 export interface SkyMotion {
@@ -210,6 +337,7 @@ export function drawScenery(
   drawHaze(ctx, world, HAZE_HEIGHT, p.haze)
   drawCity(ctx, p, CITY_NEAR, world, (scrolled * 0.45) % SCENE_PERIOD, p.cityNear)
   drawHaze(ctx, world, HAZE_NEAR_HEIGHT, p.hazeNear)
+  drawBushes(ctx, p, world, (scrolled * 0.7) % SCENE_PERIOD)
   // In front of the skyline and its haze, behind the pipes: a party, not a rumour of one.
   if (effects) drawFireworks(ctx, p, state.fireworks, world, now)
 }
@@ -235,6 +363,146 @@ function drawStars(
     }
   }
   ctx.restore()
+}
+
+function drawBushes(ctx: CanvasRenderingContext2D, p: Palette, world: World, shift: number): void {
+  const base = world.groundY
+  const EDGE = 1.3
+  for (const bush of BUSHES) {
+    for (const offset of [0, SCENE_PERIOD]) {
+      const x = bush.x - shift + offset
+      if (x + bush.w + 12 < 0 || x - 12 > world.width) continue
+
+      // Silhouette outline: every lobe again, a little larger, in the edge colour underneath.
+      ctx.fillStyle = p.bushEdge
+      ctx.beginPath()
+      ctx.rect(x - EDGE, base - bush.h, bush.w + EDGE * 2, bush.h)
+      for (const lobe of bush.lobes) {
+        ctx.moveTo(x + lobe.dx + lobe.r + EDGE, base + lobe.dy)
+        ctx.arc(x + lobe.dx, base + lobe.dy, lobe.r + EDGE, 0, Math.PI * 2)
+      }
+      ctx.fill()
+
+      // The body in shade, then the lit side: the same lobes shifted towards the light, clipped
+      // to the body so nothing pokes out of the silhouette.
+      const body = new Path2D()
+      body.rect(x, base - bush.h, bush.w, bush.h)
+      for (const lobe of bush.lobes) {
+        body.moveTo(x + lobe.dx + lobe.r, base + lobe.dy)
+        body.arc(x + lobe.dx, base + lobe.dy, lobe.r, 0, Math.PI * 2)
+      }
+      ctx.fillStyle = p.bushShade
+      ctx.fill(body)
+      ctx.save()
+      ctx.clip(body)
+      ctx.fillStyle = p.bushLit
+      ctx.beginPath()
+      for (const lobe of bush.lobes) {
+        const r = lobe.r * 0.72
+        ctx.moveTo(x + lobe.dx - lobe.r * 0.2 + r, base + lobe.dy - lobe.r * 0.28)
+        ctx.arc(x + lobe.dx - lobe.r * 0.2, base + lobe.dy - lobe.r * 0.28, r, 0, Math.PI * 2)
+      }
+      ctx.fill()
+      // A few leaves catching light on the shaded side.
+      ctx.globalAlpha = 0.8
+      ctx.beginPath()
+      for (const leaf of bush.leaves) {
+        ctx.moveTo(x + leaf.dx + leaf.r, base + leaf.dy)
+        ctx.ellipse(x + leaf.dx, base + leaf.dy, leaf.r, leaf.r * 0.6, -0.5, 0, Math.PI * 2)
+      }
+      ctx.fill()
+      ctx.restore()
+    }
+  }
+}
+
+/**
+ * Weeds in the wall's joints, scrolling with the wall: a dark seam where the mortar has gone,
+ * shade blades, lit blades over them, and now and then a flower or a clover instead.
+ */
+export function drawGreenery(ctx: CanvasRenderingContext2D, p: Palette, world: World, scrolled: number): void {
+  const base = world.groundY
+  const shift = scrolled % SCENE_PERIOD
+  ctx.save()
+  ctx.lineCap = 'round'
+  for (const tuft of TUFTS) {
+    for (const offset of [0, SCENE_PERIOD]) {
+      const x = tuft.x - shift + offset
+      if (x < -16 || x > world.width + 16) continue
+
+      // The joint has opened up a little where the roots are.
+      ctx.fillStyle = p.groundLine
+      ctx.fillRect(x - 1.5, base, 3, 6)
+
+      if (tuft.clover) {
+        drawClover(ctx, p, x, base)
+        continue
+      }
+
+      for (const pass of [false, true]) {
+        ctx.strokeStyle = pass ? p.grassLit : p.grassShade
+        for (const blade of tuft.blades) {
+          if (blade.lit !== pass) continue
+          ctx.lineWidth = blade.w
+          ctx.beginPath()
+          ctx.moveTo(x + blade.dx * 0.6, base + 3)
+          ctx.quadraticCurveTo(
+            x + blade.dx + blade.lean * 2.5,
+            base - blade.h * 0.55,
+            x + blade.dx + blade.lean * 6,
+            base - blade.h,
+          )
+          ctx.stroke()
+        }
+      }
+
+      if (tuft.flower) {
+        const tall = tuft.blades.reduce((a, b) => (b.h > a.h ? b : a))
+        const fx = x + tall.dx + tall.lean * 6
+        const fy = base - tall.h - 1
+        ctx.fillStyle = p.flower
+        ctx.beginPath()
+        for (let k = 0; k < 5; k++) {
+          const a = (k / 5) * Math.PI * 2
+          ctx.moveTo(fx + Math.cos(a) * 1.6 + 1.1, fy + Math.sin(a) * 1.6)
+          ctx.arc(fx + Math.cos(a) * 1.6, fy + Math.sin(a) * 1.6, 1.1, 0, Math.PI * 2)
+        }
+        ctx.fill()
+        ctx.fillStyle = p.flowerCenter
+        ctx.beginPath()
+        ctx.arc(fx, fy, 0.9, 0, Math.PI * 2)
+        ctx.fill()
+      }
+    }
+  }
+  ctx.restore()
+}
+
+/** A low clover: three stalks from the joint, each with a small three-leaf head. */
+function drawClover(ctx: CanvasRenderingContext2D, p: Palette, x: number, base: number): void {
+  ctx.strokeStyle = p.grassShade
+  ctx.lineWidth = 1
+  const heads: [number, number][] = [
+    [-4, 4.5],
+    [0.5, 6.5],
+    [4.5, 4],
+  ]
+  for (const [hx, hy] of heads) {
+    ctx.beginPath()
+    ctx.moveTo(x, base + 2)
+    ctx.quadraticCurveTo(x + hx * 0.5, base - hy * 0.5, x + hx, base - hy)
+    ctx.stroke()
+  }
+  for (const [i, [hx, hy]] of heads.entries()) {
+    ctx.fillStyle = i === 1 ? p.grassLit : p.grassShade
+    ctx.beginPath()
+    for (let k = 0; k < 3; k++) {
+      const a = -Math.PI / 2 + (k / 3) * Math.PI * 2
+      ctx.moveTo(x + hx + Math.cos(a) * 1.3 + 1.3, base - hy + Math.sin(a) * 1.3)
+      ctx.arc(x + hx + Math.cos(a) * 1.3, base - hy + Math.sin(a) * 1.3, 1.3, 0, Math.PI * 2)
+    }
+    ctx.fill()
+  }
 }
 
 function drawHaze(ctx: CanvasRenderingContext2D, world: World, height: number, color: string): void {
@@ -358,8 +626,9 @@ export function drawGround(
   ctx: CanvasRenderingContext2D,
   p: Palette,
   world: World,
-  offset: number,
+  scrolled: number,
 ): void {
+  const offset = scrolled % BRICK_WIDTH
   const top = world.groundY
   const height = world.height - top
   ctx.fillStyle = p.ground
@@ -388,4 +657,19 @@ export function drawGround(
   ctx.stroke(joints)
   ctx.strokeStyle = p.groundHighlight
   ctx.stroke(edges)
+
+  // A hairline crack in the odd brick: texture, not a feature.
+  const shift = scrolled % SCENE_PERIOD
+  ctx.strokeStyle = p.groundLine
+  ctx.lineWidth = 1
+  ctx.beginPath()
+  for (const crack of CRACKS) {
+    for (const base of [0, SCENE_PERIOD]) {
+      const x = crack.x - shift + base
+      if (x < -20 || x > world.width) continue
+      ctx.moveTo(x, top + crack.y)
+      for (const point of crack.points) ctx.lineTo(x + point.dx, top + crack.y + point.dy)
+    }
+  }
+  ctx.stroke()
 }

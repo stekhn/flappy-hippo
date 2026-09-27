@@ -418,7 +418,7 @@ function HelpTab() {
         <ul className="space-y-2.5">
           <li>
             <span className="text-brand font-bold">Tippen oder Leertaste</span> lässt das Nilpferd
-            einmal mit den Flügeln schlagen. Nicht gedrückt halten — es fällt sonst trotzdem.
+            einmal mit den Flügeln schlagen. Gedrückt halten hilft nicht, es fällt trotzdem.
           </li>
           <li>
             <span className="text-brand font-bold">Jedes Hindernis</span> gibt einen Punkt, jede
@@ -429,8 +429,8 @@ function HelpTab() {
             Treffer aus. Danach bleibt das Nilpferd kurz unverwundbar.
           </li>
           <li>
-            <span className="text-brand font-bold">Die Decke</span> ist eine Grenze, kein Ende — nur
-            Boden und Röhren sind gefährlich.
+            <span className="text-brand font-bold">Die Decke</span> ist eine Grenze, kein Ende.
+            Gefährlich sind nur Boden und Röhren.
           </li>
         </ul>
       </Section>

@@ -135,6 +135,7 @@ export function Game() {
         {showPause && (
           <PauseCard
             score={snapshot.score}
+            touch={touch}
             onResume={controls.resume}
             onRestart={controls.restartFromPause}
             onGiveUp={controls.surrender}

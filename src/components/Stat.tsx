@@ -12,11 +12,11 @@ export function Stat({
   children,
 }: {
   icon: ReactNode
-  tone?: 'ink' | 'brand' | 'gold'
+  tone?: 'ink' | 'brand' | 'gold' | 'melon' | 'shield'
   animate?: boolean
   children: ReactNode
 }) {
-  const color = tone === 'gold' ? 'text-gold' : tone === 'brand' ? 'text-brand' : ''
+  const color = { ink: '', brand: 'text-brand', gold: 'text-gold', melon: 'text-melon', shield: 'text-shield' }[tone]
   return (
     <span
       className={`t-label inline-flex items-center gap-1.5 ${color} ${animate ? 'animate-pop' : ''}`}

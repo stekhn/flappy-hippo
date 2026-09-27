@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { mock, test } from 'node:test'
-import { FLAP_VELOCITY, HIPPO_RADIUS, MELON_POINTS, PIPE_WIDTH } from './constants.ts'
+import { FLAP_VELOCITY, HIPPO_RADIUS, MAX_SHIELDS, MELON_POINTS, PIPE_WIDTH } from './constants.ts'
 import { difficultyById } from './difficulty.ts'
 import { advance, flap, hasCollision, initialState } from './state.ts'
 import type { GameEvent, GameState, Pipe } from './types.ts'
@@ -96,11 +96,11 @@ test('a score below the record leaves the record alone', () => {
 
 test('a shield absorbs one hit and keeps the round alive', () => {
   const state = running()
-  state.shielded = true
+  state.charges = 1
   state.pipes = [{ x: world.hippoX - 4, gapY: 0, half: 10, passed: true }]
   const events = step(state)
   assert.equal(state.phase, 'running')
-  assert.equal(state.shielded, false)
+  assert.equal(state.charges, 0)
   assert.equal(state.saves, 1)
   assert.ok(events.some((event) => event.type === 'shield-pop'))
   assert.ok(state.solidUntil > 1000)
@@ -126,11 +126,12 @@ test('a melon is worth its points and is collected only once', () => {
   assert.equal(state.melons, 1)
 })
 
-test('a shield pickup arms the hippo', () => {
+test('shield pickups stack, one charge each', () => {
   const state = running()
+  state.charges = 1
   state.pickups = [{ kind: 'shield', x: world.hippoX, y: state.hippoY, taken: false, seed: 0 }]
   const events = step(state)
-  assert.equal(state.shielded, true)
+  assert.equal(state.charges, 2)
   assert.equal(state.shields, 1)
   assert.ok(events.some((event) => event.type === 'shield'))
 })
@@ -205,7 +206,7 @@ test('the first points ever are not a mid-flight record', () => {
   assert.equal(state.newBest, true)
 })
 
-test('a shield only spawns once a few pipes are cleared and none is held', () => {
+test('a shield only spawns once a few pipes are cleared and the stack is not full', () => {
   // Math.random at zero: every chance roll succeeds, every position lands at its minimum.
   mock.method(Math, 'random', () => 0)
   try {
@@ -223,10 +224,10 @@ test('a shield only spawns once a few pipes are cleared and none is held', () =>
 
     const armed = running()
     armed.pipesCleared = 5
-    armed.shielded = true
+    armed.charges = MAX_SHIELDS
     armed.nextSpawn = armed.scrolled
     step(armed)
-    assert.equal(armed.pickups[0].kind, 'melon', 'no second shield while one is held')
+    assert.equal(armed.pickups[0].kind, 'melon', 'no shield beyond the stack limit')
   } finally {
     mock.restoreAll()
   }

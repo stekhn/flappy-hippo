@@ -57,15 +57,21 @@ export function Hud({ snapshot, sound, onToggleSound, onPause, onMenu }: HudProp
                   </span>
                 )}
                 {snapshot.melons > 0 && (
-                  <span className="hud-text flex items-center gap-1 text-base">
+                  <span
+                    className="hud-text flex items-center gap-1 text-base"
+                    style={{ color: 'var(--game-melon)' }}
+                  >
                     <IconMelon width={18} height={18} />
                     <span>{snapshot.melons}</span>
                   </span>
                 )}
-                {snapshot.shielded && (
-                  <span className="hud-text flex items-center gap-1 text-base">
+                {snapshot.charges > 0 && (
+                  <span
+                    className="hud-text flex items-center gap-1 text-base"
+                    style={{ color: 'var(--game-shield)' }}
+                  >
                     <IconShield width={18} height={18} />
-                    <span>Schild</span>
+                    <span>{snapshot.charges > 1 ? `Schild ×${snapshot.charges}` : 'Schild'}</span>
                   </span>
                 )}
               </div>

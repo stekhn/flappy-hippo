@@ -13,7 +13,7 @@ const INITIAL_SNAPSHOT: Snapshot = {
   score: 0,
   best: 0,
   newBest: false,
-  shielded: false,
+  charges: 0,
   melons: 0,
   overTitle: 'Vorbei',
   round: 0,

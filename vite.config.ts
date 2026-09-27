@@ -11,7 +11,7 @@ const BASE = '/flappy-hippo/'
 
 const DESCRIPTION =
   'Lass das Nilpferd fliegen und weiche den Hindernissen aus. Drei Schwierigkeitsstufen, ' +
-  'Melonen und Schilde, Rekorde, Medaillen und Erfolge — offline spielbar, ohne Konto, ohne Werbung.'
+  'Melonen und Schilde, Rekorde, Medaillen und Erfolge. Offline spielbar, ohne Konto, ohne Werbung.'
 
 // Flappy Hippo is a purely client-side game: no backend, no network calls at runtime. The build is
 // a static bundle plus a service worker that precaches it, so the game keeps working offline and

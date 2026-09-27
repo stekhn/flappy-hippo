@@ -1,4 +1,4 @@
-import { BRICK_WIDTH, FLAP_ANIMATION_MS, INVULNERABLE_MS } from '../constants.ts'
+import { FLAP_ANIMATION_MS, INVULNERABLE_MS } from '../constants.ts'
 import type { GameState, Palette } from '../types.ts'
 import type { World } from '../world.ts'
 import { drawParticles } from './effects.ts'
@@ -6,7 +6,7 @@ import { drawHippo } from './hippo.ts'
 import { drawPickups } from './pickups.ts'
 import { drawPipes } from './pipes.ts'
 import type { SkyMotion } from './scenery.ts'
-import { drawGround, drawScenery, drawSky } from './scenery.ts'
+import { drawGreenery, drawGround, drawScenery, drawSky } from './scenery.ts'
 
 /** The pose a knocked-out hippo settles into: body level, head hanging from the neck. */
 export const DEFEAT = { tilt: 0, headNod: 0.7, headDrop: 2 }
@@ -28,7 +28,8 @@ export function drawScene(
   drawScenery(ctx, p, state, world, now, sky, effects)
   drawPipes(ctx, p, state.pipes, world)
   drawPickups(ctx, p, state.pickups, now)
-  drawGround(ctx, p, world, state.scrolled % BRICK_WIDTH)
+  drawGround(ctx, p, world, state.scrolled)
+  drawGreenery(ctx, p, world, state.scrolled)
   if (effects) drawParticles(ctx, p, state.particles)
 
   const idle = state.phase === 'ready'
@@ -52,7 +53,7 @@ export function drawScene(
       defeated,
       headNod: DEFEAT.headNod * sink,
       headDrop: DEFEAT.headDrop * sink,
-      shielded: state.shielded,
+      shield: state.charges,
       sparkle: solidLeft / INVULNERABLE_MS,
     },
     now,

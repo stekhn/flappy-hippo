@@ -53,6 +53,8 @@ export const MELON_CHANCE = 0.4
 export const SHIELD_CHANCE = 0.07
 /** Pipes to clear before the first shield can appear. */
 export const SHIELD_EARLIEST_PIPE = 5
+/** Shields stack — up to this many charges, one hit each. */
+export const MAX_SHIELDS = 3
 /** How long a popped shield keeps the hippo solid, so it can fly clear of the pipe. */
 export const INVULNERABLE_MS = 1000
 

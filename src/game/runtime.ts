@@ -21,7 +21,8 @@ export interface Snapshot {
   score: number
   best: number
   newBest: boolean
-  shielded: boolean
+  /** Shield charges in hand. */
+  charges: number
   melons: number
   overTitle: string
   round: number
@@ -347,14 +348,15 @@ export class GameRuntime {
     const dt = Math.min((now - this.last) / 1000, MAX_FRAME_S)
     this.last = now
     if (!this.live(now) && !this.dirty) return
-    if (this.suspended) return
 
-    const frozen = this.paused || now < this.countdownUntil
+    // Suspended (the menu is up), paused, or counting back in: nothing moves, but a frame that
+    // was marked dirty — a theme switch made from that very menu — is still painted once.
+    const frozen = this.suspended || this.paused || now < this.countdownUntil
     if (!frozen) {
       advance(this.state, dt, now, this.world, this.difficulty, this.events)
       this.drain()
     }
-    if (this.effects) animateSky(this.sky, this.state, now, dt)
+    if (this.effects && !this.suspended) animateSky(this.sky, this.state, now, dt)
     drawScene(this.ctx, this.state, this.world, this.palette, this.sky, now, this.effects)
     this.dirty = false
     this.push(now)
@@ -409,7 +411,7 @@ export class GameRuntime {
       score: s.score,
       best: s.best,
       newBest: s.newBest,
-      shielded: s.shielded,
+      charges: s.charges,
       melons: s.melons,
       overTitle: s.overTitle,
       round: s.round,
@@ -428,7 +430,7 @@ export class GameRuntime {
       next.score === prev.score &&
       next.best === prev.best &&
       next.newBest === prev.newBest &&
-      next.shielded === prev.shielded &&
+      next.charges === prev.charges &&
       next.melons === prev.melons &&
       next.round === prev.round &&
       next.difficulty === prev.difficulty

@@ -1,15 +1,17 @@
 import { CardShell } from './CardShell.tsx'
+import { Keycap } from './Keycap.tsx'
 import { Stat } from './Stat.tsx'
 import { IconHome, IconPlay, IconRestart, IconStar } from './icons.tsx'
 
 interface PauseCardProps {
   score: number
+  touch: boolean
   onResume: () => void
   onRestart: () => void
   onGiveUp: () => void
 }
 
-export function PauseCard({ score, onResume, onRestart, onGiveUp }: PauseCardProps) {
+export function PauseCard({ score, touch, onResume, onRestart, onGiveUp }: PauseCardProps) {
   return (
     <CardShell onBackdropTap={onResume} labelledBy="pause-title">
       <h2 id="pause-title" className="t-heading">
@@ -24,6 +26,7 @@ export function PauseCard({ score, onResume, onRestart, onGiveUp }: PauseCardPro
       <button type="button" className="btn-primary mt-5 w-full" onClick={onResume}>
         <IconPlay width={22} height={22} />
         Weiter
+        {!touch && <Keycap />}
       </button>
       <div className="mt-3 flex gap-2">
         <button type="button" className="btn-secondary flex-1 px-3" onClick={onRestart}>
