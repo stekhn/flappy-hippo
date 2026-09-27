@@ -1,7 +1,7 @@
 // Turns the street's animals into SVG files by recording what their canvas drawing routines do.
 //
-//   node --experimental-strip-types scripts/make-animal-svg.ts dog docs/dog.svg
-//   node --experimental-strip-types scripts/make-animal-svg.ts cat docs/cat.svg [--age 1.4]
+//   node --experimental-strip-types scripts/make-animal-svg.ts dog dog.svg
+//   node --experimental-strip-types scripts/make-animal-svg.ts cat cat.svg [--age 1.4]
 //
 // A small stand-in for CanvasRenderingContext2D collects paths, fills and strokes under the current
 // transform and writes them out as <path> elements, so the file is the very drawing the game paints.

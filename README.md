@@ -33,7 +33,7 @@ npm run build        # static bundle in dist/
 npm run preview      # serve the build under /flappy-hippo/
 npm test             # game logic (Node test runner)
 npm run lint         # oxlint
-npm run assets       # assets/* → icons, favicon, iOS splash screens, link preview
+npm run assets       # src/assets/* → icons, favicon, iOS splash screens, link preview
 npm run screenshots  # manifest screenshots from the running app (needs Chrome, see below)
 ```
 
@@ -76,8 +76,10 @@ src/game/render/   canvas drawing: hippo, pipes, backdrop, street, effects
 src/components/    React UI: HUD, cards, menu
 src/hooks/         runtime binding, settings, progress, install prompt
 src/i18n/          message catalogues and locale detection
-assets/            icon sources (SVG) for scripts/make-assets.ts
-scripts/           asset and screenshot generation
+src/assets/        icon and poster sources for scripts/make-assets.ts
+src/dev/           pose lab: open /src/dev/poses.html on the dev server
+public/            static files served as they are: icons, splash screens, screenshots, fonts
+scripts/           asset, screenshot and SVG generation
 ```
 
 ## Origin

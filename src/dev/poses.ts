@@ -1,10 +1,10 @@
 // A contact sheet of hippo poses, drawn by the real renderer, for choosing how a knocked-out hippo
-// should look. Open /dev/poses.html on the dev server. The values that win go into DEFEAT in
+// should look. Open /src/dev/poses.html on the dev server. The values that win go into DEFEAT in
 // src/game/render/scene.ts.
 
-import { resolvePalette } from '../src/game/palette.ts'
-import { drawHippo } from '../src/game/render/hippo.ts'
-import type { HippoPose } from '../src/game/render/hippo.ts'
+import { resolvePalette } from '../game/palette.ts'
+import { drawHippo } from '../game/render/hippo.ts'
+import type { HippoPose } from '../game/render/hippo.ts'
 
 interface Variant {
   label: string

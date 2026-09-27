@@ -1,6 +1,6 @@
-// Rasterizes the marks in assets/ into everything a store-quality PWA needs, and writes the iOS
+// Rasterizes the marks in src/assets/ into everything a store-quality PWA needs, and writes the iOS
 // splash-screen <link> tags into index.html between the splash markers. Run after changing any
-// SVG in assets/:  npm run assets
+// SVG in src/assets/:  npm run assets
 //
 // The output lands in public/ and is committed, so a plain `npm ci && npm run build` never needs
 // an image toolchain. Screenshots for the manifest come from scripts/make-screenshots.ts.
@@ -11,7 +11,7 @@ import { fileURLToPath } from 'node:url'
 import sharp from 'sharp'
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
-const asset = (name: string) => readFile(join(root, 'assets', name))
+const asset = (name: string) => readFile(join(root, 'src', 'assets', name))
 const out = async (name: string, png: Buffer) => {
   const path = join(root, 'public', name)
   await mkdir(dirname(path), { recursive: true })
