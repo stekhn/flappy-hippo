@@ -326,59 +326,54 @@ body {
 }
 
 /* --------------------------------------------------------------------------------------------
-   Motion. Cards bounce in the way a toy would; toasts slide up from the bottom edge. Anyone who
-   asked their system for less motion gets a plain fade instead.
+   Motion. Cards bounce in the way a toy would; toasts slide up from the bottom edge.
+
+   Only `transform` is ever animated here, never `opacity`. An element whose opacity the
+   compositor animates — and with a filling animation it keeps doing so after the last frame —
+   becomes a "backdrop root": a frosted child then blurs only what lies between that element and
+   itself, which is nothing, and the glass turns clear until some style change drops the layer.
+   The menu's scrim fades by animating its colour instead. Anyone who asked their system for
+   less motion gets no animation at all.
    -------------------------------------------------------------------------------------------- */
 @keyframes pop-in {
   from {
-    opacity: 0;
     transform: scale(0.8);
   }
   to {
-    opacity: 1;
     transform: scale(1);
   }
 }
 
 @keyframes rise-in {
   from {
-    opacity: 0;
-    transform: translateY(14%);
+    transform: translateY(110%);
   }
   to {
-    opacity: 1;
     transform: translateY(0);
   }
 }
 
-@keyframes fade-in {
+@keyframes scrim-in {
   from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
+    background-color: transparent;
   }
 }
 
 @keyframes toast-in {
   from {
-    opacity: 0;
-    transform: translateY(140%) scale(0.92);
+    transform: translateY(160%) scale(0.92);
   }
   to {
-    opacity: 1;
     transform: translateY(0) scale(1);
   }
 }
 
 @keyframes toast-out {
   from {
-    opacity: 1;
     transform: translateY(0) scale(1);
   }
   to {
-    opacity: 0;
-    transform: translateY(140%) scale(0.92);
+    transform: translateY(160%) scale(0.92);
   }
 }
 
@@ -400,8 +395,8 @@ body {
   animation: rise-in 280ms cubic-bezier(0.34, 1.4, 0.64, 1) both;
 }
 
-.animate-fade {
-  animation: fade-in 160ms ease both;
+.animate-scrim {
+  animation: scrim-in 200ms ease both;
 }
 
 .animate-toast-in {
@@ -421,15 +416,9 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .animate-pop,
   .animate-rise,
-  .animate-fade,
-  .animate-toast-in {
-    animation: fade-in 120ms ease both;
-  }
-
-  .animate-toast-out {
-    animation: fade-in 120ms ease reverse both;
-  }
-
+  .animate-scrim,
+  .animate-toast-in,
+  .animate-toast-out,
   .animate-wobble {
     animation: none;
   }

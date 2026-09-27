@@ -17,7 +17,7 @@ interface CardShellProps {
 export function CardShell({ children, onBackdropTap, align = 'center', labelledBy }: CardShellProps) {
   return (
     <div
-      className={`safe-inset animate-fade absolute inset-0 z-0 flex justify-center ${
+      className={`safe-inset absolute inset-0 z-0 flex justify-center ${
         align === 'end' ? 'items-end' : 'items-center'
       }`}
       onPointerDown={(event) => {

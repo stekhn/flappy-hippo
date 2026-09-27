@@ -38,13 +38,16 @@ interface MenuSheetProps {
   onResetProgress: () => void
 }
 
-/** Wide and short — a phone on its side, a laptop — gets a dialog with a tab rail instead of a sheet. */
-const WIDE = '(min-width: 640px) and (orientation: landscape)'
+/**
+ * Anything wider than a phone — a phone on its side, a tablet either way, a laptop — gets a dialog
+ * with a tab rail. A bottom sheet only makes sense when it can span the whole width.
+ */
+const WIDE = '(min-width: 640px)'
 
 /**
- * The menu behind the menu button: settings, records, achievements and the how-to. In portrait it
- * is a bottom sheet with a tab bar; in landscape a centred dialog with the tabs down the left, so
- * a short screen still shows a useful amount of content.
+ * The menu behind the menu button: settings, records, achievements and the how-to. On a narrow
+ * phone it is a bottom sheet with a tab bar; on anything wider a centred dialog with the tabs down
+ * the left, so a short or square screen still shows a useful amount of content.
  */
 export function MenuSheet({
   tab,
@@ -145,7 +148,7 @@ export function MenuSheet({
 
   return (
     <div
-      className={`safe-inset animate-fade absolute inset-0 z-20 flex justify-center bg-sky/40 ${
+      className={`safe-inset animate-scrim absolute inset-0 z-20 flex justify-center bg-sky/40 ${
         wide ? 'items-center' : 'items-end !p-0'
       }`}
       onPointerDown={onClose}

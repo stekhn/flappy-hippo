@@ -154,7 +154,9 @@ try {
     executablePath: findChrome(),
     headless: true,
     pipe: false,
-    args: ['--no-sandbox', '--disable-gpu', '--hide-scrollbars'],
+    // --use-mock-keychain: a full Chrome on macOS otherwise asks the Keychain for its cookie
+    // encryption key on first launch of a fresh profile — a prompt nobody running this wants.
+    args: ['--no-sandbox', '--disable-gpu', '--hide-scrollbars', '--use-mock-keychain'],
   })
   await mkdir(join(root, 'public', 'screenshots'), { recursive: true })
   for (const scene of SCENES) {
