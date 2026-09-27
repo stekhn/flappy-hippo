@@ -1,5 +1,13 @@
 import type { Snapshot } from '../game/runtime.ts'
-import { IconMelon, IconMenu, IconPause, IconShield, IconSoundOff, IconSoundOn } from './icons.tsx'
+import {
+  IconMelon,
+  IconMenu,
+  IconPause,
+  IconShield,
+  IconSoundOff,
+  IconSoundOn,
+  IconTrophy,
+} from './icons.tsx'
 
 interface HudProps {
   snapshot: Snapshot
@@ -12,6 +20,7 @@ interface HudProps {
 /** The thin layer of chrome over the scene: score, shield, and the two buttons a thumb can reach. */
 export function Hud({ snapshot, sound, onToggleSound, onPause, onMenu }: HudProps) {
   const playing = snapshot.phase === 'running' && !snapshot.paused
+  const countingIn = playing && snapshot.countdown > 0
 
   return (
     <div className="safe-inset pointer-events-none absolute inset-0 z-10 flex flex-col">
@@ -31,19 +40,31 @@ export function Hud({ snapshot, sound, onToggleSound, onPause, onMenu }: HudProp
         <div className="flex min-w-0 flex-col items-center pt-1">
           {playing && (
             <>
-              <span className="hud-text tnum text-5xl leading-none font-black">
+              <span
+                className="hud-text text-6xl transition-colors"
+                style={snapshot.newBest ? { color: 'var(--game-gold)' } : undefined}
+              >
                 {snapshot.score}
               </span>
-              <div className="mt-1.5 flex items-center gap-2.5">
+              <div className="mt-1.5 flex items-center gap-3">
+                {snapshot.newBest && (
+                  <span
+                    className="hud-text animate-pop flex items-center gap-1 text-base"
+                    style={{ color: 'var(--game-gold)' }}
+                  >
+                    <IconTrophy width={18} height={18} />
+                    <span>Rekord</span>
+                  </span>
+                )}
                 {snapshot.melons > 0 && (
-                  <span className="hud-text flex items-center gap-1 text-sm font-semibold">
-                    <IconMelon width={16} height={16} />
-                    <span className="tnum">{snapshot.melons}</span>
+                  <span className="hud-text flex items-center gap-1 text-base">
+                    <IconMelon width={18} height={18} />
+                    <span>{snapshot.melons}</span>
                   </span>
                 )}
                 {snapshot.shielded && (
-                  <span className="hud-text flex items-center gap-1 text-sm font-semibold">
-                    <IconShield width={16} height={16} />
+                  <span className="hud-text flex items-center gap-1 text-base">
+                    <IconShield width={18} height={18} />
                     <span>Schild</span>
                   </span>
                 )}
@@ -62,6 +83,15 @@ export function Hud({ snapshot, sound, onToggleSound, onPause, onMenu }: HudProp
           {playing ? <IconPause /> : <IconMenu />}
         </button>
       </div>
+
+      {/* The count back in after a pause. Keyed by the digit so each one pops in afresh. */}
+      {countingIn && (
+        <div className="flex flex-1 items-center justify-center" aria-live="assertive">
+          <span key={snapshot.countdown} className="hud-text animate-pop text-9xl">
+            {snapshot.countdown}
+          </span>
+        </div>
+      )}
     </div>
   )
 }

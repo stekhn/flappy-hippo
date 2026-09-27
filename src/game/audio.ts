@@ -5,7 +5,17 @@
  * lazily on the first tap or key press (`unlock`).
  */
 
-export type Cue = 'flap' | 'score' | 'melon' | 'shield' | 'pop' | 'crash' | 'milestone' | 'ui'
+export type Cue =
+  | 'flap'
+  | 'score'
+  | 'melon'
+  | 'shield'
+  | 'pop'
+  | 'crash'
+  | 'milestone'
+  | 'record'
+  | 'achievement'
+  | 'ui'
 
 export interface Sfx {
   unlock(): void
@@ -139,6 +149,23 @@ export function createSfx(initiallyMuted = false): Sfx {
           ;[784, 988, 1175, 1568].forEach((f, i) =>
             tone(context, { type: 'triangle', from: f, duration: 0.2, gain: 0.12, at: i * 0.07 }),
           )
+          return
+        case 'record':
+          // Two quick fifths and a held top note: brighter than a milestone, shorter than a crash.
+          ;[
+            [659, 0, 0.1],
+            [988, 0.08, 0.1],
+            [1319, 0.16, 0.32],
+          ].forEach(([f, at, duration]) =>
+            tone(context, { type: 'triangle', from: f, duration, gain: 0.14, at }),
+          )
+          return
+        case 'achievement':
+          // The console two-note: a soft bell, then a brighter one a fifth up, ringing out.
+          tone(context, { type: 'sine', from: 784, duration: 0.22, gain: 0.16 })
+          tone(context, { type: 'triangle', from: 1568, duration: 0.12, gain: 0.05 })
+          tone(context, { type: 'sine', from: 1175, duration: 0.5, gain: 0.16, at: 0.13 })
+          tone(context, { type: 'triangle', from: 2350, duration: 0.25, gain: 0.04, at: 0.13 })
           return
         case 'ui':
           tone(context, { type: 'sine', from: 420, to: 560, duration: 0.07, gain: 0.1 })

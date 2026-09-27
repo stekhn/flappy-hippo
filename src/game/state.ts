@@ -163,6 +163,20 @@ function launchFireworks(state: GameState, world: World, now: number): void {
   }
 }
 
+/** Everything that may follow a point: fireworks every ten, and the moment a record falls. */
+function celebrate(state: GameState, world: World, now: number, events: GameEvent[]): void {
+  if (state.score % FIREWORK_STEP === 0) {
+    launchFireworks(state, world, now)
+    events.push({ type: 'milestone', score: state.score })
+  }
+  // Only a record from an earlier round is worth announcing mid-flight; the first point ever
+  // is not a "new record", it is just the first point.
+  if (!state.newBest && state.best > 0 && state.score > state.best) {
+    state.newBest = true
+    events.push({ type: 'record', score: state.score })
+  }
+}
+
 function stepParticles(particles: Particle[], dt: number): Particle[] {
   for (const p of particles) {
     p.life -= dt
@@ -201,10 +215,7 @@ function collect(state: GameState, world: World, now: number, events: GameEvent[
       state.score += MELON_POINTS
       burst(state, pickup.x, pickup.y, 10, 'melon', 90, 1)
       events.push({ type: 'melon', score: state.score })
-      if (state.score % FIREWORK_STEP === 0) {
-        launchFireworks(state, world, now)
-        events.push({ type: 'milestone', score: state.score })
-      }
+      celebrate(state, world, now, events)
       continue
     }
     state.shields += 1
@@ -270,10 +281,7 @@ export function advance(
     state.pipesCleared += 1
     state.score += 1
     events.push({ type: 'score', score: state.score })
-    if (state.score % FIREWORK_STEP === 0) {
-      launchFireworks(state, world, now)
-      events.push({ type: 'milestone', score: state.score })
-    }
+    celebrate(state, world, now, events)
   }
   state.pipes = state.pipes.filter((pipe) => pipe.x + PIPE_WIDTH > -10)
 

@@ -29,6 +29,23 @@ export function useProgress() {
     return unlocked
   }, [])
 
+  /**
+   * Checks a round still in progress against the achievements, folding it in provisionally.
+   * Anything reached is unlocked and saved right away — the way a console pops the toast the
+   * moment the tenth pipe is behind you, not when you crash — while the run's own stats wait
+   * for `record`.
+   */
+  const preview = useCallback((run: RunResult): string[] => {
+    const at = Date.now()
+    const unlocked = newlyUnlocked(recordRun(latest.current, run, at))
+    if (unlocked.length === 0) return unlocked
+    const next = unlock(latest.current, unlocked, at)
+    latest.current = next
+    saveProgress(next)
+    setProgress(next)
+    return unlocked
+  }, [])
+
   const reset = useCallback(() => {
     const next = emptyProgress()
     latest.current = next
@@ -36,5 +53,5 @@ export function useProgress() {
     setProgress(next)
   }, [])
 
-  return { progress, record, reset }
+  return { progress, record, preview, reset }
 }

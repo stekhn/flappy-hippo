@@ -1,4 +1,3 @@
-import { OUTLINE } from '../constants.ts'
 import type { Palette } from '../types.ts'
 
 export function drawEllipse(
@@ -40,29 +39,6 @@ export function drawShadedEllipse(
   ctx.stroke()
 }
 
-export function drawStar(
-  ctx: CanvasRenderingContext2D,
-  cx: number,
-  cy: number,
-  r: number,
-  color: string,
-): void {
-  ctx.beginPath()
-  for (let i = 0; i < 10; i++) {
-    const radius = i % 2 === 0 ? r : r * 0.45
-    const angle = -Math.PI / 2 + (i * Math.PI) / 5
-    ctx.lineTo(cx + Math.cos(angle) * radius, cy + Math.sin(angle) * radius)
-  }
-  ctx.closePath()
-  ctx.fillStyle = color
-  ctx.fill()
-}
-
 export function easeOut(t: number): number {
   return 1 - (1 - t) ** 3
-}
-
-/** Resets the stroke weight the hippo and the pipes both rely on. */
-export function resetOutline(ctx: CanvasRenderingContext2D): void {
-  ctx.lineWidth = OUTLINE
 }

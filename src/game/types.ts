@@ -94,6 +94,8 @@ export type GameEvent =
   | { type: 'shield' }
   | { type: 'shield-pop' }
   | { type: 'milestone'; score: number }
+  /** The running score just passed the record set in an earlier round. */
+  | { type: 'record'; score: number }
   | { type: 'crash'; score: number; best: number; newBest: boolean }
 
 export interface Palette {

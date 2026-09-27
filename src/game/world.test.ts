@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { MAX_ASPECT, SHORT_SIDE } from './constants.ts'
+import { MAX_ASPECT, MAX_ZOOM, SHORT_SIDE } from './constants.ts'
 import { canvasSize, fitWorld } from './world.ts'
 
 test('a portrait phone keeps the short side and grows downwards', () => {
@@ -40,4 +40,18 @@ test('the canvas fits inside its box without overflowing either side', () => {
 test('a degenerate box does not produce NaN', () => {
   const world = fitWorld(0, 0)
   assert.ok(Number.isFinite(world.width) && Number.isFinite(world.height))
+})
+
+test('a large display stops zooming at the cap and leaves the board framed', () => {
+  const world = fitWorld(2560, 1440)
+  const size = canvasSize(world, 2560, 1440)
+  assert.equal(size.scale, MAX_ZOOM)
+  assert.ok(size.width < 2560 && size.height < 1440)
+})
+
+test('a phone fills its screen below the cap', () => {
+  const world = fitWorld(390, 844)
+  const size = canvasSize(world, 390, 844)
+  assert.ok(size.scale < MAX_ZOOM)
+  assert.ok(Math.abs(size.width - 390) < 0.001 || Math.abs(size.height - 844) < 0.001)
 })

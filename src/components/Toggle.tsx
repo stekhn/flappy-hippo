@@ -18,21 +18,22 @@ export function Toggle({ label, hint, checked, onChange }: ToggleProps) {
         blurIfPointer(event)
         onChange(!checked)
       }}
-      className="flex w-full items-center justify-between gap-4 py-2 text-left"
+      className="tile flex w-full items-center justify-between gap-4 px-4 py-3 text-left"
     >
-      <span>
-        <span className="block text-sm font-semibold">{label}</span>
-        {hint && <span className="text-muted block text-xs">{hint}</span>}
+      <span className="min-w-0">
+        <span className="t-label block">{label}</span>
+        {hint && <span className="t-hint block">{hint}</span>}
       </span>
       <span
         aria-hidden="true"
-        className={`relative h-7 w-12 shrink-0 rounded-full transition-colors ${
-          checked ? 'bg-brand' : 'bg-ink/25'
+        className={`relative h-8 w-14 shrink-0 rounded-full transition-colors ${
+          checked ? 'bg-brand' : 'bg-ink/20'
         }`}
+        style={checked ? { boxShadow: 'inset 0 -3px 0 var(--game-brand-deep)' } : undefined}
       >
         <span
-          className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow transition-[left] ${
-            checked ? 'left-6' : 'left-1'
+          className={`absolute top-1 h-6 w-6 rounded-full bg-white shadow-md transition-[left] ${
+            checked ? 'left-7' : 'left-1'
           }`}
         />
       </span>

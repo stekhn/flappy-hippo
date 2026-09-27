@@ -10,7 +10,7 @@ export const MAX_ASPECT = 2.3
  * screen; without a cap a desktop browser would reach 2.8 and the hippo would fill a third of it.
  * Past the cap the board is centred and framed instead (see the canvas styling in styles.css).
  */
-export const MAX_ZOOM = 2
+export const MAX_ZOOM = 2.2
 
 export const GRAVITY = 1500
 export const FLAP_VELOCITY = -420
@@ -80,6 +80,10 @@ export const MOON_RADIUS = 16
 export const FLAP_ANIMATION_MS = 300
 /** A stray tap right after a crash must not skip the game-over card. */
 export const RESTART_DELAY_MS = 450
+/** Coming back from a pause counts down 3-2-1 before the hippo moves again. */
+export const COUNTDOWN_MS = 1500
+/** How long after a crash the scene keeps animating (falling sky, dust) before it goes still. */
+export const OVER_SETTLE_MS = 3000
 /** Frames longer than this (a backgrounded tab, a slow phone) are clamped, never simulated. */
 export const MAX_FRAME_S = 1 / 30
 

@@ -1,48 +1,66 @@
 import type { ReactNode } from 'react'
-import { achievementById } from '../game/achievements.ts'
+import { difficultyById } from '../game/difficulty.ts'
 import { medalFor, nextMedal } from '../game/medals.ts'
 import type { Snapshot } from '../game/runtime.ts'
+import { canShare } from '../platform.ts'
 import { CardShell } from './CardShell.tsx'
-import { IconChart, IconMelon, IconRestart, IconStar, IconTrophy } from './icons.tsx'
+import { IconChart, IconMelon, IconRestart, IconShare, IconStar, IconTrophy } from './icons.tsx'
 import type { MenuTab } from './MenuSheet.tsx'
 
 interface OverCardProps {
   snapshot: Snapshot
-  /** Achievement ids this round unlocked, shown once before they move to the menu. */
-  unlocked: string[]
   touch: boolean
   onRestart: () => void
   onOpenMenu: (tab: MenuTab) => void
 }
 
-export function OverCard({ snapshot, unlocked, touch, onRestart, onOpenMenu }: OverCardProps) {
+/** Hands the score to the OS share sheet. Nothing leaves the device unless the player picks a target. */
+async function shareScore(snapshot: Snapshot): Promise<void> {
+  const level = difficultyById(snapshot.difficulty).label
+  const points = `${snapshot.score} ${snapshot.score === 1 ? 'Punkt' : 'Punkte'}`
+  try {
+    await navigator.share({
+      title: 'Flappy Hippo',
+      text: `${points} in Flappy Hippo (${level}). Schaffst du mehr?`,
+      url: location.href,
+    })
+  } catch {
+    /* the sheet was dismissed, or the platform refused — either way nothing to do */
+  }
+}
+
+export function OverCard({ snapshot, touch, onRestart, onOpenMenu }: OverCardProps) {
   const medal = medalFor(snapshot.score)
   const next = nextMedal(snapshot.score)
+  const shareable = canShare() && snapshot.score > 0
 
   return (
     <CardShell dim onBackdropTap={onRestart} labelledBy="over-title">
-      <h2 id="over-title" className="text-xl font-black">
+      <h2 id="over-title" className="t-heading">
         {snapshot.overTitle}
       </h2>
 
       {medal && (
         <div
-          className="mx-auto mt-3 flex h-16 w-16 flex-col items-center justify-center rounded-full border-2"
-          style={{ borderColor: medal.color, background: medal.background, color: medal.color }}
+          className="animate-pop mx-auto mt-4 flex h-[4.5rem] w-[4.5rem] flex-col items-center justify-center rounded-full border-[3px]"
+          style={{
+            borderColor: medal.color,
+            background: medal.background,
+            color: medal.color,
+            boxShadow: `0 4px 0 ${medal.color}`,
+          }}
         >
-          <IconTrophy width={22} height={22} />
-          <span className="mt-0.5 text-[0.625rem] font-bold tracking-wide uppercase">
-            {medal.label}
-          </span>
+          <IconTrophy width={24} height={24} />
+          <span className="t-label mt-0.5 text-[0.75rem]">{medal.label}</span>
         </div>
       )}
 
-      <dl className="mt-4 grid grid-cols-2 gap-2 text-left">
-        <Stat icon={<IconStar width={16} height={16} className="text-brand" />} label="Punkte">
+      <dl className="mt-5 grid grid-cols-2 gap-2 text-left">
+        <Stat icon={<IconStar width={18} height={18} className="text-brand" />} label="Punkte">
           {snapshot.score}
         </Stat>
         <Stat
-          icon={<IconTrophy width={16} height={16} className="text-gold" />}
+          icon={<IconTrophy width={18} height={18} className="text-gold" />}
           label={snapshot.newBest ? 'Neuer Rekord' : 'Rekord'}
           highlight={snapshot.newBest}
         >
@@ -51,57 +69,37 @@ export function OverCard({ snapshot, unlocked, touch, onRestart, onOpenMenu }: O
       </dl>
 
       {snapshot.melons > 0 && (
-        <p className="text-muted mt-2 flex items-center justify-center gap-1.5 text-sm">
-          <IconMelon width={16} height={16} />
-          <span className="tnum">{snapshot.melons}</span> Melonen eingesammelt
+        <p className="t-hint mt-3 flex items-center justify-center gap-1.5">
+          <IconMelon width={18} height={18} />
+          <span className="t-number text-ink text-base">{snapshot.melons}</span>
+          {snapshot.melons === 1 ? 'Melone eingesammelt' : 'Melonen eingesammelt'}
         </p>
-      )}
-
-      {unlocked.length > 0 && (
-        <ul className="mt-3 space-y-1">
-          {unlocked.map((id) => {
-            const achievement = achievementById(id)
-            if (!achievement) return null
-            return (
-              <li
-                key={id}
-                className="border-line bg-surface flex items-center gap-2 rounded-xl border px-3 py-2 text-left text-sm"
-              >
-                <span aria-hidden="true" className="text-lg">
-                  {achievement.icon}
-                </span>
-                <span>
-                  <span className="font-semibold">{achievement.label}</span>
-                  <span className="text-muted block text-xs">Erfolg freigeschaltet</span>
-                </span>
-              </li>
-            )
-          })}
-        </ul>
       )}
 
       {next && !snapshot.newBest && (
-        <p className="text-muted mt-3 text-xs">
-          Noch <span className="tnum font-semibold">{next.from - snapshot.score}</span> Punkte bis{' '}
-          {next.label}
+        <p className="t-hint mt-3">
+          Noch <span className="t-number text-ink text-base">{next.from - snapshot.score}</span>{' '}
+          Punkte bis {next.label}
         </p>
       )}
 
-      <button type="button" className="btn-primary mt-4 w-full" onClick={onRestart}>
-        <IconRestart width={20} height={20} />
+      <button type="button" className="btn-primary mt-5 w-full" onClick={onRestart}>
+        <IconRestart width={22} height={22} />
         Nochmal
       </button>
-      <p className="text-muted mt-2 text-xs">
-        {touch ? 'Oder irgendwo tippen' : 'Oder Leertaste drücken'}
-      </p>
-      <button
-        type="button"
-        className="btn-ghost mt-1 w-full text-sm"
-        onClick={() => onOpenMenu('scores')}
-      >
-        <IconChart width={18} height={18} />
-        Bestenliste
-      </button>
+      <p className="t-hint mt-2">{touch ? 'Oder irgendwo tippen' : 'Oder Leertaste drücken'}</p>
+      <div className="mt-2 flex justify-center gap-1">
+        <button type="button" className="btn-ghost" onClick={() => onOpenMenu('scores')}>
+          <IconChart width={20} height={20} />
+          Rekorde
+        </button>
+        {shareable && (
+          <button type="button" className="btn-ghost" onClick={() => void shareScore(snapshot)}>
+            <IconShare width={20} height={20} />
+            Teilen
+          </button>
+        )}
+      </div>
     </CardShell>
   )
 }
@@ -118,12 +116,12 @@ function Stat({
   children: ReactNode
 }) {
   return (
-    <div className="border-line bg-surface rounded-xl border px-3 py-2">
-      <dt className="text-muted flex items-center gap-1.5 text-xs">
+    <div className="tile px-4 py-3">
+      <dt className="t-hint flex items-center gap-1.5 text-[0.875rem]">
         {icon}
         {label}
       </dt>
-      <dd className={`tnum text-xl font-bold ${highlight ? 'text-brand' : ''}`}>{children}</dd>
+      <dd className={`t-number mt-1 text-[1.75rem] ${highlight ? 'text-gold' : ''}`}>{children}</dd>
     </div>
   )
 }

@@ -1,35 +1,19 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { GameRuntime } from '../game/runtime.ts'
-import type { Snapshot } from '../game/runtime.ts'
+import { useCallback, useEffect, useState } from 'react'
 import type { DifficultyId } from '../game/difficulty.ts'
-import type { GameEvent } from '../game/types.ts'
+import { useGameRuntime } from '../hooks/useGameRuntime.ts'
 import { useInstallPrompt } from '../hooks/useInstallPrompt.ts'
 import { useProgress } from '../hooks/useProgress.ts'
 import { useSettings } from '../hooks/useSettings.ts'
+import { useToasts } from '../hooks/useToasts.ts'
+import { isTouch } from '../platform.ts'
 import { useTheme } from '../theme.ts'
+import { AchievementToast } from './AchievementToast.tsx'
 import { Hud } from './Hud.tsx'
 import { MenuSheet } from './MenuSheet.tsx'
 import type { MenuTab } from './MenuSheet.tsx'
 import { OverCard } from './OverCard.tsx'
 import { PauseCard } from './PauseCard.tsx'
 import { StartCard } from './StartCard.tsx'
-
-const INITIAL_SNAPSHOT: Snapshot = {
-  phase: 'ready',
-  paused: false,
-  score: 0,
-  best: 0,
-  newBest: false,
-  shielded: false,
-  melons: 0,
-  overTitle: 'Vorbei',
-  round: 0,
-}
-
-/** True on devices whose primary input is a finger — only the wording changes. */
-function isTouch(): boolean {
-  return typeof matchMedia !== 'undefined' && matchMedia('(hover: none)').matches
-}
 
 /**
  * The game screen: a canvas the runtime paints, with the HUD, the overlay cards and the menu in
@@ -39,107 +23,32 @@ function isTouch(): boolean {
 export function Game() {
   const { theme, setTheme, resolved } = useTheme()
   const { settings, update } = useSettings()
-  const { progress, record, reset } = useProgress()
+  const { progress, record, preview, reset } = useProgress()
   const { canInstall, install } = useInstallPrompt()
-
-  const boxRef = useRef<HTMLDivElement>(null)
-  const canvasRef = useRef<HTMLCanvasElement>(null)
-  const runtimeRef = useRef<GameRuntime | null>(null)
-  const [snapshot, setSnapshot] = useState<Snapshot>(INITIAL_SNAPSHOT)
+  const { current: toast, push: showToasts } = useToasts()
   const [menu, setMenu] = useState<MenuTab | null>(null)
-  const [unlocked, setUnlocked] = useState<string[]>([])
-  const [status, setStatus] = useState('')
   const [touch] = useState(isTouch)
 
-  // The runtime outlives every render, so the values it needs at crash time are read from here.
-  const latest = useRef({ settings, resolved, record, best: progress.best })
-  useEffect(() => {
-    latest.current = { settings, resolved, record, best: progress.best }
+  const { boxRef, canvasRef, snapshot, status, controls } = useGameRuntime({
+    settings,
+    dark: resolved === 'dark',
+    best: progress.best,
+    record,
+    preview,
+    onUnlock: showToasts,
   })
 
-  const onEvent = useCallback((event: GameEvent) => {
-    if (event.type === 'shield') setStatus('Schild eingesammelt')
-    if (event.type === 'shield-pop') setStatus('Schild verbraucht')
-    if (event.type !== 'crash') return
-    const runtime = runtimeRef.current
-    if (!runtime) return
-    const { resolved: scheme, record: save } = latest.current
-    setUnlocked(save({ ...runtime.summary(), night: scheme === 'dark' }))
-    setStatus(
-      `Vorbei. ${event.score} ${event.score === 1 ? 'Punkt' : 'Punkte'}` +
-        (event.newBest ? ', neuer Rekord.' : `, Rekord ${event.best}.`),
-    )
-  }, [])
-
-  // One runtime for the lifetime of the screen; settings flow in through the setters below.
+  // The menu covers the board: nothing moves underneath it, and a live round waits paused.
   useEffect(() => {
-    const canvas = canvasRef.current
-    const box = boxRef.current
-    if (!canvas || !box) return
-    const { settings: current, resolved: scheme, best } = latest.current
-    const runtime = new GameRuntime({
-      canvas,
-      box,
-      difficulty: current.difficulty,
-      best: best[current.difficulty],
-      dark: scheme === 'dark',
-      sound: current.sound,
-      haptics: current.haptics,
-      onSnapshot: setSnapshot,
-      onEvent,
-    })
-    runtimeRef.current = runtime
-    runtime.start()
-    return () => {
-      runtime.destroy()
-      runtimeRef.current = null
-    }
-    // Built once for the life of the screen: the values read above are only seeds. Every later
-    // change is pushed in through the setters in the effects below, so re-creating the runtime
-    // (and with it the round in progress) never happens.
-  }, [onEvent])
+    controls.setSuspended(menu !== null)
+  }, [controls, menu])
 
-  useEffect(() => {
-    runtimeRef.current?.setTheme(resolved === 'dark')
-  }, [resolved])
-  useEffect(() => {
-    runtimeRef.current?.setSound(settings.sound)
-  }, [settings.sound])
-  useEffect(() => {
-    runtimeRef.current?.setHaptics(settings.haptics)
-  }, [settings.haptics])
-  useEffect(() => {
-    runtimeRef.current?.setDifficulty(settings.difficulty, progress.best[settings.difficulty])
-  }, [settings.difficulty, progress.best])
-
-  const flap = useCallback(() => runtimeRef.current?.flap(), [])
-
-  const openMenu = useCallback((tab: MenuTab) => {
-    runtimeRef.current?.pause()
-    setMenu(tab)
-  }, [])
-
-  const restart = useCallback(() => {
-    setUnlocked([])
-    runtimeRef.current?.restart()
-    setStatus('Neue Runde')
-  }, [])
-
-  const giveUp = useCallback(() => {
-    runtimeRef.current?.surrender()
-  }, [])
-
-  // Restarting from the pause card ends the round properly first, so the points still count.
-  const restartFromPause = useCallback(() => {
-    runtimeRef.current?.surrender()
-    restart()
-  }, [restart])
+  const closeMenu = useCallback(() => setMenu(null), [])
 
   const resetProgress = useCallback(() => {
     reset()
-    runtimeRef.current?.setBest(0)
-    setStatus('Fortschritt gelöscht')
-  }, [reset])
+    controls.clearBest()
+  }, [controls, reset])
 
   // Keyboard: space flies, P pauses. Anything typed into a control belongs to that control.
   useEffect(() => {
@@ -151,12 +60,13 @@ export function Game() {
       if (target?.closest('button, input, select, textarea, [contenteditable]')) return
       if (menu !== null) return
       event.preventDefault()
-      if (pauseKey) runtimeRef.current?.togglePause()
-      else flap()
+      if (flapKey) controls.flap()
+      else if (snapshot.paused) controls.resume()
+      else controls.pause()
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [flap, menu])
+  }, [controls, menu, snapshot.paused])
 
   const showStart = snapshot.phase === 'ready' && menu === null
   const showPause = snapshot.paused && snapshot.phase === 'running' && menu === null
@@ -168,7 +78,7 @@ export function Game() {
       className="relative flex h-full w-full items-center justify-center overflow-hidden"
       onPointerDown={(event) => {
         if (event.button !== 0 && event.pointerType === 'mouse') return
-        flap()
+        controls.flap()
       }}
     >
       {/* Shrink-wraps the board, so the HUD, the cards and the sheet line up with its edges
@@ -178,7 +88,7 @@ export function Game() {
 
         {/* The only in-flight control a keyboard or screen reader needs. */}
         {snapshot.phase === 'running' && !snapshot.paused && (
-          <button type="button" className="sr-only" onClick={flap}>
+          <button type="button" className="sr-only" onClick={controls.flap}>
             Fliegen
           </button>
         )}
@@ -191,8 +101,8 @@ export function Game() {
           snapshot={snapshot}
           sound={settings.sound}
           onToggleSound={() => update('sound', !settings.sound)}
-          onPause={() => runtimeRef.current?.pause()}
-          onMenu={() => openMenu('settings')}
+          onPause={controls.pause}
+          onMenu={() => setMenu('settings')}
         />
 
         {showStart && (
@@ -201,29 +111,30 @@ export function Game() {
             best={progress.best[settings.difficulty]}
             touch={touch}
             onDifficulty={(id: DifficultyId) => update('difficulty', id)}
-            onStart={flap}
-            onOpenMenu={openMenu}
+            onStart={controls.flap}
+            onOpenMenu={setMenu}
           />
         )}
 
         {showPause && (
           <PauseCard
             score={snapshot.score}
-            onResume={() => runtimeRef.current?.resume()}
-            onRestart={restartFromPause}
-            onGiveUp={giveUp}
+            onResume={controls.resume}
+            onRestart={controls.restartFromPause}
+            onGiveUp={controls.surrender}
           />
         )}
 
         {showOver && (
           <OverCard
             snapshot={snapshot}
-            unlocked={unlocked}
             touch={touch}
-            onRestart={restart}
-            onOpenMenu={openMenu}
+            onRestart={controls.restart}
+            onOpenMenu={setMenu}
           />
         )}
+
+        <AchievementToast toast={toast} />
 
         {menu !== null && (
           <MenuSheet
@@ -233,7 +144,7 @@ export function Game() {
             progress={progress}
             canInstall={canInstall}
             onTab={setMenu}
-            onClose={() => setMenu(null)}
+            onClose={closeMenu}
             onSetting={update}
             onTheme={setTheme}
             onInstall={install}

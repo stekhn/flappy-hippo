@@ -22,7 +22,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     document.documentElement.dataset.theme = resolved
     // Keep the browser chrome (status bar, address bar) in step with the sky.
-    const meta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]:not([media])')
+    const meta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]')
     if (meta) meta.content = resolved === 'dark' ? '#111a26' : '#e5f0ff'
   }, [resolved])
 

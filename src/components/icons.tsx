@@ -183,11 +183,39 @@ export function IconCheck(props: IconProps) {
   )
 }
 
+export function IconShare(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M12 3v12" />
+      <path d="M8 7l4 -4l4 4" />
+      <path d="M6 12v7a1 1 0 0 0 1 1h10a1 1 0 0 0 1 -1v-7" />
+    </Icon>
+  )
+}
+
 export function IconHome(props: IconProps) {
   return (
     <Icon {...props}>
       <path d="M4 11l8 -7l8 7" />
       <path d="M6 10v9h12v-9" />
     </Icon>
+  )
+}
+
+/** The hippo's face from the app icon, for the title card. Mirrors assets/icon.svg. */
+export function HippoMark(props: IconProps) {
+  return (
+    <svg viewBox="4 4.5 16 15.5" width="64" height="62" aria-hidden="true" focusable="false" {...props}>
+      <circle cx="7.9" cy="7.4" r="1.9" fill="#93a1b5" />
+      <circle cx="16.1" cy="7.4" r="1.9" fill="#93a1b5" />
+      <circle cx="7.9" cy="7.6" r="0.9" fill="#e8a2b0" />
+      <circle cx="16.1" cy="7.6" r="0.9" fill="#e8a2b0" />
+      <ellipse cx="12" cy="12.6" rx="7" ry="5.9" fill="#93a1b5" />
+      <ellipse cx="12" cy="15.6" rx="5.1" ry="3.5" fill="#b6c1d1" />
+      <ellipse cx="9.9" cy="15.1" rx="0.85" ry="1.1" fill="#3e4753" />
+      <ellipse cx="14.1" cy="15.1" rx="0.85" ry="1.1" fill="#3e4753" />
+      <circle cx="9.5" cy="10.5" r="1.25" fill="#3e4753" />
+      <circle cx="14.5" cy="10.5" r="1.25" fill="#3e4753" />
+    </svg>
   )
 }

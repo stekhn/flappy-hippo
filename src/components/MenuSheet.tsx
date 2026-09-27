@@ -4,6 +4,7 @@ import { ACHIEVEMENTS } from '../game/achievements.ts'
 import { DIFFICULTIES, difficultyById } from '../game/difficulty.ts'
 import type { DifficultyId } from '../game/difficulty.ts'
 import type { Progress } from '../game/storage.ts'
+import { isIos, isStandalone } from '../platform.ts'
 import type { Settings } from '../settings.ts'
 import { THEME_OPTIONS } from '../theme.ts'
 import type { ThemePref } from '../theme.ts'
@@ -51,22 +52,44 @@ export function MenuSheet({
 }: MenuSheetProps) {
   const panel = useRef<HTMLDivElement>(null)
 
-  // Escape closes, and focus moves into the sheet so a keyboard can reach the tabs.
+  // A modal in all but name: focus moves in, Tab stays inside, Escape closes, and whatever had
+  // focus before (the menu button, usually) gets it back afterwards.
   useEffect(() => {
+    const opener = document.activeElement
     panel.current?.focus()
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== 'Escape') return
-      event.preventDefault()
-      event.stopPropagation()
-      onClose()
+      if (event.key === 'Escape') {
+        event.preventDefault()
+        event.stopPropagation()
+        onClose()
+        return
+      }
+      if (event.key !== 'Tab' || !panel.current) return
+      const focusable = panel.current.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])',
+      )
+      if (focusable.length === 0) return
+      const first = focusable[0]
+      const last = focusable[focusable.length - 1]
+      const active = document.activeElement
+      if (event.shiftKey && (active === first || active === panel.current)) {
+        event.preventDefault()
+        last.focus()
+      } else if (!event.shiftKey && active === last) {
+        event.preventDefault()
+        first.focus()
+      }
     }
     window.addEventListener('keydown', onKeyDown, true)
-    return () => window.removeEventListener('keydown', onKeyDown, true)
+    return () => {
+      window.removeEventListener('keydown', onKeyDown, true)
+      if (opener instanceof HTMLElement && opener.isConnected) opener.focus()
+    }
   }, [onClose])
 
   return (
     <div
-      className="animate-fade absolute inset-0 z-20 flex items-end justify-center bg-black/35"
+      className="animate-fade absolute inset-0 z-20 flex items-end justify-center bg-black/30"
       onPointerDown={onClose}
     >
       <div
@@ -75,15 +98,16 @@ export function MenuSheet({
         role="dialog"
         aria-modal="true"
         aria-label="Menü"
-        className="sheet animate-rise flex max-h-[88dvh] w-full max-w-[30rem] flex-col rounded-b-none outline-none"
+        className="glass animate-rise flex max-h-[88dvh] w-full max-w-[30rem] flex-col rounded-t-[1.75rem] border-b-0 outline-none"
         style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}
         onPointerDown={(event) => event.stopPropagation()}
       >
-        <div className="relative px-4 pt-3">
-          <div className="bg-line mx-auto h-1 w-10 rounded-full" aria-hidden="true" />
+        {/* Its own row, so the close button never sits on top of the last tab. */}
+        <div className="relative flex h-12 shrink-0 items-center justify-center px-2 pt-2">
+          <div className="bg-ink/20 h-1.5 w-12 rounded-full" aria-hidden="true" />
           <button
             type="button"
-            className="icon-btn absolute top-1 right-2 h-10 w-10 border-0 bg-transparent"
+            className="icon-btn absolute right-3 h-10 w-10"
             onClick={onClose}
             aria-label="Menü schließen"
           >
@@ -99,11 +123,11 @@ export function MenuSheet({
               role="tab"
               aria-selected={tab === id}
               onClick={() => onTab(id)}
-              className={`flex flex-1 flex-col items-center gap-0.5 rounded-xl px-1 py-2 text-xs font-semibold transition-colors ${
-                tab === id ? 'text-brand bg-brand/10' : 'text-muted'
+              className={`t-label flex flex-1 flex-col items-center gap-0.5 rounded-2xl px-1 py-2 text-[0.9375rem] transition-[background-color,color,box-shadow] duration-100 ${
+                tab === id ? 'bg-brand text-white shadow-[0_3px_0_var(--game-brand-deep)]' : 'text-muted'
               }`}
             >
-              <Icon width={20} height={20} />
+              <Icon width={22} height={22} />
               {label}
             </button>
           ))}
@@ -112,7 +136,7 @@ export function MenuSheet({
         <div
           role="tabpanel"
           aria-label={TABS.find((t) => t.id === tab)?.label}
-          className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pt-3 pb-1"
+          className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pt-4 pb-1"
         >
           {tab === 'settings' && (
             <SettingsTab
@@ -136,8 +160,8 @@ export function MenuSheet({
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <section className="mb-5">
-      <h3 className="text-muted mb-2 text-xs font-bold tracking-wide uppercase">{title}</h3>
+    <section className="mb-6">
+      <h3 className="t-section mb-2">{title}</h3>
       {children}
     </section>
   )
@@ -166,34 +190,49 @@ function SettingsTab({
           options={DIFFICULTIES.map((d) => ({ value: d.id, label: d.label, hint: d.hint }))}
           onChange={(value: DifficultyId) => onSetting('difficulty', value)}
         />
-        <p className="text-muted mt-1.5 text-xs">{difficultyById(settings.difficulty).hint}</p>
+        <p className="t-hint mt-2">{difficultyById(settings.difficulty).hint}</p>
       </Section>
 
-      <Section title="Darstellung">
+      <Section title="Tag oder Nacht">
         <Segmented label="Design" value={theme} options={THEME_OPTIONS} onChange={onTheme} />
       </Section>
 
       <Section title="Rückmeldung">
-        <Toggle
-          label="Ton"
-          hint="Flügelschlag, Punkte, Bruchlandung"
-          checked={settings.sound}
-          onChange={(value) => onSetting('sound', value)}
-        />
-        <Toggle
-          label="Vibration"
-          hint="Kurzes Feedback auf unterstützten Geräten"
-          checked={settings.haptics}
-          onChange={(value) => onSetting('haptics', value)}
-        />
+        <div className="space-y-2">
+          <Toggle
+            label="Ton"
+            hint="Flügelschlag, Punkte, Bruchlandung"
+            checked={settings.sound}
+            onChange={(value) => onSetting('sound', value)}
+          />
+          <Toggle
+            label="Vibration"
+            hint="Kurzes Feedback auf unterstützten Geräten"
+            checked={settings.haptics}
+            onChange={(value) => onSetting('haptics', value)}
+          />
+        </div>
       </Section>
 
       {canInstall && (
         <Section title="Installieren">
-          <button type="button" className="btn-secondary w-full text-sm" onClick={onInstall}>
-            <IconInstall width={18} height={18} />
-            Zum Startbildschirm hinzufügen
+          <button type="button" className="btn-secondary w-full" onClick={onInstall}>
+            <IconInstall width={20} height={20} />
+            Zum Startbildschirm
           </button>
+          <p className="t-hint mt-2">
+            Startet dann bildschirmfüllend, ohne Browserleisten, und läuft auch offline.
+          </p>
+        </Section>
+      )}
+      {!canInstall && isIos() && !isStandalone() && (
+        <Section title="Installieren">
+          <p className="t-hint">
+            Auf dem iPhone oder iPad: in Safari das{' '}
+            <span className="text-ink font-bold">Teilen</span>-Symbol antippen und{' '}
+            <span className="text-ink font-bold">„Zum Home-Bildschirm"</span> wählen. Das Spiel
+            startet dann bildschirmfüllend und läuft auch offline.
+          </p>
         </Section>
       )}
 
@@ -202,14 +241,14 @@ function SettingsTab({
           <div className="flex gap-2">
             <button
               type="button"
-              className="btn-secondary flex-1 text-sm"
+              className="btn-secondary flex-1 px-3"
               onClick={() => setConfirmReset(false)}
             >
               Abbrechen
             </button>
             <button
               type="button"
-              className="btn-primary flex-1 text-sm"
+              className="btn-primary flex-1 px-3"
               onClick={() => {
                 onResetProgress()
                 setConfirmReset(false)
@@ -221,13 +260,13 @@ function SettingsTab({
         ) : (
           <button
             type="button"
-            className="btn-secondary w-full text-sm"
+            className="btn-secondary w-full"
             onClick={() => setConfirmReset(true)}
           >
             Rekorde und Erfolge löschen
           </button>
         )}
-        <p className="text-muted mt-2 text-xs">
+        <p className="t-hint mt-2">
           Alles bleibt auf diesem Gerät. Es gibt kein Konto, keine Server und keine Werbung.
         </p>
       </Section>
@@ -245,27 +284,24 @@ function ScoresTab({ progress }: { progress: Progress }) {
       <Section title="Rekorde">
         <div className="grid grid-cols-3 gap-2">
           {DIFFICULTIES.map((difficulty) => (
-            <div key={difficulty.id} className="border-line bg-surface rounded-xl border px-3 py-2">
-              <div className="text-muted text-xs">{difficulty.label}</div>
-              <div className="tnum text-xl font-bold">{best[difficulty.id]}</div>
-            </div>
+            <Figure key={difficulty.id} label={difficulty.label} value={best[difficulty.id]} />
           ))}
         </div>
       </Section>
 
       <Section title="Beste Runden">
         {scores.length === 0 ? (
-          <p className="text-muted text-sm">Noch keine Runde beendet.</p>
+          <p className="t-hint">Noch keine Runde beendet.</p>
         ) : (
-          <ol className="divide-line divide-y">
+          <ol className="tile divide-tile-edge divide-y-2 px-4">
             {scores.map((entry, index) => (
-              <li key={`${entry.at}-${index}`} className="flex items-center gap-3 py-2 text-sm">
-                <span className="text-muted tnum w-5 text-right">{index + 1}</span>
-                <span className="tnum w-10 font-bold">{entry.score}</span>
-                <span className="text-muted flex-1 truncate">
+              <li key={`${entry.at}-${index}`} className="flex items-center gap-3 py-2.5">
+                <span className="t-number text-muted w-5 text-right text-base">{index + 1}</span>
+                <span className="t-number w-12 text-xl">{entry.score}</span>
+                <span className="t-hint flex-1 truncate">
                   {difficultyById(entry.difficulty).label}
                 </span>
-                <span className="text-muted tnum text-xs">
+                <span className="t-hint text-[0.8125rem]">
                   {entry.at ? DATE_FORMAT.format(entry.at) : ''}
                 </span>
               </li>
@@ -275,7 +311,7 @@ function ScoresTab({ progress }: { progress: Progress }) {
       </Section>
 
       <Section title="Insgesamt">
-        <dl className="grid grid-cols-2 gap-2 text-sm">
+        <dl className="grid grid-cols-2 gap-2">
           <Figure label="Runden" value={stats.games} />
           <Figure label="Punkte" value={stats.points} />
           <Figure label="Hindernisse" value={stats.pipes} />
@@ -290,9 +326,9 @@ function ScoresTab({ progress }: { progress: Progress }) {
 
 function Figure({ label, value }: { label: string; value: number | string }) {
   return (
-    <div className="border-line bg-surface rounded-xl border px-3 py-2">
-      <dt className="text-muted text-xs">{label}</dt>
-      <dd className="tnum text-lg font-bold">
+    <div className="tile px-4 py-3">
+      <dt className="t-hint text-[0.875rem]">{label}</dt>
+      <dd className="t-number mt-1 text-[1.5rem]">
         {typeof value === 'number' ? value.toLocaleString('de-DE') : value}
       </dd>
     </div>
@@ -310,25 +346,34 @@ function AwardsTab({ progress }: { progress: Progress }) {
   const done = ACHIEVEMENTS.filter((a) => progress.achievements[a.id]).length
 
   return (
-    <Section title={`Erfolge ${done} von ${ACHIEVEMENTS.length}`}>
-      <ul className="space-y-1.5">
+    <Section title={`Erfolge · ${done} von ${ACHIEVEMENTS.length}`}>
+      <ul className="space-y-2">
         {ACHIEVEMENTS.map((achievement) => {
           const unlocked = Boolean(progress.achievements[achievement.id])
           return (
             <li
               key={achievement.id}
-              className={`border-line flex items-center gap-3 rounded-xl border px-3 py-2 ${
-                unlocked ? 'bg-surface' : 'opacity-55'
-              }`}
+              className={`tile flex items-center gap-3 px-3 py-2.5 ${unlocked ? '' : 'opacity-55'}`}
             >
-              <span aria-hidden="true" className="text-xl">
+              <span
+                aria-hidden="true"
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-2xl"
+                style={
+                  unlocked
+                    ? {
+                        background: 'color-mix(in srgb, var(--game-gold) 22%, transparent)',
+                        border: '2px solid var(--game-gold)',
+                      }
+                    : { background: 'var(--game-tile)', border: '2px solid var(--game-tile-edge)' }
+                }
+              >
                 {achievement.icon}
               </span>
               <span className="min-w-0 flex-1">
-                <span className="block text-sm font-semibold">{achievement.label}</span>
-                <span className="text-muted block text-xs">{achievement.hint}</span>
+                <span className="t-label block">{achievement.label}</span>
+                <span className="t-hint block text-[0.875rem]">{achievement.hint}</span>
               </span>
-              {unlocked && <IconCheck width={18} height={18} className="text-brand shrink-0" />}
+              {unlocked && <IconCheck width={22} height={22} className="text-gold shrink-0" />}
             </li>
           )
         })}
@@ -341,37 +386,47 @@ function HelpTab() {
   return (
     <>
       <Section title="So wird gespielt">
-        <ul className="text-muted space-y-2 text-sm">
+        <ul className="t-hint space-y-2.5">
           <li>
-            <span className="text-ink font-semibold">Tippen oder Leertaste</span> lässt das Nilpferd
+            <span className="text-ink font-bold">Tippen oder Leertaste</span> lässt das Nilpferd
             einmal mit den Flügeln schlagen. Nicht gedrückt halten — es fällt sonst trotzdem.
           </li>
           <li>
-            <span className="text-ink font-semibold">Jedes Hindernis</span> gibt einen Punkt, jede
+            <span className="text-ink font-bold">Jedes Hindernis</span> gibt einen Punkt, jede
             Melone drei. Melonen hängen zwischen den Röhren: ein Umweg, der sich lohnen kann.
           </li>
           <li>
-            <span className="text-ink font-semibold">Die Blase</span> in einer Lücke hält genau
-            einen Treffer aus. Danach bleibt das Nilpferd kurz unverwundbar.
+            <span className="text-ink font-bold">Die Blase</span> in einer Lücke hält genau einen
+            Treffer aus. Danach bleibt das Nilpferd kurz unverwundbar.
           </li>
           <li>
-            <span className="text-ink font-semibold">Die Decke</span> ist eine Grenze, kein Ende —
-            nur Boden und Röhren sind gefährlich.
+            <span className="text-ink font-bold">Die Decke</span> ist eine Grenze, kein Ende — nur
+            Boden und Röhren sind gefährlich.
           </li>
         </ul>
       </Section>
 
       <Section title="Tastatur">
-        <dl className="text-muted space-y-1.5 text-sm">
+        <dl className="t-hint space-y-2">
           <Shortcut keys="Leertaste, ↑" action="Fliegen, Runde starten, neue Runde" />
-          <Shortcut keys="P, Esc" action="Pause und weiter" />
+          <Shortcut keys="P, Esc" action="Pause und weiter (mit Countdown)" />
         </dl>
       </Section>
 
       <Section title="Über das Spiel">
-        <p className="text-muted text-sm">
+        <p className="t-hint">
           Flappy Hippo läuft komplett im Browser. Einmal geladen, funktioniert es auch offline, und
           alle Rekorde bleiben auf diesem Gerät.
+        </p>
+        <p className="mt-2">
+          <a
+            href="https://github.com/stekhn/flappy-hippo"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="t-label text-brand underline-offset-4 hover:underline"
+          >
+            Quellcode auf GitHub
+          </a>
         </p>
       </Section>
     </>
@@ -381,9 +436,7 @@ function HelpTab() {
 function Shortcut({ keys, action }: { keys: string; action: string }) {
   return (
     <div className="flex items-baseline gap-3">
-      <dt className="border-line bg-surface shrink-0 rounded-md border px-2 py-0.5 font-mono text-xs">
-        {keys}
-      </dt>
+      <dt className="tile t-label shrink-0 rounded-lg px-2 py-0.5 text-[0.875rem]">{keys}</dt>
       <dd>{action}</dd>
     </div>
   )

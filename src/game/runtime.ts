@@ -1,6 +1,6 @@
 import { createSfx } from './audio.ts'
 import type { Sfx } from './audio.ts'
-import { MAX_FRAME_S, RESTART_DELAY_MS } from './constants.ts'
+import { COUNTDOWN_MS, MAX_FRAME_S, OVER_SETTLE_MS, RESTART_DELAY_MS } from './constants.ts'
 import { difficultyById } from './difficulty.ts'
 import type { Difficulty, DifficultyId } from './difficulty.ts'
 import { resolvePalette } from './palette.ts'
@@ -16,6 +16,8 @@ import type { World } from './world.ts'
 export interface Snapshot {
   phase: GameState['phase']
   paused: boolean
+  /** 3, 2, 1 while a resumed round counts back in; 0 otherwise. */
+  countdown: number
   score: number
   best: number
   newBest: boolean
@@ -23,6 +25,20 @@ export interface Snapshot {
   melons: number
   overTitle: string
   round: number
+  /** The difficulty this round runs on — what the share text and the over card should name. */
+  difficulty: DifficultyId
+}
+
+/** Numbers for the stats and the score table, read once when a round ends. */
+export interface RunSummary {
+  score: number
+  pipes: number
+  melons: number
+  shields: number
+  saves: number
+  seconds: number
+  /** The difficulty the round was actually played on, not the one now selected. */
+  difficulty: DifficultyId
 }
 
 export interface RuntimeOptions {
@@ -35,7 +51,7 @@ export interface RuntimeOptions {
   sound: boolean
   haptics: boolean
   onSnapshot: (snapshot: Snapshot) => void
-  onEvent: (event: GameEvent, state: GameState) => void
+  onEvent: (event: GameEvent) => void
 }
 
 function buzz(enabled: boolean, pattern: number | number[]): void {
@@ -44,6 +60,14 @@ function buzz(enabled: boolean, pattern: number | number[]): void {
     navigator.vibrate(pattern)
   } catch {
     /* some browsers throw when the page is not visible */
+  }
+}
+
+function prefersReducedMotion(): boolean {
+  try {
+    return matchMedia('(prefers-reduced-motion: reduce)').matches
+  } catch {
+    return false
   }
 }
 
@@ -57,6 +81,7 @@ export class GameRuntime {
   private readonly ctx: CanvasRenderingContext2D
   private readonly options: RuntimeOptions
   private readonly sfx: Sfx
+  private readonly effects = !prefersReducedMotion()
 
   private world: World
   private palette: Palette
@@ -67,16 +92,26 @@ export class GameRuntime {
   private frame = 0
   private last = 0
   private paused = false
+  /** While the menu sheet is up nothing moves and nothing is painted, whatever the phase. */
+  private suspended = false
+  /** performance.now() until which a resumed round is still counting back in. */
+  private countdownUntil = 0
   /** A difficulty picked mid-round, applied when the next one starts. */
   private pending: Difficulty | null = null
+  /** Something changed while the scene was still (theme, size, pause) — paint one more frame. */
+  private dirty = true
   private haptics: boolean
   private snapshot: Snapshot
   private observer: ResizeObserver | null = null
+
   // Switching apps, tabs or windows must not cost the round.
   private readonly onHidden = () => {
     if (document.hidden) this.pause()
   }
   private readonly onBlur = () => this.pause()
+  // Browsers only let audio start from an activating gesture — a finger lifting or a key going
+  // down count, a touch beginning does not. Unlocking here means the very first flap is heard.
+  private readonly onActivate = () => this.sfx.unlock()
 
   constructor(options: RuntimeOptions) {
     const ctx = options.canvas.getContext('2d')
@@ -99,6 +134,8 @@ export class GameRuntime {
     this.observer.observe(this.options.box)
     document.addEventListener('visibilitychange', this.onHidden)
     window.addEventListener('blur', this.onBlur)
+    this.options.box.addEventListener('pointerup', this.onActivate)
+    window.addEventListener('keydown', this.onActivate)
     this.last = performance.now()
     const loop = (now: number) => {
       this.step(now)
@@ -111,6 +148,8 @@ export class GameRuntime {
     cancelAnimationFrame(this.frame)
     document.removeEventListener('visibilitychange', this.onHidden)
     window.removeEventListener('blur', this.onBlur)
+    this.options.box.removeEventListener('pointerup', this.onActivate)
+    window.removeEventListener('keydown', this.onActivate)
     this.observer?.disconnect()
     this.observer = null
     this.sfx.dispose()
@@ -137,10 +176,12 @@ export class GameRuntime {
     for (const pipe of this.state.pipes) pipe.gapY *= ratio
     for (const pickup of this.state.pickups) pickup.y *= ratio
     this.world = next
+    this.dirty = true
   }
 
   setTheme(dark: boolean): void {
     this.palette = resolvePalette(dark)
+    this.dirty = true
   }
 
   setSound(on: boolean): void {
@@ -149,6 +190,13 @@ export class GameRuntime {
 
   setHaptics(on: boolean): void {
     this.haptics = on
+  }
+
+  /** Freezes the loop entirely while the menu covers the board; pauses a live round as well. */
+  setSuspended(suspended: boolean): void {
+    if (suspended) this.pause()
+    this.suspended = suspended
+    this.dirty = true
   }
 
   /**
@@ -167,6 +215,7 @@ export class GameRuntime {
     if (this.state.phase === 'ready') {
       this.state = initialState({ world: this.world, difficulty: this.difficulty, best })
       this.sky = initialSky()
+      this.dirty = true
     }
     this.push()
   }
@@ -178,7 +227,7 @@ export class GameRuntime {
 
   /** The one input the game has. Starts a round, flaps, or begins the next round after a crash. */
   flap(): void {
-    this.sfx.unlock()
+    if (this.suspended) return
     const now = performance.now()
     const state = this.state
     if (this.paused) {
@@ -194,6 +243,8 @@ export class GameRuntime {
       state.phase = 'running'
       state.startedAt = now
     }
+    // A flap during the count-in means "I'm ready" — no need to wait it out.
+    this.countdownUntil = 0
     flap(state, now)
     this.sfx.play('flap')
     buzz(this.haptics, 6)
@@ -213,40 +264,46 @@ export class GameRuntime {
     this.state.startedAt = now
     flap(this.state, now)
     this.paused = false
-    this.sfx.unlock()
+    this.countdownUntil = 0
     this.sfx.play('flap')
     this.push()
   }
 
-  pause(): void {
-    if (this.state.phase !== 'running' || this.paused) return
+  /** Freezes a live round. Returns whether there was one to freeze. */
+  pause(): boolean {
+    if (this.state.phase !== 'running' || this.paused) return false
     this.paused = true
+    this.dirty = true
     this.push()
+    return true
   }
 
-  resume(): void {
-    if (!this.paused) return
+  /** Lifts the pause and counts back in, so the round never resumes into a dive nobody saw coming. */
+  resume(): boolean {
+    if (!this.paused) return false
     this.paused = false
-    // Resuming from a dive would end the round before anyone can react
     this.state.velocity = Math.min(this.state.velocity, 0)
+    this.countdownUntil = performance.now() + COUNTDOWN_MS
     this.push()
-  }
-
-  togglePause(): void {
-    if (this.paused) this.resume()
-    else this.pause()
+    return true
   }
 
   /** Gives up the current round — the score still counts. */
   surrender(): void {
     if (this.state.phase !== 'running') return
     this.paused = false
+    this.countdownUntil = 0
     gameOver(this.state, performance.now(), this.events)
     this.drain()
   }
 
-  /** Numbers for the stats and the score table, read once when a round ends. */
-  summary() {
+  /** An achievement just unlocked — the toast is React's, the chime and the buzz are ours. */
+  celebrateUnlock(): void {
+    this.sfx.play('achievement')
+    buzz(this.haptics, [15, 50, 15])
+  }
+
+  summary(): RunSummary {
     const { score, pipesCleared, melons, shields, saves, elapsed } = this.state
     return {
       score,
@@ -255,7 +312,6 @@ export class GameRuntime {
       shields,
       saves,
       seconds: elapsed,
-      // The difficulty the round was actually played on, not the one now selected.
       difficulty: this.difficulty.id,
     }
   }
@@ -266,27 +322,44 @@ export class GameRuntime {
     this.pending = null
   }
 
-  isPaused(): boolean {
-    return this.paused
+  private countdown(now: number): number {
+    return Math.max(Math.ceil((this.countdownUntil - now) / (COUNTDOWN_MS / 3)), 0)
+  }
+
+  /**
+   * Whether anything on the canvas is moving. A paused or suspended board is still; so is the
+   * game-over scene once the sky has finished falling — the card on top has the numbers, and a
+   * phone left on that screen should not spend its battery redrawing it.
+   */
+  private live(now: number): boolean {
+    if (this.suspended || this.paused) return false
+    const s = this.state
+    if (s.phase !== 'over') return true
+    return now - s.overAt < OVER_SETTLE_MS || s.particles.length > 0
   }
 
   private step(now: number): void {
     const dt = Math.min((now - this.last) / 1000, MAX_FRAME_S)
     this.last = now
-    if (!this.paused) {
+    if (!this.live(now) && !this.dirty) return
+    if (this.suspended) return
+
+    const frozen = this.paused || now < this.countdownUntil
+    if (!frozen) {
       advance(this.state, dt, now, this.world, this.difficulty, this.events)
       this.drain()
     }
-    animateSky(this.sky, this.state, now, dt)
-    drawScene(this.ctx, this.state, this.world, this.palette, this.sky, now)
-    this.push()
+    if (this.effects) animateSky(this.sky, this.state, now, dt)
+    drawScene(this.ctx, this.state, this.world, this.palette, this.sky, now, this.effects)
+    this.dirty = false
+    this.push(now)
   }
 
   private drain(): void {
     if (this.events.length === 0) return
     for (const event of this.events) {
       this.react(event)
-      this.options.onEvent(event, this.state)
+      this.options.onEvent(event)
     }
     this.events.length = 0
   }
@@ -311,6 +384,10 @@ export class GameRuntime {
       case 'milestone':
         this.sfx.play('milestone')
         return
+      case 'record':
+        this.sfx.play('record')
+        buzz(this.haptics, [10, 40, 10, 40, 30])
+        return
       case 'crash':
         this.sfx.play('crash')
         buzz(this.haptics, [40, 60, 90])
@@ -318,11 +395,12 @@ export class GameRuntime {
     }
   }
 
-  private readSnapshot(): Snapshot {
+  private readSnapshot(now = performance.now()): Snapshot {
     const s = this.state
     return {
       phase: s.phase,
       paused: this.paused,
+      countdown: this.countdown(now),
       score: s.score,
       best: s.best,
       newBest: s.newBest,
@@ -330,22 +408,25 @@ export class GameRuntime {
       melons: s.melons,
       overTitle: s.overTitle,
       round: s.round,
+      difficulty: this.difficulty.id,
     }
   }
 
   /** React only hears from the loop when something it renders actually changed. */
-  private push(): void {
-    const next = this.readSnapshot()
+  private push(now?: number): void {
+    const next = this.readSnapshot(now)
     const prev = this.snapshot
     const same =
       next.phase === prev.phase &&
       next.paused === prev.paused &&
+      next.countdown === prev.countdown &&
       next.score === prev.score &&
       next.best === prev.best &&
       next.newBest === prev.newBest &&
       next.shielded === prev.shielded &&
       next.melons === prev.melons &&
-      next.round === prev.round
+      next.round === prev.round &&
+      next.difficulty === prev.difficulty
     if (same) return
     this.snapshot = next
     this.options.onSnapshot(next)

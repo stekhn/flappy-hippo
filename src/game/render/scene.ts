@@ -8,7 +8,10 @@ import { drawPipes } from './pipes.ts'
 import type { SkyMotion } from './scenery.ts'
 import { drawGround, drawScenery, drawSky } from './scenery.ts'
 
-/** Paints one frame of the world. Everything that is not the scene lives in the DOM above it. */
+/**
+ * Paints one frame of the world. Everything that is not the scene lives in the DOM above it.
+ * With `effects` off (the viewer asked for reduced motion) fireworks and particles stay unpainted.
+ */
 export function drawScene(
   ctx: CanvasRenderingContext2D,
   state: GameState,
@@ -16,13 +19,14 @@ export function drawScene(
   p: Palette,
   sky: SkyMotion,
   now: number,
+  effects = true,
 ): void {
   drawSky(ctx, p, world)
-  drawScenery(ctx, p, state, world, now, sky)
+  drawScenery(ctx, p, state, world, now, sky, effects)
   drawPipes(ctx, p, state.pipes, world)
   drawPickups(ctx, p, state.pickups, now)
   drawGround(ctx, p, world, state.scrolled % BRICK_WIDTH)
-  drawParticles(ctx, p, state.particles)
+  if (effects) drawParticles(ctx, p, state.particles)
 
   const idle = state.phase === 'ready'
   const solidLeft = Math.max(state.solidUntil - now, 0)

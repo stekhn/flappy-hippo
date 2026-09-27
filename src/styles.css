@@ -7,6 +7,27 @@
 @custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
 /* --------------------------------------------------------------------------------------------
+   Type. Two families, self-hosted so the game reads the same offline: Fredoka carries everything
+   that should feel like part of the game (titles, numbers, buttons, labels), Nunito carries the
+   running text. Both are variable fonts, so one file each covers every weight in use.
+   -------------------------------------------------------------------------------------------- */
+@font-face {
+  font-family: 'Fredoka';
+  font-style: normal;
+  font-weight: 300 700;
+  font-display: swap;
+  src: url('/fonts/fredoka-latin.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Nunito';
+  font-style: normal;
+  font-weight: 200 1000;
+  font-display: swap;
+  src: url('/fonts/nunito-latin.woff2') format('woff2');
+}
+
+/* --------------------------------------------------------------------------------------------
    One palette for both worlds. The --game-* values are read back by src/game/palette.ts to paint
    the canvas, and re-exported as Tailwind tokens below for the DOM chrome, so the buttons above
    the scene can never drift away from the scene itself.
@@ -14,19 +35,25 @@
 :root {
   --game-brand: #006aff;
   --game-brand-strong: #0053c7;
+  /* The solid "underside" of a pressable button — always darker than the face, in both themes. */
+  --game-brand-deep: #0045ad;
   --game-pipe-edge: #00479f;
   --game-sky: #e5f0ff;
   --game-sky-low: #f2f7ff;
   --game-city-far: #d9e8fe;
   --game-city-near: #c6dcfd;
   --game-ground: #dee2e6;
-  --game-text: #1f2430;
-  --game-muted: #5a6478;
+  --game-text: #1b2a44;
+  --game-muted: #5d6b85;
   --game-gold: #e8930c;
-  --game-surface: rgb(255 255 255 / 0.82);
-  --game-surface-solid: #fbfcfe;
-  --game-line: rgb(31 36 48 / 0.12);
-  --game-shadow: rgb(18 30 56 / 0.18);
+  --game-gold-deep: #b86f00;
+  /* Every modal — cards, sheet, toasts — shares this one frosted surface. */
+  --game-glass: rgb(238 245 255 / 0.8);
+  --game-glass-edge: rgb(0 106 255 / 0.16);
+  /* Smaller panels inside a modal: stat tiles, list rows, control tracks. */
+  --game-tile: rgb(255 255 255 / 0.62);
+  --game-tile-edge: rgb(0 106 255 / 0.12);
+  --game-shadow: rgb(18 30 56 / 0.2);
   /* Behind the board on displays too large to fill — a shade deeper than the sky. */
   --game-frame: #cfdef4;
 }
@@ -35,19 +62,22 @@
   color-scheme: dark;
   --game-brand: #5b9dff;
   --game-brand-strong: #7db0ff;
+  --game-brand-deep: #2c6ad6;
   --game-pipe-edge: #1f4f9e;
   --game-sky: #111a26;
   --game-sky-low: #1b2735;
   --game-city-far: #1b2533;
   --game-city-near: #26313f;
   --game-ground: #2c3646;
-  --game-text: #dde3ec;
-  --game-muted: #9aa7ba;
+  --game-text: #e3eaf5;
+  --game-muted: #9db0cc;
   --game-gold: #ffc65c;
-  --game-surface: rgb(20 29 41 / 0.82);
-  --game-surface-solid: #16202d;
-  --game-line: rgb(221 227 236 / 0.14);
-  --game-shadow: rgb(0 0 0 / 0.5);
+  --game-gold-deep: #c98a1a;
+  --game-glass: rgb(18 27 40 / 0.82);
+  --game-glass-edge: rgb(140 185 255 / 0.22);
+  --game-tile: rgb(255 255 255 / 0.06);
+  --game-tile-edge: rgb(255 255 255 / 0.12);
+  --game-shadow: rgb(0 0 0 / 0.55);
   --game-frame: #080d14;
 }
 
@@ -58,15 +88,19 @@
 @theme inline {
   --color-brand: var(--game-brand);
   --color-brand-strong: var(--game-brand-strong);
+  --color-brand-deep: var(--game-brand-deep);
   --color-sky: var(--game-sky);
   --color-frame: var(--game-frame);
   --color-ink: var(--game-text);
   --color-muted: var(--game-muted);
   --color-gold: var(--game-gold);
-  --color-surface: var(--game-surface);
-  --color-surface-solid: var(--game-surface-solid);
-  --color-line: var(--game-line);
-  --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --color-gold-deep: var(--game-gold-deep);
+  --color-glass: var(--game-glass);
+  --color-glass-edge: var(--game-glass-edge);
+  --color-tile: var(--game-tile);
+  --color-tile-edge: var(--game-tile-edge);
+  --font-sans: 'Nunito', ui-rounded, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-display: 'Fredoka', 'Nunito', ui-rounded, ui-sans-serif, system-ui, sans-serif;
 }
 
 /* --------------------------------------------------------------------------------------------
@@ -90,6 +124,8 @@ html {
 body {
   @apply bg-frame text-ink font-sans antialiased;
   margin: 0;
+  font-weight: 500;
+  line-height: 1.45;
   overflow: hidden;
   overscroll-behavior: none;
   touch-action: manipulation;
@@ -111,8 +147,9 @@ body {
   }
 
   :focus-visible {
-    outline: 2px solid var(--game-brand);
-    outline-offset: 2px;
+    outline: 3px solid var(--game-brand);
+    outline-offset: 3px;
+    border-radius: 9999px;
   }
 }
 
@@ -120,62 +157,152 @@ body {
    growing at MAX_ZOOM and presents itself as a card on the page instead — the runtime flags that
    on the canvas, and the wrapper picks it up so the overlays are clipped to the same corners. */
 .board:has(> canvas[data-framed='true']) {
-  border-radius: 1rem;
+  border-radius: 1.5rem;
   overflow: hidden;
-  box-shadow: 0 24px 60px -24px var(--game-shadow);
+  box-shadow: 0 30px 70px -30px var(--game-shadow);
 }
 
 /* --------------------------------------------------------------------------------------------
-   Building blocks
+   The type scale. Five roles, and every screen is built from these alone.
    -------------------------------------------------------------------------------------------- */
 
-/* The frosted card the scene shows through, used by every overlay and sheet. */
+/* The game's name and the biggest moments. */
+@utility t-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 2.125rem;
+  line-height: 1;
+  letter-spacing: -0.01em;
+}
+
+/* A card's headline. */
+@utility t-heading {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.5rem;
+  line-height: 1.1;
+}
+
+/* Buttons, tabs, chips, labels — anything the player can act on or scan. */
+@utility t-label {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.0625rem;
+  line-height: 1.2;
+}
+
+/* A section title inside the menu. */
+@utility t-section {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1rem;
+  line-height: 1.2;
+  color: var(--game-brand);
+}
+
+/* A score, a record, a count — figures that should line up. */
+@utility t-number {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+/* Secondary running text: hints, explanations, footnotes. */
+@utility t-hint {
+  font-size: 0.9375rem;
+  line-height: 1.4;
+  color: var(--game-muted);
+}
+
+/* --------------------------------------------------------------------------------------------
+   Surfaces
+   -------------------------------------------------------------------------------------------- */
+
+/* The one frosted surface every modal is made of: cards, the sheet, toasts. */
+@utility glass {
+  background: var(--game-glass);
+  border: 2px solid var(--game-glass-edge);
+  backdrop-filter: blur(18px) saturate(1.4);
+  -webkit-backdrop-filter: blur(18px) saturate(1.4);
+  box-shadow: 0 22px 50px -24px var(--game-shadow);
+}
+
 @utility card {
-  @apply rounded-2xl border border-line bg-surface;
-  backdrop-filter: blur(14px) saturate(1.3);
-  -webkit-backdrop-filter: blur(14px) saturate(1.3);
-  box-shadow: 0 18px 40px -20px var(--game-shadow);
+  @apply glass;
+  border-radius: 1.75rem;
 }
 
-/* The bottom sheet: the same frosted family as the cards, but opaque enough to read a form on. */
-@utility sheet {
-  @apply rounded-2xl border border-line;
-  background: color-mix(in srgb, var(--game-surface-solid) 95%, transparent);
-  backdrop-filter: blur(18px) saturate(1.2);
-  -webkit-backdrop-filter: blur(18px) saturate(1.2);
-  box-shadow: 0 -18px 50px -20px var(--game-shadow);
+/* A panel inside a modal. */
+@utility tile {
+  background: var(--game-tile);
+  border: 2px solid var(--game-tile-edge);
+  border-radius: 1.25rem;
 }
 
+/* --------------------------------------------------------------------------------------------
+   Controls. Buttons have a solid underside and sink when pressed — the one trick that makes a
+   flat UI read as a game.
+   -------------------------------------------------------------------------------------------- */
 @utility btn-base {
-  @apply inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-base
-    font-semibold transition-[background-color,transform,opacity] outline-none
-    active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50;
+  @apply t-label inline-flex items-center justify-center gap-2 rounded-full px-6 outline-none
+    disabled:cursor-not-allowed disabled:opacity-50;
+  min-height: 3.25rem;
+  transition:
+    transform 80ms ease,
+    box-shadow 80ms ease;
 }
 
 @utility btn-primary {
   @apply btn-base bg-brand text-white;
-  box-shadow: 0 8px 18px -10px var(--game-brand);
+  box-shadow: 0 4px 0 var(--game-brand-deep);
+  &:active:not(:disabled) {
+    transform: translateY(3px);
+    box-shadow: 0 1px 0 var(--game-brand-deep);
+  }
 }
 
 @utility btn-secondary {
-  @apply btn-base border border-line bg-surface text-ink;
+  @apply btn-base text-ink;
+  background: var(--game-tile);
+  border: 2px solid var(--game-tile-edge);
+  box-shadow: 0 4px 0 var(--game-tile-edge);
+  &:active:not(:disabled) {
+    transform: translateY(3px);
+    box-shadow: 0 1px 0 var(--game-tile-edge);
+  }
 }
 
 @utility btn-ghost {
-  @apply btn-base text-muted hover:text-ink;
+  @apply btn-base text-brand px-4;
+  min-height: 2.75rem;
+  &:active:not(:disabled) {
+    transform: translateY(2px);
+  }
 }
 
-/* Round icon button for the HUD: fixed 44px tap target, frosted like the cards. */
+/* Round icon button for the HUD: fixed tap target, glass like the cards. */
 @utility icon-btn {
-  @apply inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-line
-    bg-surface text-ink transition-transform outline-none active:scale-90;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  @apply inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-ink
+    outline-none;
+  background: var(--game-glass);
+  border: 2px solid var(--game-glass-edge);
+  box-shadow: 0 3px 0 var(--game-glass-edge);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition:
+    transform 80ms ease,
+    box-shadow 80ms ease;
+  &:active {
+    transform: translateY(2px);
+    box-shadow: 0 1px 0 var(--game-glass-edge);
+  }
 }
 
 /* HUD text sits straight on the scene, so it carries its own outline in the sky colour — legible
    over a cloud, a pipe or the city alike, without a plate behind it. */
 @utility hud-text {
+  @apply t-number;
   color: var(--game-brand);
   text-shadow:
     0 2px 0 var(--game-sky),
@@ -189,11 +316,6 @@ body {
     0 6px 14px var(--game-shadow);
 }
 
-/* Numbers that should line up in a column (scores, stats). */
-@utility tnum {
-  font-variant-numeric: tabular-nums;
-}
-
 /* Keeps content clear of the notch, the home indicator and rounded corners. */
 @utility safe-inset {
   padding-top: max(0.75rem, env(safe-area-inset-top));
@@ -203,13 +325,13 @@ body {
 }
 
 /* --------------------------------------------------------------------------------------------
-   Motion. Overlays scale in the way the canvas cards used to; anyone who asked their system for
-   less motion gets a plain fade instead.
+   Motion. Cards bounce in the way a toy would; toasts slide up from the bottom edge. Anyone who
+   asked their system for less motion gets a plain fade instead.
    -------------------------------------------------------------------------------------------- */
 @keyframes pop-in {
   from {
     opacity: 0;
-    transform: scale(0.9);
+    transform: scale(0.8);
   }
   to {
     opacity: 1;
@@ -220,7 +342,7 @@ body {
 @keyframes rise-in {
   from {
     opacity: 0;
-    transform: translateY(12%);
+    transform: translateY(14%);
   }
   to {
     opacity: 1;
@@ -237,23 +359,78 @@ body {
   }
 }
 
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(140%) scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes toast-out {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(140%) scale(0.92);
+  }
+}
+
+@keyframes wobble {
+  0%,
+  100% {
+    transform: rotate(-4deg);
+  }
+  50% {
+    transform: rotate(4deg);
+  }
+}
+
 .animate-pop {
-  animation: pop-in 160ms cubic-bezier(0.2, 0.9, 0.3, 1) both;
+  animation: pop-in 260ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
 
 .animate-rise {
-  animation: rise-in 220ms cubic-bezier(0.2, 0.9, 0.3, 1) both;
+  animation: rise-in 280ms cubic-bezier(0.34, 1.4, 0.64, 1) both;
 }
 
 .animate-fade {
   animation: fade-in 160ms ease both;
 }
 
+.animate-toast-in {
+  animation: toast-in 380ms cubic-bezier(0.34, 1.45, 0.64, 1) both;
+}
+
+.animate-toast-out {
+  animation: toast-out 260ms ease-in both;
+}
+
+/* The hippo on the title card sways, gently. */
+.animate-wobble {
+  animation: wobble 2.6s ease-in-out infinite;
+  transform-origin: 50% 70%;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .animate-pop,
   .animate-rise,
-  .animate-fade {
+  .animate-fade,
+  .animate-toast-in {
     animation: fade-in 120ms ease both;
+  }
+
+  .animate-toast-out {
+    animation: fade-in 120ms ease reverse both;
+  }
+
+  .animate-wobble {
+    animation: none;
   }
 
   *,

@@ -13,14 +13,10 @@ interface SegmentedProps<T extends string> {
   onChange: (value: T) => void
 }
 
-/** A row of mutually exclusive choices — difficulty, theme — as one 44px-tall control. */
+/** A row of mutually exclusive choices — difficulty, theme — as one chunky control. */
 export function Segmented<T extends string>({ label, value, options, onChange }: SegmentedProps<T>) {
   return (
-    <div
-      role="radiogroup"
-      aria-label={label}
-      className="border-line flex gap-1 rounded-xl border p-1"
-    >
+    <div role="radiogroup" aria-label={label} className="tile flex gap-1 rounded-full p-1">
       {options.map((option) => {
         const active = option.value === value
         return (
@@ -34,8 +30,8 @@ export function Segmented<T extends string>({ label, value, options, onChange }:
               blurIfPointer(event)
               onChange(option.value)
             }}
-            className={`flex-1 rounded-lg px-2 py-1.5 text-sm font-semibold transition-colors ${
-              active ? 'bg-brand text-white' : 'text-muted hover:text-ink'
+            className={`t-label flex-1 rounded-full px-2 py-2 transition-[background-color,color,transform,box-shadow] duration-100 ${
+              active ? 'bg-brand text-white shadow-[0_3px_0_var(--game-brand-deep)]' : 'text-muted'
             }`}
           >
             {option.label}

@@ -23,7 +23,7 @@ export function CardShell({
     <div
       className={`safe-inset animate-fade absolute inset-0 z-0 flex justify-center ${
         align === 'end' ? 'items-end' : 'items-center'
-      } ${dim ? 'bg-black/20' : ''}`}
+      } ${dim ? 'bg-black/25' : ''}`}
       onPointerDown={(event) => {
         // The stage below listens for taps too — this one is already spoken for.
         event.stopPropagation()
@@ -34,7 +34,7 @@ export function CardShell({
         role="dialog"
         aria-modal="false"
         aria-labelledby={labelledBy}
-        className="card animate-pop max-h-full w-full max-w-[22rem] overflow-y-auto p-5 text-center"
+        className="card animate-pop max-h-full w-full max-w-[22rem] overflow-y-auto p-6 text-center"
         onPointerDown={(event) => event.stopPropagation()}
       >
         {children}

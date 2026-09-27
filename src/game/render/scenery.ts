@@ -178,6 +178,7 @@ export function drawScenery(
   world: World,
   now: number,
   sky: SkyMotion,
+  effects: boolean,
 ): void {
   const { scrolled } = state
   if (p.night) drawStars(ctx, p, world, scrolled, now)
@@ -207,7 +208,7 @@ export function drawScenery(
 
   drawCity(ctx, p, CITY_FAR, world, (scrolled * 0.2) % SCENE_PERIOD, p.cityFar)
   drawHaze(ctx, world, HAZE_HEIGHT, p.haze)
-  drawFireworks(ctx, p, state.fireworks, world, now)
+  if (effects) drawFireworks(ctx, p, state.fireworks, world, now)
   drawCity(ctx, p, CITY_NEAR, world, (scrolled * 0.45) % SCENE_PERIOD, p.cityNear)
   drawHaze(ctx, world, HAZE_NEAR_HEIGHT, p.hazeNear)
 }

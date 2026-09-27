@@ -11,24 +11,24 @@ interface PauseCardProps {
 export function PauseCard({ score, onResume, onRestart, onGiveUp }: PauseCardProps) {
   return (
     <CardShell dim onBackdropTap={onResume} labelledBy="pause-title">
-      <h2 id="pause-title" className="text-xl font-black">
+      <h2 id="pause-title" className="t-heading">
         Pause
       </h2>
-      <p className="text-muted mt-1 text-sm">
-        Aktueller Stand <span className="tnum text-ink font-semibold">{score}</span>
+      <p className="t-hint mt-2">
+        Aktueller Stand <span className="t-number text-ink text-lg">{score}</span>
       </p>
 
-      <button type="button" className="btn-primary mt-4 w-full" onClick={onResume}>
-        <IconPlay width={20} height={20} />
+      <button type="button" className="btn-primary mt-5 w-full" onClick={onResume}>
+        <IconPlay width={22} height={22} />
         Weiter
       </button>
-      <div className="mt-2 flex gap-2">
-        <button type="button" className="btn-secondary flex-1 text-sm" onClick={onRestart}>
-          <IconRestart width={18} height={18} />
+      <div className="mt-3 flex gap-2">
+        <button type="button" className="btn-secondary flex-1 px-3" onClick={onRestart}>
+          <IconRestart width={20} height={20} />
           Neu
         </button>
-        <button type="button" className="btn-secondary flex-1 text-sm" onClick={onGiveUp}>
-          <IconHome width={18} height={18} />
+        <button type="button" className="btn-secondary flex-1 px-3" onClick={onGiveUp}>
+          <IconHome width={20} height={20} />
           Beenden
         </button>
       </div>

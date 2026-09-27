@@ -2,7 +2,7 @@ import { DIFFICULTIES } from '../game/difficulty.ts'
 import type { DifficultyId } from '../game/difficulty.ts'
 import { CardShell } from './CardShell.tsx'
 import { Segmented } from './Segmented.tsx'
-import { IconChart, IconGear, IconPlay, IconTrophy } from './icons.tsx'
+import { HippoMark, IconChart, IconGear, IconPlay, IconTrophy } from './icons.tsx'
 import type { MenuTab } from './MenuSheet.tsx'
 
 interface StartCardProps {
@@ -27,44 +27,45 @@ export function StartCard({
 
   return (
     <CardShell align="end" onBackdropTap={onStart} labelledBy="start-title">
-      <h1 id="start-title" className="text-brand text-2xl font-black tracking-tight">
+      <HippoMark className="animate-wobble mx-auto -mt-1 mb-1" />
+      <h1 id="start-title" className="t-title text-brand">
         Flappy Hippo
       </h1>
-      <p className="text-muted mt-1 text-sm">
+      <p className="t-hint mt-2">
         {touch ? 'Tippen lässt das Nilpferd fliegen.' : 'Klick oder Leertaste lässt das Nilpferd fliegen.'}
       </p>
 
-      <div className="mt-4">
+      <div className="mt-5">
         <Segmented
           label="Schwierigkeit"
           value={difficulty}
           options={DIFFICULTIES.map((d) => ({ value: d.id, label: d.label, hint: d.hint }))}
           onChange={onDifficulty}
         />
-        <p className="text-muted mt-1.5 text-xs">{current.hint}</p>
+        <p className="t-hint mt-2">{current.hint}</p>
       </div>
 
       {best > 0 && (
-        <p className="text-muted mt-4 flex items-center justify-center gap-1.5 text-sm">
-          <IconTrophy width={16} height={16} className="text-gold" />
+        <p className="t-label text-gold mt-4 flex items-center justify-center gap-1.5">
+          <IconTrophy width={18} height={18} />
           <span>
-            Rekord <span className="tnum text-ink font-semibold">{best}</span>
+            Rekord <span className="t-number text-ink">{best}</span>
           </span>
         </p>
       )}
 
-      <button type="button" className="btn-primary mt-4 w-full" onClick={onStart}>
-        <IconPlay width={20} height={20} />
+      <button type="button" className="btn-primary mt-5 w-full" onClick={onStart}>
+        <IconPlay width={22} height={22} />
         Spielen
       </button>
 
-      <div className="mt-2 flex justify-center gap-1">
-        <button type="button" className="btn-ghost text-sm" onClick={() => onOpenMenu('scores')}>
-          <IconChart width={18} height={18} />
-          Bestenliste
+      <div className="mt-3 flex justify-center gap-1">
+        <button type="button" className="btn-ghost" onClick={() => onOpenMenu('scores')}>
+          <IconChart width={20} height={20} />
+          Rekorde
         </button>
-        <button type="button" className="btn-ghost text-sm" onClick={() => onOpenMenu('settings')}>
-          <IconGear width={18} height={18} />
+        <button type="button" className="btn-ghost" onClick={() => onOpenMenu('settings')}>
+          <IconGear width={20} height={20} />
           Einstellungen
         </button>
       </div>

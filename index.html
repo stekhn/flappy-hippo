@@ -11,12 +11,14 @@
       content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no, maximum-scale=1"
     />
     <meta name="description" content="Flappy Hippo — lass das Nilpferd fliegen und weiche den Hindernissen aus. Offline spielbar, ohne Konto und ohne Werbung." />
-    <meta name="theme-color" content="#e5f0ff" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#101720" media="(prefers-color-scheme: dark)" />
+    <!-- Kept in step with the resolved theme by the boot script below and by ThemeProvider. -->
+    <meta name="theme-color" content="#e5f0ff" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="Flappy Hippo" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <link rel="preload" href="fonts/fredoka-latin.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="fonts/nunito-latin.woff2" as="font" type="font/woff2" crossorigin />
     <title>Flappy Hippo</title>
     <script>
       // Resolve the theme before first paint to avoid a flash. Mirrors src/theme.ts.
@@ -27,6 +29,8 @@
             t === 'dark' ||
             ((t === 'system' || t === null) && matchMedia('(prefers-color-scheme: dark)').matches);
           document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+          var meta = document.querySelector('meta[name="theme-color"]');
+          if (meta) meta.content = dark ? '#111a26' : '#e5f0ff';
         } catch (e) {
           /* leave the default (light) */
         }

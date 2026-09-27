@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { test } from 'node:test'
+import { mock, test } from 'node:test'
 import { FLAP_VELOCITY, HIPPO_RADIUS, MELON_POINTS, PIPE_WIDTH } from './constants.ts'
 import { difficultyById } from './difficulty.ts'
 import { advance, flap, hasCollision, initialState } from './state.ts'
@@ -176,5 +176,58 @@ test('every gap is reachable: inside the field, clear of ceiling and ground', ()
   for (const spawn of spawns) {
     assert.ok(spawn.gapY - spawn.half > 0, 'gap top inside the field')
     assert.ok(spawn.gapY + spawn.half < world.groundY, 'gap bottom above the ground')
+  }
+})
+
+test('a record from an earlier round is announced the moment it falls, and only once', () => {
+  const state = running()
+  state.best = 1
+  state.pipes = [
+    { x: world.hippoX - PIPE_WIDTH + 1, gapY: state.hippoY, half: 80, passed: false },
+    { x: world.hippoX - PIPE_WIDTH + 1, gapY: state.hippoY, half: 80, passed: false },
+  ]
+  const events = step(state)
+  assert.equal(state.score, 2)
+  assert.equal(state.newBest, true)
+  assert.equal(events.filter((event) => event.type === 'record').length, 1)
+})
+
+test('the first points ever are not a mid-flight record', () => {
+  const state = running()
+  state.best = 0
+  state.pipes = [{ x: world.hippoX - PIPE_WIDTH + 1, gapY: state.hippoY, half: 80, passed: false }]
+  const events = step(state)
+  assert.equal(state.newBest, false)
+  assert.ok(!events.some((event) => event.type === 'record'))
+  // …but at the end of the round they still count as one.
+  state.hippoY = world.groundY
+  step(state)
+  assert.equal(state.newBest, true)
+})
+
+test('a shield only spawns once a few pipes are cleared and none is held', () => {
+  // Math.random at zero: every chance roll succeeds, every position lands at its minimum.
+  mock.method(Math, 'random', () => 0)
+  try {
+    const early = running()
+    early.nextSpawn = early.scrolled
+    step(early)
+    assert.equal(early.pickups.length, 1)
+    assert.equal(early.pickups[0].kind, 'melon', 'too early for a shield')
+
+    const later = running()
+    later.pipesCleared = 5
+    later.nextSpawn = later.scrolled
+    step(later)
+    assert.equal(later.pickups[0].kind, 'shield')
+
+    const armed = running()
+    armed.pipesCleared = 5
+    armed.shielded = true
+    armed.nextSpawn = armed.scrolled
+    step(armed)
+    assert.equal(armed.pickups[0].kind, 'melon', 'no second shield while one is held')
+  } finally {
+    mock.restoreAll()
   }
 })
