@@ -83,9 +83,14 @@ export const SHAKE_MS = 260
 // The later stages. A long round keeps getting harder, but never by chance: everything new is
 // telegraphed and can be answered with skill.
 
+/**
+ * Testing switch, code only: brings the stages forward to 10 and 20 points so a pot or a moving
+ * pipe is a minute away, not ten. The title card says so while it is on. Ship with it off.
+ */
+export const EARLY_STAGES = true
 /** Scores at which the stages begin: flower pots falling from the top edge, then pipes on the move. */
-export const STAGE_POTS = 100
-export const STAGE_MOVERS = 200
+export const STAGE_POTS = EARLY_STAGES ? 10 : 100
+export const STAGE_MOVERS = EARLY_STAGES ? 20 : 200
 /** Over how many points past its start a stage keeps getting denser before it levels off. */
 export const STAGE_RAMP = 200
 

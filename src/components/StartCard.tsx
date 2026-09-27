@@ -1,3 +1,4 @@
+import { EARLY_STAGES, STAGE_MOVERS, STAGE_POTS } from '../game/constants.ts'
 import { DIFFICULTIES } from '../game/difficulty.ts'
 import type { DifficultyId } from '../game/difficulty.ts'
 import { CardShell } from './CardShell.tsx'
@@ -68,6 +69,13 @@ export function StartCard({
           Einstellungen
         </button>
       </div>
+
+      {/* The stages were brought forward in code for testing: say so, or it ships that way. */}
+      {EARLY_STAGES && (
+        <p className="t-hint mt-3">
+          Testmodus: Stufen bei {STAGE_POTS} und {STAGE_MOVERS} Punkten
+        </p>
+      )}
     </CardShell>
   )
 }
