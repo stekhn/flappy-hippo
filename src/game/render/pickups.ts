@@ -77,7 +77,10 @@ function paintMelon(ctx: CanvasRenderingContext2D, p: Palette): void {
   }
 }
 
-/** The emblem: outlined like everything else, its fill light enough to keep the bubble clear. */
+/**
+ * The emblem: outlined like everything else, its fill light enough to keep the bubble clear, and
+ * one line down the middle, the way a shield is quartered.
+ */
 function paintEmblem(ctx: CanvasRenderingContext2D, p: Palette): void {
   const e = EMBLEM
   ctx.strokeStyle = p.bubbleEdge
@@ -92,5 +95,10 @@ function paintEmblem(ctx: CanvasRenderingContext2D, p: Palette): void {
   ctx.lineTo(-e * 0.45, -e * 0.3)
   ctx.closePath()
   ctx.fill()
+  ctx.stroke()
+  ctx.lineWidth = 1
+  ctx.beginPath()
+  ctx.moveTo(0, -e * 0.55)
+  ctx.lineTo(0, e * 0.62)
   ctx.stroke()
 }
