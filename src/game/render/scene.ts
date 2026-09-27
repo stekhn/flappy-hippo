@@ -44,7 +44,7 @@ export function drawScene(
   drawScenery(ctx, p, state, world, now, sky, effects, cache)
   drawPipes(ctx, p, state.pipes, world)
   drawPickups(ctx, p, state.pickups, now)
-  drawGround(ctx, p, world, state.scrolled, state.round, cache)
+  drawGround(ctx, p, world, state.scrolled, state.round, now, cache)
   // Pots land on the wall, so they go over it
   drawPots(ctx, p, state.pots)
   if (effects) drawParticles(ctx, p, state.particles)

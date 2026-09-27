@@ -116,15 +116,15 @@ export function IconStar(props: IconProps) {
   )
 }
 
-/** Filled, with the rind line and the pips knocked out in white. */
+/** A wedge: green rind in the current colour round red flesh with three pips, so it is not a lime. */
 export function IconMelon(props: IconProps) {
   return (
     <Icon {...props}>
       <path d="M3 16a9 9 0 0 1 18 0z" fill="currentColor" />
-      <path d="M6 16a6 6 0 0 1 12 0" stroke="#fff" strokeOpacity="0.6" strokeWidth={1.5} />
-      <path d="M10 14.5h.01" stroke="#fff" strokeOpacity="0.85" />
-      <path d="M14 14.5h.01" stroke="#fff" strokeOpacity="0.85" />
-      <path d="M12 12h.01" stroke="#fff" strokeOpacity="0.85" />
+      <path d="M5.6 16a6.4 6.4 0 0 1 12.8 0z" fill="var(--game-melon-flesh)" stroke="none" />
+      <circle cx="9.5" cy="14.4" r="1.05" fill="#2a1f24" stroke="none" />
+      <circle cx="14.5" cy="14.4" r="1.05" fill="#2a1f24" stroke="none" />
+      <circle cx="12" cy="11.9" r="1.05" fill="#2a1f24" stroke="none" />
     </Icon>
   )
 }

@@ -76,7 +76,7 @@ export function Hud({ snapshot, sound, onToggleSound, onPause, onMenu }: HudProp
                     className="hud-text animate-pop flex items-center gap-1 text-base"
                     style={{ color: 'var(--game-gold)' }}
                   >
-                    <IconTrophy width={18} height={18} />
+                    <IconTrophy width={22} height={22} />
                     <span>Rekord</span>
                   </span>
                 )}
@@ -85,7 +85,7 @@ export function Hud({ snapshot, sound, onToggleSound, onPause, onMenu }: HudProp
                     className="hud-text flex items-center gap-1 text-base"
                     style={{ color: 'var(--game-melon)' }}
                   >
-                    <IconMelon width={18} height={18} />
+                    <IconMelon width={22} height={22} />
                     <span>{snapshot.melons}</span>
                   </span>
                 )}
@@ -94,7 +94,7 @@ export function Hud({ snapshot, sound, onToggleSound, onPause, onMenu }: HudProp
                     className="hud-text flex items-center gap-1 text-base"
                     style={{ color: 'var(--game-shield)' }}
                   >
-                    <IconShield width={18} height={18} />
+                    <IconShield width={22} height={22} />
                     <span>{snapshot.charges > 1 ? `Schild ×${snapshot.charges}` : 'Schild'}</span>
                   </span>
                 )}

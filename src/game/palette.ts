@@ -53,7 +53,7 @@ export function resolvePalette(dark: boolean): Palette {
     brand,
     gold: cssVar('--game-gold', '#f5a524'),
     melon: cssVar('--game-melon', dark ? '#7fe0a0' : '#178a48'),
-    melonFlesh: dark ? '#ff7a9a' : '#e8395f',
+    melonFlesh: cssVar('--game-melon-flesh', dark ? '#ff7a9a' : '#e8395f'),
     melonRind: '#2f8a4a',
     melonSeed: 'rgba(38, 30, 34, 0.85)',
     // The shield is the one violet thing in the game, so it can never be mistaken for a pipe.

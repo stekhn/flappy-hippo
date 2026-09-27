@@ -645,9 +645,10 @@ export function drawGround(
   world: World,
   scrolled: number,
   round: number,
+  now: number,
   cache: LayerCache,
 ): void {
   const wall = cache.layer('wall', STREET_ABOVE, GROUND_HEIGHT, (c, ground) => paintWall(c, p, ground), STREET_PERIOD)
   const origin = cache.blit(ctx, wall, scrolled % STREET_PERIOD, world.width)
-  drawFurniture(ctx, p, origin, Math.floor(scrolled / STREET_PERIOD), round, world.width, world.groundY)
+  drawFurniture(ctx, p, origin, Math.floor(scrolled / STREET_PERIOD), round, world.width, world.groundY, now / 1000)
 }
