@@ -71,8 +71,10 @@ nichts mehr gezeichnet; wer weniger Bewegung eingestellt hat, bekommt sie auch i
 Statt ein festes 3:2-Bild in jedes Gerät zu quetschen, behält das Spielfeld **eine konstante kurze
 Seite** (320 Welt-Einheiten) und lässt die lange Seite dem Bildschirm folgen. Eine Lücke von 130
 Einheiten ist dadurch überall dieselbe Aufgabe: Ein Handy im Hochformat bekommt einfach mehr Himmel
-über und unter sich, ein Laptop mehr Anlauf nach vorn. Ab einer bestimmten Größe hört die
-Vergrößerung auf, und das Spielfeld sitzt als gerahmte Karte auf der Seite.
+über und unter sich, ein Laptop mehr Anlauf nach vorn. Damit das hohe Feld nicht schwerer wird,
+darf jede neue Lücke nur einen begrenzten Schritt über oder unter der vorigen liegen — wie weit,
+bestimmt allein die Schwierigkeitsstufe, nicht die Bildschirmform. Ab einer bestimmten Größe hört
+die Vergrößerung auf, und das Spielfeld sitzt als gerahmte Karte auf der Seite.
 
 ## Gestaltung
 

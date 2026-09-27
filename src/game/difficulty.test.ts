@@ -30,6 +30,7 @@ test('every difficulty gets faster and tighter, never the reverse', () => {
   for (const difficulty of DIFFICULTIES) {
     assert.ok(difficulty.speed[1] > difficulty.speed[0], difficulty.id)
     assert.ok(difficulty.gap[1] < difficulty.gap[0], difficulty.id)
+    assert.ok(difficulty.jump[1] > difficulty.jump[0], difficulty.id)
   }
 })
 

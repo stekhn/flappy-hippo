@@ -15,6 +15,12 @@ export interface Difficulty {
   spacing: Ramped
   /** Vertical opening between two pipes. */
   gap: Ramped
+  /**
+   * How far the next gap's centre may sit above or below the previous one. Bounding this is
+   * what keeps a tall portrait field exactly as hard as a wide landscape one: the field's height
+   * decides how far the gaps may wander over time, never how far they jump from pipe to pipe.
+   */
+  jump: Ramped
   /** Score at which the ramp reaches its end values. */
   ramp: number
 }
@@ -26,6 +32,7 @@ export const DIFFICULTIES: Difficulty[] = [
     speed: [128, 172],
     spacing: [218, 252],
     gap: [152, 128],
+    jump: [70, 100],
     ramp: 60,
   },
   {
@@ -34,6 +41,7 @@ export const DIFFICULTIES: Difficulty[] = [
     speed: [150, 235],
     spacing: [205, 250],
     gap: [132, 102],
+    jump: [85, 125],
     ramp: 45,
   },
   {
@@ -42,6 +50,7 @@ export const DIFFICULTIES: Difficulty[] = [
     speed: [178, 292],
     spacing: [196, 248],
     gap: [114, 88],
+    jump: [100, 150],
     ramp: 35,
   },
 ]
@@ -55,6 +64,7 @@ export interface Tuning {
   speed: number
   spacing: number
   gap: number
+  jump: number
   /** How far along the ramp we are, 0..1 — also drives the "heat" tint of the HUD. */
   progress: number
 }
@@ -71,6 +81,7 @@ export function tuningFor(difficulty: Difficulty, score: number, world: World): 
     speed: lerp(difficulty.speed, progress),
     spacing: lerp(difficulty.spacing, progress),
     gap: Math.min(lerp(difficulty.gap, progress), room),
+    jump: lerp(difficulty.jump, progress),
     progress,
   }
 }

@@ -244,3 +244,41 @@ test('knocked out, the hippo stays exactly where it was hit', () => {
   assert.equal(state.hippoY, restingAt)
   assert.equal(state.particles.length, 0, 'no dust on a crash')
 })
+
+/** Lets the spawner run without the hippo dying, and without touching the pipes it makes. */
+function gapSequence(field: ReturnType<typeof fitWorld>, frames: number): number[] {
+  const state = initialState({ world: field, difficulty: normal, best: 0 })
+  state.phase = 'running'
+  state.solidUntil = Number.MAX_SAFE_INTEGER
+  const seen = new Set<Pipe>()
+  const gaps: number[] = []
+  for (let i = 0; i < frames; i++) {
+    const events: GameEvent[] = []
+    advance(state, 1 / 60, 1000 + i * 16, field, normal, events)
+    for (const pipe of state.pipes) {
+      if (seen.has(pipe)) continue
+      seen.add(pipe)
+      gaps.push(pipe.gapY)
+    }
+  }
+  return gaps
+}
+
+test('consecutive gaps never jump further than the difficulty allows, on any screen', () => {
+  for (const field of [fitWorld(390, 844), fitWorld(1440, 900), fitWorld(320, 2000)]) {
+    const gaps = gapSequence(field, 2400)
+    assert.ok(gaps.length > 10, 'enough pipes to judge')
+    for (let i = 1; i < gaps.length; i++) {
+      const jump = Math.abs(gaps[i] - gaps[i - 1])
+      assert.ok(jump <= normal.jump[1] + 1e-6, `jump of ${jump.toFixed(1)} on a ${field.height}-tall field`)
+    }
+  }
+})
+
+test('the opening gap is within reach of where the hippo starts', () => {
+  for (let i = 0; i < 50; i++) {
+    const field = fitWorld(390, 844)
+    const state = initialState({ world: field, difficulty: normal, best: 0 })
+    assert.ok(Math.abs(state.pipes[0].gapY - field.groundY / 2) <= normal.jump[0] + 1e-6)
+  }
+})

@@ -9,7 +9,7 @@ import type { SkyMotion } from './scenery.ts'
 import { drawGround, drawScenery, drawSky } from './scenery.ts'
 
 /** The pose a knocked-out hippo settles into: body level, head hanging from the neck. */
-export const DEFEAT = { tilt: 0.1, headNod: 0.5, headDrop: 2 }
+export const DEFEAT = { tilt: 0, headNod: 0.7, headDrop: 2 }
 
 /**
  * Paints one frame of the world. Everything that is not the scene lives in the DOM above it.

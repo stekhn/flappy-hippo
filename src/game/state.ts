@@ -33,15 +33,22 @@ function firstPipeX(world: World): number {
   return Math.round(world.width * 0.82)
 }
 
-function randomGapY(world: World, half: number): number {
+/**
+ * Where the next gap goes: anywhere within `jump` of the previous gap that still keeps the
+ * opening clear of the ceiling and the ground. Drawing from that window rather than from the
+ * whole field is what makes every screen shape the same challenge.
+ */
+function nextGapY(world: World, previous: number, half: number, jump: number): number {
   const margin = half + GAP_MARGIN
-  const range = Math.max(world.groundY - 2 * margin, 0)
-  return margin + Math.random() * range
+  const low = Math.max(margin, previous - jump)
+  const high = Math.min(world.groundY - margin, previous + jump)
+  if (high <= low) return Math.min(Math.max(previous, margin), world.groundY - margin)
+  return low + Math.random() * (high - low)
 }
 
-function makePipe(world: World, x: number, gap: number): Pipe {
-  const half = gap / 2
-  return { x, gapY: randomGapY(world, half), half, passed: false }
+function makePipe(world: World, x: number, tuning: Tuning, previous: number): Pipe {
+  const half = tuning.gap / 2
+  return { x, gapY: nextGapY(world, previous, half, tuning.jump), half, passed: false }
 }
 
 export interface InitOptions {
@@ -53,7 +60,8 @@ export interface InitOptions {
 
 export function initialState({ world, difficulty, best, round = 0 }: InitOptions): GameState {
   const tuning = tuningFor(difficulty, 0, world)
-  const first = makePipe(world, firstPipeX(world), tuning.gap)
+  // The first gap is measured from where the hippo starts, so the opening round is fair too.
+  const first = makePipe(world, firstPipeX(world), tuning, world.groundY / 2)
   // The first pipe is placed mid-flight, so the spawn counter starts part-way through a cycle.
   const travelled = spawnX(world) - first.x
   return {
@@ -269,7 +277,8 @@ export function advance(
   state.scrolled += dx
   while (state.scrolled >= state.nextSpawn) {
     const overshoot = state.scrolled - state.nextSpawn
-    const pipe = makePipe(world, spawnX(world) - overshoot, tuning.gap)
+    const previous = state.pipes.at(-1)?.gapY ?? world.groundY / 2
+    const pipe = makePipe(world, spawnX(world) - overshoot, tuning, previous)
     state.pipes.push(pipe)
     spawnPickup(state, world, pipe, tuning)
     state.nextSpawn += tuning.spacing
