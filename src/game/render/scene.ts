@@ -6,6 +6,7 @@ import {
   SHIELD_IN_MS,
   SHIELD_POP_MS,
 } from '../constants.ts'
+import { t as words } from '../../i18n/index.ts'
 import type { GameState, Palette } from '../types.ts'
 import type { World } from '../world.ts'
 import { drawConfetti, drawParticles } from './effects.ts'
@@ -106,9 +107,10 @@ function drawFloaters(ctx: CanvasRenderingContext2D, p: Palette, state: GameStat
     ctx.globalAlpha = 1 - t * t
     ctx.lineWidth = 3
     ctx.strokeStyle = p.sky
-    ctx.strokeText(floater.text, floater.x, y)
-    ctx.fillStyle = floater.tint === 'melon' ? p.melon : p.bubbleEdge
-    ctx.fillText(floater.text, floater.x, y)
+    const text = floater.kind === 'melon' ? `+${floater.value}` : words.canvas.shield
+    ctx.strokeText(text, floater.x, y)
+    ctx.fillStyle = floater.kind === 'melon' ? p.melon : p.bubbleEdge
+    ctx.fillText(text, floater.x, y)
   }
   ctx.restore()
 }

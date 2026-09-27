@@ -1,6 +1,7 @@
-import { difficultyById } from '../game/difficulty.ts'
 import { medalFor, nextMedal } from '../game/medals.ts'
 import type { Snapshot } from '../game/runtime.ts'
+import { Fill } from '../i18n/Fill.tsx'
+import { t } from '../i18n/index.ts'
 import { canShare } from '../platform.ts'
 import { CardShell } from './CardShell.tsx'
 import { Keycap } from './Keycap.tsx'
@@ -17,12 +18,10 @@ interface OverCardProps {
 
 /** Hands the score to the OS share sheet. Nothing leaves the device unless the player picks a target. */
 async function shareScore(snapshot: Snapshot): Promise<void> {
-  const level = difficultyById(snapshot.difficulty).label
-  const points = `${snapshot.score} ${snapshot.score === 1 ? 'Punkt' : 'Punkte'}`
   try {
     await navigator.share({
       title: 'Flappy Hippo',
-      text: `${points} in Flappy Hippo (${level}). Schaffst du mehr?`,
+      text: t.over.shareText(t.points(snapshot.score), t.difficulties[snapshot.difficulty]),
       url: location.href,
     })
   } catch {
@@ -43,7 +42,7 @@ export function OverCard({ snapshot, touch, onRestart, onOpenMenu }: OverCardPro
     <CardShell onBackdropTap={onRestart} labelledBy="over-title">
       <HippoMark asleep width={44} height={43} className="mx-auto mb-1" />
       <h2 id="over-title" className="t-heading">
-        {snapshot.overTitle}
+        {t.over.titles[snapshot.round % t.over.titles.length]}
       </h2>
 
       {medal && (
@@ -57,7 +56,7 @@ export function OverCard({ snapshot, touch, onRestart, onOpenMenu }: OverCardPro
           }}
         >
           <IconTrophy width={24} height={24} />
-          <span className="t-label mt-0.5 text-[0.75rem]">{medal.label}</span>
+          <span className="t-label mt-0.5 text-[0.75rem]">{t.medals[medal.id]}</span>
         </div>
       )}
 
@@ -67,48 +66,52 @@ export function OverCard({ snapshot, touch, onRestart, onOpenMenu }: OverCardPro
         >
           {snapshot.score}
         </span>
-        <span className="t-label block">{snapshot.score === 1 ? 'Punkt' : 'Punkte'}</span>
+        <span className="t-label block">{t.pointsWord(snapshot.score)}</span>
       </p>
 
       <p className="mt-3 flex flex-wrap justify-center gap-x-5 gap-y-1">
         <Stat icon={<IconTrophy width={18} height={18} />} tone="gold" animate={snapshot.newBest}>
           {snapshot.newBest ? (
-            'Neuer Rekord'
+            t.over.newRecord
           ) : (
             <>
-              Rekord <span className="t-number">{snapshot.best}</span>
+              {t.over.record} <span className="t-number">{snapshot.best}</span>
             </>
           )}
         </Stat>
         {snapshot.melons > 0 && (
           <Stat icon={<IconMelon width={18} height={18} />} tone="melon">
-            <span className="t-number">{snapshot.melons}</span>{' '}
-            {snapshot.melons === 1 ? 'Melone' : 'Melonen'}
+            <span className="t-number">{snapshot.melons}</span> {t.melonsWord(snapshot.melons)}
           </Stat>
         )}
       </p>
 
       {next && (
         <p className="mt-3">
-          Noch <span className="t-number text-base">{next.from - snapshot.score}</span> Punkte bis{' '}
-          {next.label}
+          <Fill
+            message={t.over.toNext}
+            slots={{
+              n: <span className="t-number text-base">{next.from - snapshot.score}</span>,
+              medal: t.medals[next.id],
+            }}
+          />
         </p>
       )}
 
       <button type="button" className="btn-primary mt-5 w-full" onClick={onRestart}>
         <IconRestart width={22} height={22} />
-        Nochmal
+        {t.over.again}
         {!touch && <Keycap />}
       </button>
       <div className="mt-3 flex justify-center gap-1">
         <button type="button" className="btn-ghost" onClick={() => onOpenMenu('scores')}>
           <IconChart width={20} height={20} />
-          Rekorde
+          {t.over.records}
         </button>
         {shareable && (
           <button type="button" className="btn-ghost" onClick={() => void shareScore(snapshot)}>
             <IconShare width={20} height={20} />
-            Teilen
+            {t.over.share}
           </button>
         )}
       </div>

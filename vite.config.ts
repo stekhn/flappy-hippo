@@ -9,9 +9,10 @@ import { VitePWA } from 'vite-plugin-pwa'
 // index.html to match.
 const BASE = '/flappy-hippo/'
 
+// The manifest is static, so it is in English; the interface itself follows the browser language.
 const DESCRIPTION =
-  'Lass das Nilpferd fliegen und weiche den Hindernissen aus. Drei Schwierigkeitsstufen, ' +
-  'Melonen und Schilde, Rekorde, Medaillen und Erfolge. Offline spielbar, ohne Konto, ohne Werbung.'
+  'Make the hippo fly and dodge the pipes. Three difficulties, melons and shields, records, ' +
+  'medals and achievements. Playable offline, no account, no ads.'
 
 // Flappy Hippo is a purely client-side game: no backend, no network calls at runtime. The build is
 // a static bundle plus a service worker that precaches it, so the game keeps working offline and
@@ -31,7 +32,7 @@ export default defineConfig(({ command, isPreview }) => ({
         name: 'Flappy Hippo',
         short_name: 'Flappy Hippo',
         description: DESCRIPTION,
-        lang: 'de',
+        lang: 'en',
         dir: 'ltr',
         start_url: '.',
         scope: '.',
@@ -59,56 +60,56 @@ export default defineConfig(({ command, isPreview }) => ({
             sizes: '1080x1920',
             type: 'image/png',
             form_factor: 'narrow',
-            label: 'Der Startbildschirm mit Schwierigkeitswahl und Rekord',
+            label: 'The title screen with the difficulty choice and the record',
           },
           {
             src: 'screenshots/narrow-flight.png',
             sizes: '1080x1920',
             type: 'image/png',
             form_factor: 'narrow',
-            label: 'Das Nilpferd im Flug, mit Schild, vor einer Melone',
+            label: 'The hippo in flight, shielded, ahead of a melon',
           },
           {
             src: 'screenshots/narrow-over.png',
             sizes: '1080x1920',
             type: 'image/png',
             form_factor: 'narrow',
-            label: 'Rundenende mit Goldmedaille, neuem Rekord und freigeschaltetem Erfolg',
+            label: 'End of a round with a gold medal, a new record and an unlocked achievement',
           },
           {
             src: 'screenshots/narrow-awards.png',
             sizes: '1080x1920',
             type: 'image/png',
             form_factor: 'narrow',
-            label: 'Die Liste der Erfolge im Menü',
+            label: 'The list of achievements in the menu',
           },
           {
             src: 'screenshots/wide-flight.png',
             sizes: '1920x1080',
             type: 'image/png',
             form_factor: 'wide',
-            label: 'Das Nilpferd im Flug, mit Schild, vor einer Melone',
+            label: 'The hippo in flight, shielded, ahead of a melon',
           },
           {
             src: 'screenshots/wide-title.png',
             sizes: '1920x1080',
             type: 'image/png',
             form_factor: 'wide',
-            label: 'Der Startbildschirm bei Nacht',
+            label: 'The title screen at night',
           },
         ],
         shortcuts: [
           {
-            name: 'Rekorde',
-            short_name: 'Rekorde',
-            description: 'Bestenliste und Statistik',
+            name: 'Records',
+            short_name: 'Records',
+            description: 'Best rounds and statistics',
             url: './?menu=scores',
             icons: [{ src: 'icon-192.png', sizes: '192x192', type: 'image/png' }],
           },
           {
-            name: 'Erfolge',
-            short_name: 'Erfolge',
-            description: 'Alle Erfolge und was noch fehlt',
+            name: 'Achievements',
+            short_name: 'Achievements',
+            description: 'All achievements and what is still missing',
             url: './?menu=awards',
             icons: [{ src: 'icon-192.png', sizes: '192x192', type: 'image/png' }],
           },

@@ -1,147 +1,86 @@
 # Flappy Hippo
 
-Ein fliegendes Nilpferd, eine Taste, kein Konto. Flappy Hippo läuft komplett im Browser, lässt sich
-auf dem Handy als App installieren und funktioniert danach auch offline.
+A flying hippo, one button, no account. Flappy Hippo runs entirely in the browser, installs on a
+phone like an app, and works offline after the first visit.
 
-**Spielen: https://stekhn.github.io/flappy-hippo/**
+**Play:** https://stekhn.github.io/flappy-hippo/
+
+![The hippo in flight between two pipes](public/screenshots/wide-flight.png)
 
 ## Features
 
-- **Eine Steuerung**: tippen, klicken oder Leertaste. Mehr braucht es nicht.
-- **Drei Schwierigkeitsstufen**, die mit steigender Punktzahl schneller und enger werden. Ab 100
-  Punkten fallen Blumentöpfe von den Balkonen, ab 200 wandern manche Röhren auf und ab. Beides
-  kündigt sich an und lässt sich mit Können umfliegen: Sterben ist nie Zufall.
-- **Melonen und Schilde**: Melonen hängen zwischen den Röhren und bringen drei Punkte, die Blase
-  hält genau einen Treffer aus.
-- **Rekorde, Medaillen und 22 Erfolge**, zehn davon verborgen, bis man ihnen nahe kommt — alles lokal, ohne Konto und ohne Server. Fällt der
-  Rekord mitten im Flug, färbt sich die Anzeige gold; ein Erfolg meldet sich in dem Moment, in
-  dem er erreicht ist, als Toast am unteren Rand — wie auf der Konsole, nicht erst nach dem Absturz.
-- **Pause mit Countdown**: App-Wechsel oder Anruf kosten keine Runde; weiter geht es mit 3-2-1.
-- **Tag und Nacht**: Sonne, Mond, Sterne und beleuchtete Fenster, gekoppelt an das System-Design.
-- **Für Handys gebaut**: füllt den Bildschirm inklusive Notch, pausiert beim App-Wechsel, Ton und
-  Vibration lassen sich abschalten.
-- **Eine richtige App**: installierbar auf Handy und Desktop, offline spielbar, mit Startbild auf
-  dem iPhone, Screenshots im Installationsdialog und Verknüpfungen zu Rekorden und Erfolgen. Eine
-  neue Version wird angeboten, nie mitten in der Runde erzwungen. Ein Ergebnis lässt sich über das
-  Teilen-Menü des Systems weitergeben — mehr Verbindung nach außen gibt es nicht.
+- **One control:** tap, click or Space.
+- **Three difficulties** that get faster and tighter as the score climbs. From 100 points flower
+  pots fall from the balconies, from 200 some pipes move up and down. Both are telegraphed and can
+  be answered with skill: dying is never luck.
+- **Melons and shields:** melons hang between the pipes and are worth three points; the bubble
+  takes exactly one hit.
+- **Records, medals and 22 achievements**, ten of them hidden until you get close. Everything is
+  stored on the device; there is no server.
+- **Pause with a count-in:** switching apps or taking a call never costs a round.
+- **Day and night** with the system theme; **German or English** with the browser language.
+- **A real app:** installable on phones and desktops, offline, with iOS splash screens, store-style
+  screenshots in the install dialog, and app shortcuts. Updates are offered, never forced mid-round.
 
-## Quick start
+## Getting started
 
-Node >= 22.
+Requires Node 22 or newer.
 
 ```bash
 npm install
-npm run dev      # Dev-Server auf http://localhost:5173
-npm run build    # statisches Bundle in dist/
-npm run preview  # das gebaute Bundle unter /flappy-hippo/ ansehen
-npm test         # Spiellogik (Node Test Runner)
-npm run lint     # oxlint
-npm run assets   # assets/*.svg → Icons, Favicon, iOS-Startbilder (nur nach Änderungen an den SVGs)
-npm run screenshots  # Manifest-Screenshots aus der laufenden App (braucht Chrome, s. u.)
+npm run dev          # dev server at http://localhost:5173
+npm run build        # static bundle in dist/
+npm run preview      # serve the build under /flappy-hippo/
+npm test             # game logic (Node test runner)
+npm run lint         # oxlint
+npm run assets       # assets/*.svg → icons, favicon, iOS splash screens
+npm run screenshots  # manifest screenshots from the running app (needs Chrome, see below)
 ```
 
-Der Build ist eine reine statische Seite: `dist/` auf einen beliebigen Webserver legen, fertig. Zur
-Laufzeit gibt es keine Netzwerkaufrufe.
+The build is a static site: put `dist/` on any web server. There are no network calls at runtime.
 
-## Als App
-
-Flappy Hippo erfüllt alles, was Chrome, Safari und Edge für eine installierbare Web-App verlangen,
-und das, was den Unterschied zu einer bloßen Webseite macht:
-
-- **Manifest** mit `id`, Name, Beschreibung, Kategorien, `launch_handler` (ein zweiter Tipp aufs
-  Icon holt das laufende Spiel zurück) und Verknüpfungen zu *Rekorde* und *Erfolge*.
-- **Icons** in allen Rollen: normal, *maskable* (Kopf in der 80-%-Sicherheitszone, für runde und
-  eckige Launcher), *monochrome* (für Android-Themen und Badges), Apple-Touch-Icon, SVG- und
-  PNG-Favicon, Safari-Pinned-Tab. Quelle sind die SVGs in `assets/`, gerendert von
-  `scripts/make-assets.ts`.
-- **Screenshots** im Manifest — vier im Hochformat für Android, zwei im Querformat für den
-  Desktop — damit der Installationsdialog aussieht wie ein Store-Eintrag. Sie werden mit
-  `scripts/make-screenshots.ts` aus der echten App aufgenommen (Chrome oder Chromium nötig;
-  `CHROME_PATH=/pfad/zu/chrome npm run screenshots`, sonst wird an den üblichen Orten gesucht).
-- **Startbilder für iOS** für gängige iPhones und iPads, Hoch- und Querformat, hell und dunkel —
-  sonst zeigt Safari beim Start einer installierten App eine weiße Fläche. `npm run assets`
-  erzeugt sie und schreibt die `<link>`-Tags in `index.html`.
-- **Service Worker** (Workbox über `vite-plugin-pwa`): das Spiel ist nach dem ersten Besuch
-  vollständig offline. Eine neue Version meldet sich als Hinweis mit *Neu laden* und wartet — ein
-  Reload mitten im Flug würde die Runde kosten. Screenshots und Startbilder sind vom Precache
-  ausgenommen.
-- **Teilen-Metadaten** (Open Graph, Twitter Card, kanonische URL), damit ein geteilter Link mit
-  Bild und Beschreibung erscheint.
+`npm run screenshots` looks for Chrome or Chromium in the usual places; point it elsewhere with
+`CHROME_PATH=/path/to/chrome npm run screenshots`.
 
 ## Deployment
 
-Jeder Push auf `main` baut und veröffentlicht über
-[GitHub Actions](.github/workflows/deploy.yml) auf GitHub Pages — derselbe Ablauf wie bei
-[punchpath](https://github.com/stekhn/punchpath). Der Workflow lintet, testet, baut und lädt `dist/`
-als Pages-Artefakt hoch; `enablement: true` schaltet Pages beim ersten Lauf selbst ein.
+Every push to `main` builds and publishes to GitHub Pages via
+[GitHub Actions](.github/workflows/deploy.yml). Once, in the repository settings, set
+**Pages → Build and deployment → Source** to **GitHub Actions**.
 
-Einmalig nötig:
+The game is served as a project site under `/flappy-hippo/`; that path is the `base` in
+[vite.config.ts](vite.config.ts). Change it to `/` for a user site or a custom domain, and update
+the canonical and Open Graph URLs in [index.html](index.html).
 
-1. Repository auf GitHub anlegen und pushen:
-   ```bash
-   git remote add origin git@github.com:stekhn/flappy-hippo.git
-   git push -u origin main
-   ```
-2. Unter **Settings → Pages → Build and deployment** als Source **GitHub Actions** wählen.
+## How it works
 
-Das Spiel wird als Projektseite unter `/flappy-hippo/` ausgeliefert; der Pfad steht als `base` in
-[vite.config.ts](vite.config.ts). Bei einer eigenen Domain oder einer User-Page dort auf `/` stellen.
+The core is a small, DOM-free simulation: `advance()` takes the state, a time step and the
+world, and reports what happened. Around it sits a runtime that owns the canvas, the animation
+frame and the input, and above that React for the HUD, the cards and the menu. React never
+renders a frame; it receives a snapshot only when something it shows has changed.
 
-## So funktioniert es
+The play field keeps a constant short side (320 world units) and lets the long side follow the
+screen, so a gap is the same challenge on a portrait phone and a wide laptop. Still layers of
+the backdrop are baked into bitmaps once and blitted at the scroll offset; only what moves is
+drawn each frame. Resolution is capped at 2x and stepped down if a device cannot hold 60 fps.
 
-Der Kern ist eine kleine, DOM-freie Simulation: `advance()` bekommt den Zustand, ein Zeitdelta und
-die Spielwelt und meldet zurück, was passiert ist. Darum herum liegt eine Laufzeit, die das Canvas,
-den Animation Frame und die Eingaben besitzt, und darüber React für HUD, Karten und Menü. React
-rendert nie ein Einzelbild — es bekommt nur dann einen Schnappschuss, wenn sich etwas ändert, das
-es anzeigt. Steht die Szene still (Pause, Menü, ausgeklungener Game-Over-Bildschirm), wird auch
-nichts mehr gezeichnet; wer weniger Bewegung eingestellt hat, bekommt sie auch im Canvas.
+The interface follows the browser's first language: German where that is German, English
+otherwise. Strings live in [src/i18n](src/i18n), typed against the English catalogue.
 
-### Zeichnen mit Budget
-
-Ein Side-Scroller zeigt jedes Bild dieselbe Kulisse, nur verschoben. Deshalb werden die stillen
-Ebenen (Skylines, Hecke mit Laternen, Mauer mit Straße) einmal in Bitmaps gebacken, eine
-Szenenperiode breit in Geräteauflösung, und pro Bild nur noch zwei-, dreimal an der Scrollposition
-eingeblendet ([src/game/render/layers.ts](src/game/render/layers.ts)). Gezeichnet wird pro Bild
-nur, was sich bewegt: Himmelskörper, Röhren, Blumentöpfe, Sammelobjekte, das Nilpferd, dazu das seltene
-Straßenmobiliar (Bank, Briefkasten, Mülleimer, ab und zu eine Katze oder ein Hund), das nicht
-gebacken wird, damit es sich nie wiederholt: Was an welcher Stelle steht, ergibt sich aus ihrer
-Nummer, nicht aus einer Liste. Die Auflösung ist auf 2x
-gedeckelt, und hält ein Gerät trotzdem keine 60 fps, geht sie stufenweise herunter.
-
-### Das Spielfeld passt sich an
-
-Statt ein festes 3:2-Bild in jedes Gerät zu quetschen, behält das Spielfeld **eine konstante kurze
-Seite** (320 Welt-Einheiten) und lässt die lange Seite dem Bildschirm folgen. Eine Lücke von 130
-Einheiten ist dadurch überall dieselbe Aufgabe: Ein Handy im Hochformat bekommt einfach mehr Himmel
-über und unter sich, ein Laptop mehr Anlauf nach vorn. Damit das hohe Feld nicht schwerer wird,
-darf jede neue Lücke nur einen begrenzten Schritt über oder unter der vorigen liegen — wie weit,
-bestimmt allein die Schwierigkeitsstufe, nicht die Bildschirmform. Ab einer bestimmten Größe hört
-die Vergrößerung auf, und das Spielfeld sitzt als gerahmte Karte auf der Seite.
-
-## Gestaltung
-
-Die Oberfläche soll sich anfühlen wie ein Teil des Spiels, nicht wie eine Verwaltungsmaske davor.
-Zwei Schriften, beide selbst gehostet (siehe [public/fonts](public/fonts/README.md)): **Fredoka**
-für alles, was zum Spiel gehört — Titel, Zahlen, Knöpfe, Reiter —, **Nunito** für den Fließtext.
-Fünf Textrollen (`t-title`, `t-heading`, `t-label`, `t-number`, `t-hint`) reichen für jeden
-Bildschirm. Alle Overlays — Karten, Menü, Toasts — liegen auf derselben frostigen Glasfläche
-(`glass`), und Knöpfe haben eine feste Unterseite und sinken beim Drücken ein. Die Tokens dafür
-stehen in [src/styles.css](src/styles.css) und speisen auch die Canvas-Palette.
-
-## Projektstruktur
+## Project structure
 
 ```
-src/game/          Simulation, Zustand, Laufzeit, Ton — ohne React
-src/game/render/   Canvas-Zeichenroutinen (Nilpferd, Röhren, Kulisse, Effekte)
-src/components/    React-Oberfläche: HUD, Karten, Menü
-src/hooks/         Laufzeit-Anbindung, Einstellungen, Fortschritt, Installations-Prompt
-assets/            Icon-Quellen (SVG) für scripts/make-icons.ts
-dev/               Pose-Labor: `npm run dev`, dann /dev/poses.html — Kontaktbogen der Nilpferd-Posen
-docs/              der gerenderte Kontaktbogen (defeat-poses.png)
+src/game/          simulation, state, runtime, audio (no React)
+src/game/render/   canvas drawing: hippo, pipes, backdrop, street, effects
+src/components/    React UI: HUD, cards, menu
+src/hooks/         runtime binding, settings, progress, install prompt
+src/i18n/          message catalogues and locale detection
+assets/            icon sources (SVG) for scripts/make-assets.ts
+scripts/           asset and screenshot generation
 ```
 
-## Herkunft
+## Origin
 
-Das Spiel begann als Wartungsseiten-Easteregg in einer internen Next.js-App und ist hier zu einer
-eigenständigen Web-App geworden: eigenes Spielfeld-Modell für Hochformat, Aufsammelobjekte,
-Schwierigkeitsstufen, Ton, Rekorde, Erfolge und Offline-Betrieb.
+The game began as an easter egg on a maintenance page of an internal Next.js app and grew into a
+standalone web app here: a portrait-friendly field, pickups, difficulties, sound, records,
+achievements and offline play.

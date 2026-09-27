@@ -186,7 +186,8 @@ function surveySpawns(frames: number, score = 0) {
     for (const pickup of state.pickups) {
       if (seenPickups.has(pickup)) continue
       seenPickups.add(pickup)
-      if (pickup.kind === 'melon') melons.push({ y: pickup.y, gapY: spawns[spawns.length - 1].gapY })
+      // Measured from the pipe's resting centre: a mover's gap may already have swung by now
+      if (pickup.kind === 'melon') melons.push({ y: pickup.y, gapY: spawns[spawns.length - 1].baseY })
     }
     for (const pot of state.pots) {
       if (seenPots.has(pot)) continue

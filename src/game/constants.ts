@@ -145,14 +145,3 @@ export const COUNTDOWN_MS = 1500
 export const OVER_SETTLE_MS = 3000
 /** Frames longer than this (a backgrounded tab, a slow phone) are clamped, never simulated. */
 export const MAX_FRAME_S = 1 / 30
-
-export const OVER_TITLES = [
-  'Vorbei',
-  'Autsch',
-  'Platsch',
-  'Hoppla',
-  'Bruchlandung',
-  'Knapp vorbei',
-  'Rums',
-  'Schade',
-] as const

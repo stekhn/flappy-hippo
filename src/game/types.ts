@@ -86,13 +86,13 @@ export interface Particle {
   weight: number
 }
 
-/** A little label rising from where something was picked up: "+3", "Schild". */
+/** A little label rising from where something was picked up: the melon's points, or the word "shield". */
 export interface Floater {
-  text: string
+  kind: 'melon' | 'shield'
+  value: number
   x: number
   y: number
   born: number
-  tint: 'melon' | 'shield'
 }
 
 export interface GameState {
@@ -132,7 +132,6 @@ export interface GameState {
   best: number
   newBest: boolean
   round: number
-  overTitle: string
   overAt: number
   startedAt: number
   flappedAt: number

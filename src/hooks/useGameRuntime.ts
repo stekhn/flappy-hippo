@@ -4,6 +4,7 @@ import { GameRuntime } from '../game/runtime.ts'
 import type { Snapshot } from '../game/runtime.ts'
 import type { RunResult } from '../game/storage.ts'
 import type { GameEvent } from '../game/types.ts'
+import { t } from '../i18n/index.ts'
 import type { Settings } from '../settings.ts'
 
 const INITIAL_SNAPSHOT: Snapshot = {
@@ -15,7 +16,6 @@ const INITIAL_SNAPSHOT: Snapshot = {
   newBest: false,
   charges: 0,
   melons: 0,
-  overTitle: 'Vorbei',
   round: 0,
   difficulty: 'normal',
   stage: 0,
@@ -87,19 +87,16 @@ export function useGameRuntime({ settings, dark, best, record, preview, onUnlock
     }
     switch (event.type) {
       case 'shield':
-        setStatus('Schild eingesammelt')
+        setStatus(t.status.shield)
         return
       case 'shield-pop':
-        setStatus('Schild verbraucht')
+        setStatus(t.status.shieldPop)
         return
       case 'record':
-        setStatus(`Neuer Rekord, ${event.score} Punkte`)
+        setStatus(t.status.record(event.score))
         return
       case 'crash':
-        setStatus(
-          `Vorbei. ${event.score} ${event.score === 1 ? 'Punkt' : 'Punkte'}` +
-            (event.newBest ? ', neuer Rekord.' : `, Rekord ${event.best}.`),
-        )
+        setStatus(t.status.crash(event.score, event.best, event.newBest))
         return
       default:
         return
@@ -148,19 +145,19 @@ export function useGameRuntime({ settings, dark, best, record, preview, onUnlock
   const controls = useMemo<GameControls>(() => {
     const restart = () => {
       runtimeRef.current?.restart()
-      setStatus('Neue Runde')
+      setStatus(t.status.newRound)
     }
     return {
       flap: () => runtimeRef.current?.flap(),
       pause: () => {
-        if (runtimeRef.current?.pause()) setStatus('Pause')
+        if (runtimeRef.current?.pause()) setStatus(t.status.paused)
       },
       resume: () => {
-        if (runtimeRef.current?.resume()) setStatus('Weiter, es zählt runter')
+        if (runtimeRef.current?.resume()) setStatus(t.status.resuming)
       },
       freeze: () => {
         const did = runtimeRef.current?.toggleFreeze()
-        if (did) setStatus(did === 'frozen' ? 'Standbild' : 'Weiter, es zählt runter')
+        if (did) setStatus(did === 'frozen' ? t.status.frozen : t.status.resuming)
       },
       restart,
       restartFromPause: () => {
@@ -171,7 +168,7 @@ export function useGameRuntime({ settings, dark, best, record, preview, onUnlock
       setSuspended: (suspended) => runtimeRef.current?.setSuspended(suspended),
       clearBest: () => {
         runtimeRef.current?.setBest(0)
-        setStatus('Fortschritt gelöscht')
+        setStatus(t.status.reset)
       },
     }
   }, [])

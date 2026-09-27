@@ -1,9 +1,10 @@
 import { achievementById } from '../game/achievements.ts'
 import type { Toast } from '../hooks/useToasts.ts'
+import { t } from '../i18n/index.ts'
 import { EmojiBadge } from './EmojiBadge.tsx'
 import { IconTrophy } from './icons.tsx'
 
-/** The console-style "Erfolg freigeschaltet" banner, rising from the bottom edge of the board. */
+/** The console-style "achievement unlocked" banner, rising from the bottom edge of the board. */
 export function AchievementToast({ toast }: { toast: Toast | null }) {
   const achievement = toast ? achievementById(toast.id) : undefined
   if (!toast || !achievement) return null
@@ -22,8 +23,8 @@ export function AchievementToast({ toast }: { toast: Toast | null }) {
       >
         <EmojiBadge icon={achievement.icon} earned />
         <span className="min-w-0 flex-1">
-          <span className="t-label text-gold block text-[0.875rem]">Erfolg freigeschaltet</span>
-          <span className="t-label block truncate">{achievement.label}</span>
+          <span className="t-label text-gold block text-[0.875rem]">{t.toast.unlocked}</span>
+          <span className="t-label block truncate">{t.achievements[achievement.id].label}</span>
         </span>
         <IconTrophy width={22} height={22} className="text-gold shrink-0" />
       </div>

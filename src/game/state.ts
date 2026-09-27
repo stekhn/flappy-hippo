@@ -19,7 +19,6 @@ import {
   MILESTONE_STEP,
   MOVER_MIN_JUMP,
   MOVER_PERIOD_S,
-  OVER_TITLES,
   PICKUP_RADIUS,
   PIPE_WIDTH,
   POT_AIM,
@@ -120,7 +119,6 @@ export function initialState({ world, difficulty, best, round = 0 }: InitOptions
     best,
     newBest: false,
     round,
-    overTitle: OVER_TITLES[round % OVER_TITLES.length],
     overAt: 0,
     startedAt: 0,
     flappedAt: 0,
@@ -157,8 +155,8 @@ function spawnPickup(state: GameState, world: World, pipe: Pipe, tuning: Tuning)
   // sometimes worth leaving alone. On a tall field a melon anywhere would mostly be out of reach.
   const margin = PICKUP_RADIUS + GAP_MARGIN
   const reach = tuning.jump * MELON_REACH
-  const low = Math.max(margin, pipe.gapY - reach)
-  const high = Math.min(world.groundY - margin, pipe.gapY + reach)
+  const low = Math.max(margin, pipe.baseY - reach)
+  const high = Math.min(world.groundY - margin, pipe.baseY + reach)
   state.pickups.push({
     kind: 'melon',
     x: pipe.x + tuning.spacing / 2,
@@ -373,7 +371,7 @@ function collect(state: GameState, world: World, now: number, events: GameEvent[
       state.melons += 1
       state.score += MELON_POINTS
       burst(state, pickup.x, pickup.y, 14, 'melon', 110, 1)
-      state.floaters.push({ text: `+${MELON_POINTS}`, x: pickup.x, y: pickup.y - 6, born: now, tint: 'melon' })
+      state.floaters.push({ kind: 'melon', value: MELON_POINTS, x: pickup.x, y: pickup.y - 6, born: now })
       events.push({ type: 'melon', score: state.score })
       celebrate(state, world, now, events)
       continue
@@ -382,7 +380,7 @@ function collect(state: GameState, world: World, now: number, events: GameEvent[
     state.charges += 1
     state.shieldAt = now
     burst(state, pickup.x, pickup.y, 12, 'bubble', 70, 0)
-    state.floaters.push({ text: 'Schild', x: pickup.x, y: pickup.y - 6, born: now, tint: 'shield' })
+    state.floaters.push({ kind: 'shield', value: 0, x: pickup.x, y: pickup.y - 6, born: now })
     events.push({ type: 'shield' })
   }
 }

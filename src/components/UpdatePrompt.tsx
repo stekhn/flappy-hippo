@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { useRegisterSW } from 'virtual:pwa-register/react'
+import { t } from '../i18n/index.ts'
 import { IconCheck, IconClose, IconRestart } from './icons.tsx'
 
 /** How often an open game asks whether a newer build was published. */
@@ -39,7 +40,7 @@ export function UpdatePrompt() {
       <div className="glass animate-toast-in pointer-events-auto flex items-center gap-3 rounded-[1.25rem] py-2 pr-2 pl-4">
         {needRefresh ? (
           <>
-            <span className="t-label">Neue Version verfügbar</span>
+            <span className="t-label">{t.update.available}</span>
             <button
               type="button"
               className="btn-primary px-4 text-[0.9375rem]"
@@ -47,12 +48,12 @@ export function UpdatePrompt() {
               onClick={() => void updateServiceWorker(true)}
             >
               <IconRestart width={18} height={18} />
-              Neu laden
+              {t.update.reload}
             </button>
             <button
               type="button"
               className="icon-btn h-10 w-10"
-              aria-label="Später"
+              aria-label={t.update.later}
               onClick={() => setNeedRefresh(false)}
             >
               <IconClose width={20} height={20} />
@@ -61,7 +62,7 @@ export function UpdatePrompt() {
         ) : (
           <>
             <IconCheck width={22} height={22} className="text-brand" />
-            <span className="t-label pr-2">Bereit für offline</span>
+            <span className="t-label pr-2">{t.update.offlineReady}</span>
           </>
         )}
       </div>

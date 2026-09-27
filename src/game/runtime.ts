@@ -25,7 +25,6 @@ export interface Snapshot {
   /** Shield charges in hand. */
   charges: number
   melons: number
-  overTitle: string
   round: number
   /** The difficulty this round runs on — what the share text and the over card should name. */
   difficulty: DifficultyId
@@ -488,7 +487,6 @@ export class GameRuntime {
       newBest: s.newBest,
       charges: s.charges,
       melons: s.melons,
-      overTitle: s.overTitle,
       round: s.round,
       difficulty: this.difficulty.id,
       stage: s.stage,

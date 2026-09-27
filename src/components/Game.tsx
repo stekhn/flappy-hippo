@@ -5,6 +5,7 @@ import { useInstallPrompt } from '../hooks/useInstallPrompt.ts'
 import { useProgress } from '../hooks/useProgress.ts'
 import { useSettings } from '../hooks/useSettings.ts'
 import { useToasts } from '../hooks/useToasts.ts'
+import { t } from '../i18n/index.ts'
 import { isTouch } from '../platform.ts'
 import { useTheme } from '../theme.ts'
 import { AchievementToast } from './AchievementToast.tsx'
@@ -107,7 +108,7 @@ export function Game() {
         {/* The only in-flight control a keyboard or screen reader needs. */}
         {snapshot.phase === 'running' && !snapshot.paused && (
           <button type="button" className="sr-only" onClick={controls.flap}>
-            Fliegen
+            {t.hud.fly}
           </button>
         )}
 

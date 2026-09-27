@@ -8,11 +8,7 @@ import { createContext, useContext } from 'react'
 export type ThemePref = 'system' | 'light' | 'dark'
 export type ResolvedTheme = 'light' | 'dark'
 
-export const THEME_OPTIONS: { value: ThemePref; label: string }[] = [
-  { value: 'system', label: 'System' },
-  { value: 'light', label: 'Tag' },
-  { value: 'dark', label: 'Nacht' },
-]
+export const THEME_PREFS: ThemePref[] = ['system', 'light', 'dark']
 
 const STORAGE_KEY = 'flappy-hippo.theme'
 

@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
+import { de } from '../i18n/de.ts'
+import { en } from '../i18n/en.ts'
 import { ACHIEVEMENTS, newlyUnlocked, unlock } from './achievements.ts'
 import { emptyProgress, parseProgress, recordRun } from './storage.ts'
 import type { RunResult } from './storage.ts'
@@ -109,12 +111,14 @@ test('achievements unlock once and stay unlocked', () => {
   assert.equal(unlocked.achievements['ten'], 1000)
 })
 
-test('every achievement has an id, a label and a hint', () => {
+test('every achievement has a unique id, words in both languages, and starts locked', () => {
   const ids = new Set(ACHIEVEMENTS.map((a) => a.id))
   assert.equal(ids.size, ACHIEVEMENTS.length)
   for (const achievement of ACHIEVEMENTS) {
-    assert.ok(achievement.label.length > 0, achievement.id)
-    assert.ok(achievement.hint.length > 0, achievement.id)
+    for (const catalogue of [en, de]) {
+      const words = catalogue.achievements[achievement.id]
+      assert.ok(words.label.length > 0 && words.hint.length > 0, achievement.id)
+    }
     assert.equal(achievement.reached(emptyProgress()), false, achievement.id)
   }
 })

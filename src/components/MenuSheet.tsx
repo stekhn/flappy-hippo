@@ -2,13 +2,15 @@ import { useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { ACHIEVEMENTS } from '../game/achievements.ts'
 import { STAGE_MOVERS, STAGE_POTS } from '../game/constants.ts'
-import { DIFFICULTIES, difficultyById } from '../game/difficulty.ts'
+import { DIFFICULTIES } from '../game/difficulty.ts'
 import type { DifficultyId } from '../game/difficulty.ts'
 import type { Progress } from '../game/storage.ts'
 import { useMediaQuery } from '../hooks/useMediaQuery.ts'
 import { isIos, isStandalone } from '../platform.ts'
 import type { Settings } from '../settings.ts'
-import { THEME_OPTIONS } from '../theme.ts'
+import { Fill } from '../i18n/Fill.tsx'
+import { formatDate, formatNumber, t } from '../i18n/index.ts'
+import { THEME_PREFS } from '../theme.ts'
 import type { ThemePref } from '../theme.ts'
 import { EmojiBadge } from './EmojiBadge.tsx'
 import { Segmented } from './Segmented.tsx'
@@ -18,10 +20,10 @@ import { IconChart, IconCheck, IconClose, IconGear, IconHelp, IconInstall, IconS
 export type MenuTab = 'settings' | 'scores' | 'awards' | 'help'
 
 const TABS: { id: MenuTab; label: string; icon: typeof IconGear }[] = [
-  { id: 'settings', label: 'Spiel', icon: IconGear },
-  { id: 'scores', label: 'Rekorde', icon: IconChart },
-  { id: 'awards', label: 'Erfolge', icon: IconStar },
-  { id: 'help', label: 'Info', icon: IconHelp },
+  { id: 'settings', label: t.menu.tabs.settings, icon: IconGear },
+  { id: 'scores', label: t.menu.tabs.scores, icon: IconChart },
+  { id: 'awards', label: t.menu.tabs.awards, icon: IconStar },
+  { id: 'help', label: t.menu.tabs.help, icon: IconHelp },
 ]
 
 interface MenuSheetProps {
@@ -142,7 +144,7 @@ export function MenuSheet({
   )
 
   const close = (
-    <button type="button" className="icon-btn" onClick={onClose} aria-label="Menü schließen">
+    <button type="button" className="icon-btn" onClick={onClose} aria-label={t.menu.close}>
       <IconClose width={20} height={20} />
     </button>
   )
@@ -160,7 +162,7 @@ export function MenuSheet({
           tabIndex={-1}
           role="dialog"
           aria-modal="true"
-          aria-label="Menü"
+          aria-label={t.menu.label}
           className="glass animate-pop flex max-h-full w-full max-w-[44rem] rounded-[1.75rem] outline-none"
           onPointerDown={(event) => event.stopPropagation()}
         >
@@ -168,7 +170,7 @@ export function MenuSheet({
             <div className="mb-2">{close}</div>
             <div
               role="tablist"
-              aria-label="Bereiche"
+              aria-label={t.menu.sections}
               aria-orientation="vertical"
               className="flex flex-col gap-1"
             >
@@ -184,7 +186,7 @@ export function MenuSheet({
           tabIndex={-1}
           role="dialog"
           aria-modal="true"
-          aria-label="Menü"
+          aria-label={t.menu.label}
           className="glass animate-rise flex max-h-[88dvh] w-full max-w-[30rem] flex-col rounded-t-[1.75rem] border-b-0 outline-none"
           style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}
           onPointerDown={(event) => event.stopPropagation()}
@@ -194,7 +196,7 @@ export function MenuSheet({
             <div className="bg-ink/20 h-1.5 w-12 rounded-full" aria-hidden="true" />
             <div className="absolute right-3">{close}</div>
           </div>
-          <div role="tablist" aria-label="Bereiche" className="flex gap-1 px-3 pt-1">
+          <div role="tablist" aria-label={t.menu.sections} className="flex gap-1 px-3 pt-1">
             {tabs}
           </div>
           {content}
@@ -229,30 +231,35 @@ function SettingsTab({
 
   return (
     <>
-      <Section title="Schwierigkeit">
+      <Section title={t.menu.settings.difficulty}>
         <Segmented
-          label="Schwierigkeit"
+          label={t.menu.settings.difficulty}
           value={settings.difficulty}
-          options={DIFFICULTIES.map((d) => ({ value: d.id, label: d.label }))}
+          options={DIFFICULTIES.map((d) => ({ value: d.id, label: t.difficulties[d.id] }))}
           onChange={(value: DifficultyId) => onSetting('difficulty', value)}
         />
       </Section>
 
-      <Section title="Tag oder Nacht">
-        <Segmented label="Design" value={theme} options={THEME_OPTIONS} onChange={onTheme} />
+      <Section title={t.menu.settings.theme}>
+        <Segmented
+          label={t.menu.settings.themeLabel}
+          value={theme}
+          options={THEME_PREFS.map((value) => ({ value, label: t.themes[value] }))}
+          onChange={onTheme}
+        />
       </Section>
 
-      <Section title="Rückmeldung">
+      <Section title={t.menu.settings.feedback}>
         <div className="space-y-2">
           <Toggle
-            label="Ton"
-            hint="Flügelschlag, Punkte, Bruchlandung"
+            label={t.menu.settings.sound}
+            hint={t.menu.settings.soundHint}
             checked={settings.sound}
             onChange={(value) => onSetting('sound', value)}
           />
           <Toggle
-            label="Vibration"
-            hint="Kurzes Feedback auf unterstützten Geräten"
+            label={t.menu.settings.vibration}
+            hint={t.menu.settings.vibrationHint}
             checked={settings.haptics}
             onChange={(value) => onSetting('haptics', value)}
           />
@@ -260,28 +267,29 @@ function SettingsTab({
       </Section>
 
       {canInstall && (
-        <Section title="Installieren">
+        <Section title={t.menu.settings.install}>
           <button type="button" className="btn-secondary w-full" onClick={onInstall}>
             <IconInstall width={20} height={20} />
-            Zum Startbildschirm
+            {t.menu.settings.installButton}
           </button>
-          <p className="t-hint mt-2">
-            Startet dann bildschirmfüllend, ohne Browserleisten, und läuft auch offline.
-          </p>
+          <p className="t-hint mt-2">{t.menu.settings.installHint}</p>
         </Section>
       )}
       {!canInstall && isIos() && !isStandalone() && (
-        <Section title="Installieren">
+        <Section title={t.menu.settings.install}>
           <p>
-            Auf dem iPhone oder iPad: in Safari das{' '}
-            <span className="text-brand font-bold">Teilen</span>-Symbol antippen und{' '}
-            <span className="text-brand font-bold">„Zum Home-Bildschirm"</span> wählen. Das Spiel
-            startet dann bildschirmfüllend und läuft auch offline.
+            <Fill
+              message={t.menu.settings.installIos}
+              slots={{
+                share: <span className="text-brand font-bold">{t.menu.settings.installIosShare}</span>,
+                add: <span className="text-brand font-bold">{t.menu.settings.installIosAdd}</span>,
+              }}
+            />
           </p>
         </Section>
       )}
 
-      <Section title="Daten">
+      <Section title={t.menu.settings.data}>
         {confirmReset ? (
           <div className="flex gap-2">
             <button
@@ -289,7 +297,7 @@ function SettingsTab({
               className="btn-secondary flex-1 px-3"
               onClick={() => setConfirmReset(false)}
             >
-              Abbrechen
+              {t.menu.settings.cancel}
             </button>
             <button
               type="button"
@@ -299,7 +307,7 @@ function SettingsTab({
                 setConfirmReset(false)
               }}
             >
-              Wirklich löschen
+              {t.menu.settings.confirmReset}
             </button>
           </div>
         ) : (
@@ -308,35 +316,31 @@ function SettingsTab({
             className="btn-secondary w-full"
             onClick={() => setConfirmReset(true)}
           >
-            Rekorde und Erfolge löschen
+            {t.menu.settings.reset}
           </button>
         )}
-        <p className="t-hint mt-2">
-          Alles bleibt auf diesem Gerät. Es gibt kein Konto, keine Server und keine Werbung.
-        </p>
+        <p className="t-hint mt-2">{t.menu.settings.dataHint}</p>
       </Section>
     </>
   )
 }
-
-const DATE_FORMAT = new Intl.DateTimeFormat('de-DE', { day: '2-digit', month: '2-digit' })
 
 function ScoresTab({ progress }: { progress: Progress }) {
   const { stats, scores, best } = progress
 
   return (
     <>
-      <Section title="Rekorde">
+      <Section title={t.menu.scores.records}>
         <div className="grid grid-cols-3 gap-2">
           {DIFFICULTIES.map((difficulty) => (
-            <Figure key={difficulty.id} label={difficulty.label} value={best[difficulty.id]} />
+            <Figure key={difficulty.id} label={t.difficulties[difficulty.id]} value={best[difficulty.id]} />
           ))}
         </div>
       </Section>
 
-      <Section title="Beste Runden">
+      <Section title={t.menu.scores.bestRounds}>
         {scores.length === 0 ? (
-          <p>Noch keine Runde beendet.</p>
+          <p>{t.menu.scores.noRounds}</p>
         ) : (
           <ol className="tile divide-tile-edge divide-y-2 px-4">
             {scores.map((entry, index) => (
@@ -344,25 +348,25 @@ function ScoresTab({ progress }: { progress: Progress }) {
                 <span className="t-number text-muted w-5 text-right text-base">{index + 1}</span>
                 <span className="t-number w-12 text-xl">{entry.score}</span>
                 <span className="t-hint flex-1 truncate">
-                  {difficultyById(entry.difficulty).label}
+                  {t.difficulties[entry.difficulty]}
                 </span>
-                <span className="t-hint">{entry.at ? DATE_FORMAT.format(entry.at) : ''}</span>
+                <span className="t-hint">{entry.at ? formatDate(entry.at) : ''}</span>
               </li>
             ))}
           </ol>
         )}
       </Section>
 
-      <Section title="Insgesamt">
+      <Section title={t.menu.scores.total}>
         <dl className="grid grid-cols-2 gap-2">
-          <Figure label="Runden" value={stats.games} />
-          <Figure label="Punkte" value={stats.points} />
-          <Figure label="Hindernisse" value={stats.pipes} />
-          <Figure label="Melonen" value={stats.melons} />
-          <Figure label="Schilde" value={stats.shields} />
-          <Figure label="Flugzeit" value={formatDuration(stats.seconds)} />
-          <Figure label="Blumentöpfe" value={stats.pots} />
-          <Figure label="Wanderröhren" value={stats.movers} />
+          <Figure label={t.menu.scores.rounds} value={stats.games} />
+          <Figure label={t.menu.scores.points} value={stats.points} />
+          <Figure label={t.menu.scores.obstacles} value={stats.pipes} />
+          <Figure label={t.menu.scores.melons} value={stats.melons} />
+          <Figure label={t.menu.scores.shields} value={stats.shields} />
+          <Figure label={t.menu.scores.flightTime} value={formatDuration(stats.seconds)} />
+          <Figure label={t.menu.scores.pots} value={stats.pots} />
+          <Figure label={t.menu.scores.movers} value={stats.movers} />
         </dl>
       </Section>
     </>
@@ -374,7 +378,7 @@ function Figure({ label, value }: { label: string; value: number | string }) {
     <div className="tile px-4 py-3">
       <dt className="t-hint">{label}</dt>
       <dd className="t-number mt-1 text-[1.5rem]">
-        {typeof value === 'number' ? value.toLocaleString('de-DE') : value}
+        {typeof value === 'number' ? formatNumber(value) : value}
       </dd>
     </div>
   )
@@ -391,12 +395,14 @@ function AwardsTab({ progress }: { progress: Progress }) {
   const done = ACHIEVEMENTS.filter((a) => progress.achievements[a.id]).length
 
   return (
-    <Section title={`Erfolge · ${done} von ${ACHIEVEMENTS.length}`}>
+    <Section title={t.menu.awards.count(done, ACHIEVEMENTS.length)}>
       <ul className="space-y-2">
         {ACHIEVEMENTS.map((achievement) => {
           const unlocked = Boolean(progress.achievements[achievement.id])
           // The later ones stay secret until the player is close, and say what brings them out.
           const secret = !unlocked && achievement.reveal !== undefined && !achievement.reveal.when(progress)
+          const words = t.achievements[achievement.id]
+          const revealHint = achievement.reveal ? t.reveal[achievement.reveal.hint.kind](achievement.reveal.hint.at) : ''
           return (
             <li
               key={achievement.id}
@@ -404,10 +410,8 @@ function AwardsTab({ progress }: { progress: Progress }) {
             >
               <EmojiBadge icon={secret ? '🔒' : achievement.icon} earned={unlocked} />
               <span className="min-w-0 flex-1">
-                <span className="t-label block">{secret ? 'Noch verborgen' : achievement.label}</span>
-                <span className="block text-[0.9375rem]">
-                  {secret && achievement.reveal ? achievement.reveal.hint : achievement.hint}
-                </span>
+                <span className="t-label block">{secret ? t.menu.awards.hidden : words.label}</span>
+                <span className="block text-[0.9375rem]">{secret ? revealHint : words.hint}</span>
               </span>
               {unlocked && <IconCheck width={22} height={22} className="text-gold shrink-0" />}
             </li>
@@ -419,47 +423,29 @@ function AwardsTab({ progress }: { progress: Progress }) {
 }
 
 function HelpTab() {
+  const rules = [...t.menu.help.rules, t.menu.help.stages(STAGE_POTS, STAGE_MOVERS)]
   return (
     <>
-      <Section title="So wird gespielt">
+      <Section title={t.menu.help.howToPlay}>
         <ul className="space-y-2.5">
-          <li>
-            <span className="text-brand font-bold">Tippen oder Leertaste</span> lässt das Nilpferd
-            einmal mit den Flügeln schlagen. Gedrückt halten hilft nicht, es fällt trotzdem.
-          </li>
-          <li>
-            <span className="text-brand font-bold">Jedes Hindernis</span> gibt einen Punkt, jede
-            Melone drei. Melonen hängen zwischen den Röhren: ein Umweg, der sich lohnen kann.
-          </li>
-          <li>
-            <span className="text-brand font-bold">Die Blase</span> in einer Lücke hält genau einen
-            Treffer aus. Danach bleibt das Nilpferd kurz unverwundbar.
-          </li>
-          <li>
-            <span className="text-brand font-bold">Die Decke</span> ist eine Grenze, kein Ende.
-            Gefährlich sind nur Boden und Röhren.
-          </li>
-          <li>
-            <span className="text-brand font-bold">Ab {STAGE_POTS} Punkten</span> fallen Blumentöpfe
-            von den Balkonen. Ein Topf wackelt erst, dann fällt er: unten durch oder oben drüber. Ab{' '}
-            {STAGE_MOVERS} Punkten wandern manche Röhren auf und ab, zu erkennen an der Baustelle davor.
-          </li>
+          {rules.map((rule) => (
+            <li key={rule.lead}>
+              <span className="text-brand font-bold">{rule.lead}</span> {rule.rest}
+            </li>
+          ))}
         </ul>
       </Section>
 
-      <Section title="Tastatur">
+      <Section title={t.menu.help.keyboard}>
         <dl className="space-y-2">
-          <Shortcut keys="Leertaste, ↑" action="Fliegen, Runde starten, neue Runde" />
-          <Shortcut keys="P, Esc" action="Pause und weiter (mit Countdown)" />
-          <Shortcut keys="Shift + P" action="Standbild ohne Pausekarte, für Screenshots" />
+          {t.menu.help.shortcuts.map((shortcut) => (
+            <Shortcut key={shortcut.keys} keys={shortcut.keys} action={shortcut.action} />
+          ))}
         </dl>
       </Section>
 
-      <Section title="Über das Spiel">
-        <p>
-          Flappy Hippo läuft komplett im Browser. Einmal geladen, funktioniert es auch offline, und
-          alle Rekorde bleiben auf diesem Gerät.
-        </p>
+      <Section title={t.menu.help.about}>
+        <p>{t.menu.help.aboutText}</p>
         <p className="mt-2">
           <a
             href="https://github.com/stekhn/flappy-hippo"
@@ -467,7 +453,7 @@ function HelpTab() {
             rel="noopener noreferrer"
             className="t-label text-brand underline-offset-4 hover:underline"
           >
-            Quellcode auf GitHub
+            {t.menu.help.source}
           </a>
         </p>
       </Section>

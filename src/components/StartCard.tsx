@@ -1,6 +1,7 @@
 import { EARLY_STAGES, STAGE_MOVERS, STAGE_POTS } from '../game/constants.ts'
 import { DIFFICULTIES } from '../game/difficulty.ts'
 import type { DifficultyId } from '../game/difficulty.ts'
+import { t } from '../i18n/index.ts'
 import { CardShell } from './CardShell.tsx'
 import { Segmented } from './Segmented.tsx'
 import { Keycap } from './Keycap.tsx'
@@ -32,15 +33,13 @@ export function StartCard({
       <h1 id="start-title" className="t-title text-brand">
         Flappy Hippo
       </h1>
-      <p className="mt-2">
-        {touch ? 'Tippen lässt das Nilpferd fliegen.' : 'Klick oder Leertaste lässt das Nilpferd fliegen.'}
-      </p>
+      <p className="mt-2">{touch ? t.start.tapToFly : t.start.clickToFly}</p>
 
       <div className="mt-5">
         <Segmented
-          label="Schwierigkeit"
+          label={t.start.difficulty}
           value={difficulty}
-          options={DIFFICULTIES.map((d) => ({ value: d.id, label: d.label }))}
+          options={DIFFICULTIES.map((d) => ({ value: d.id, label: t.difficulties[d.id] }))}
           onChange={onDifficulty}
         />
       </div>
@@ -48,34 +47,30 @@ export function StartCard({
       {best > 0 && (
         <p className="mt-4">
           <Stat icon={<IconTrophy width={18} height={18} />} tone="gold">
-            Rekord <span className="t-number">{best}</span>
+            {t.start.record} <span className="t-number">{best}</span>
           </Stat>
         </p>
       )}
 
       <button type="button" className="btn-primary mt-5 w-full" onClick={onStart}>
         <IconPlay width={22} height={22} />
-        Spielen
+        {t.start.play}
         {!touch && <Keycap />}
       </button>
 
       <div className="mt-3 flex justify-center gap-1">
         <button type="button" className="btn-ghost" onClick={() => onOpenMenu('scores')}>
           <IconChart width={20} height={20} />
-          Rekorde
+          {t.start.records}
         </button>
         <button type="button" className="btn-ghost" onClick={() => onOpenMenu('settings')}>
           <IconGear width={20} height={20} />
-          Einstellungen
+          {t.start.settings}
         </button>
       </div>
 
       {/* The stages were brought forward in code for testing: say so, or it ships that way. */}
-      {EARLY_STAGES && (
-        <p className="t-hint mt-3">
-          Testmodus: Stufen bei {STAGE_POTS} und {STAGE_MOVERS} Punkten
-        </p>
-      )}
+      {EARLY_STAGES && <p className="t-hint mt-3">{t.start.testMode(STAGE_POTS, STAGE_MOVERS)}</p>}
     </CardShell>
   )
 }

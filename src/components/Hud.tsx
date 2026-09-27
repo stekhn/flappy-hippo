@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { Snapshot } from '../game/runtime.ts'
+import { t } from '../i18n/index.ts'
 import {
   IconMelon,
   IconMenu,
@@ -19,7 +20,6 @@ interface HudProps {
 }
 
 const NOTICE_MS = 3200
-const NOTICES: Record<number, string> = { 1: 'Achtung, Blumentöpfe!', 2: 'Die Röhren wandern!' }
 
 /** A new stage called out for a moment: the player must know the rules just changed. */
 function StageNotice({ stage }: { stage: number }) {
@@ -35,7 +35,7 @@ function StageNotice({ stage }: { stage: number }) {
       style={{ color: 'var(--game-brand)' }}
       role="status"
     >
-      {NOTICES[stage]}
+      {t.hud.notices[stage]}
     </p>
   )
 }
@@ -55,7 +55,7 @@ export function Hud({ snapshot, sound, onToggleSound, onPause, onMenu }: HudProp
           onPointerDown={(event) => event.stopPropagation()}
           onClick={onToggleSound}
           aria-pressed={sound}
-          aria-label={sound ? 'Ton ausschalten' : 'Ton einschalten'}
+          aria-label={sound ? t.hud.soundOff : t.hud.soundOn}
         >
           {sound ? <IconSoundOn /> : <IconSoundOff />}
         </button>
@@ -77,7 +77,7 @@ export function Hud({ snapshot, sound, onToggleSound, onPause, onMenu }: HudProp
                     style={{ color: 'var(--game-gold)' }}
                   >
                     <IconTrophy width={22} height={22} />
-                    <span>Rekord</span>
+                    <span>{t.hud.record}</span>
                   </span>
                 )}
                 {snapshot.melons > 0 && (
@@ -95,7 +95,7 @@ export function Hud({ snapshot, sound, onToggleSound, onPause, onMenu }: HudProp
                     style={{ color: 'var(--game-shield)' }}
                   >
                     <IconShield width={22} height={22} />
-                    <span>{snapshot.charges > 1 ? `Schild ×${snapshot.charges}` : 'Schild'}</span>
+                    <span>{t.hud.shield(snapshot.charges)}</span>
                   </span>
                 )}
               </div>
@@ -108,7 +108,7 @@ export function Hud({ snapshot, sound, onToggleSound, onPause, onMenu }: HudProp
           className="icon-btn pointer-events-auto"
           onPointerDown={(event) => event.stopPropagation()}
           onClick={playing ? onPause : onMenu}
-          aria-label={playing ? 'Pause' : 'Menü öffnen'}
+          aria-label={playing ? t.hud.pause : t.hud.openMenu}
         >
           {playing ? <IconPause /> : <IconMenu />}
         </button>

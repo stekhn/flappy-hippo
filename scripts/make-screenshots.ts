@@ -136,7 +136,7 @@ async function over(page: Page): Promise<void> {
 }
 
 async function awards(page: Page): Promise<void> {
-  await page.click('button[aria-label="Menü öffnen"]')
+  await page.click('button[aria-label="Open menu"]')
   await sleep(300)
   await page.click('[role="tab"]:nth-child(3)')
   await sleep(500)
