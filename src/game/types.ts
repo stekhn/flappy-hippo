@@ -1,8 +1,30 @@
-/** Shared shapes for the simulation. Everything here is plain data: no DOM, no React. */
+import type { DifficultyId } from './difficulty.ts'
+
+// Shared shapes for the simulation. Everything here is plain data: no DOM, no React.
 
 export type Phase = 'ready' | 'running' | 'over'
 
 export type PickupKind = 'melon' | 'shield'
+
+/** What stands along the street, and so what a falling hippo can come down on. */
+export type Furniture = 'bench' | 'postbox' | 'bin' | 'cat' | 'dog'
+
+/** Numbers for the stats and the score table, read once when a round ends. */
+export interface RunSummary {
+  score: number
+  pipes: number
+  melons: number
+  shields: number
+  saves: number
+  seconds: number
+  /** Pots dodged and moving pipes cleared this round. */
+  pots: number
+  movers: number
+  /** The difficulty the round was actually played on, not the one now selected. */
+  difficulty: DifficultyId
+  /** What the hippo came down on, if anything was standing there. */
+  hit: Furniture | null
+}
 
 export interface Pipe {
   x: number
@@ -107,9 +129,11 @@ export interface GameState {
   moversPassed: number
   /** Pipe slots since the last pot, so two never come in a row. */
   pipesSincePot: number
-  /** The stage the score has reached (0, then moving pipes, then pots), and when it was reached. */
+  /** A stage reached by score is `pending` and forces its first obstacle; it is announced as that obstacle nears. */
   stage: number
-  stageAt: number
+  pending: number
+  dueMover: boolean
+  duePot: boolean
   /** Distance travelled, in world units — pipes spawn on distance, not on a timer. */
   scrolled: number
   /** Distance at which the next pipe enters from the right. */
@@ -208,14 +232,18 @@ export interface Palette {
   melonFlesh: string
   melonRind: string
   melonSeed: string
-  /** The shield's colour: the bubble's rim, its glow, its shards, its emblem. */
   bubbleEdge: string
   /** Derived from it once, for what is drawn live every frame: the bubble's skin, rim and glow. */
   bubbleSkin: string
   bubbleSkinInner: string
   bubbleGlow: string
   bubbleLilac: string
-  bubbleEmblem: string
+  shieldInk: string
+  shieldFace: string
+  shieldFaceDeep: string
+  shieldRimLit: string
+  shieldRim: string
+  shieldMark: string
   /** Each confetti colour's back side and edge. */
   confettiBack: string[]
   confettiEdge: string[]
@@ -224,9 +252,6 @@ export interface Palette {
   catLine: string
   dogLight: string
   dogShade: string
-  dogDark: string
-  /** What the dog leaves behind. */
-  stream: string
   hippoBody: string
   hippoShade: string
   hippoDark: string

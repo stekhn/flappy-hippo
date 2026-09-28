@@ -1,9 +1,7 @@
-/**
- * Sound effects, synthesized on the fly. Nothing is downloaded: every cue is a couple of
- * oscillators and a noise burst shaped by a gain envelope, which keeps the bundle tiny and the
- * game playable offline. Browsers only allow audio after a gesture, so the context is created
- * lazily on the first tap or key press (`unlock`).
- */
+// Sound effects, synthesized on the fly. Nothing is downloaded: every cue is a couple of
+// oscillators and a noise burst shaped by a gain envelope, which keeps the bundle tiny and the
+// game playable offline. The context is made suspended at boot (`warm`) and resumed on the
+// first tap or key press (`unlock`), as browsers only let audio start after a gesture.
 
 export type Cue =
   | 'flap'
@@ -16,9 +14,12 @@ export type Cue =
   | 'milestone'
   | 'record'
   | 'achievement'
-  | 'ui'
 
 export interface Sfx {
+  /** Makes the context now, suspended: it is slow to make, and the first gesture is mid-round. */
+  warm(): void
+  /** Drops what is scheduled but not yet heard, so a crash's shards cannot land in the next round. */
+  silence(): void
   unlock(): void
   setMuted(muted: boolean): void
   play(cue: Cue): void
@@ -38,17 +39,32 @@ export function createSfx(initiallyMuted = false): Sfx {
   let master: GainNode | null = null
   let noise: AudioBuffer | null = null
   let muted = initiallyMuted
+  const live = new Set<AudioScheduledSourceNode>()
+
+  /** A cue's nodes live until they have played; a source is dropped the moment it ends. */
+  function track(node: AudioScheduledSourceNode): void {
+    live.add(node)
+    node.onended = () => {
+      live.delete(node)
+      node.disconnect()
+    }
+  }
+
+  function create(): AudioContext | null {
+    if (ctx) return ctx
+    const Ctor = audioContextCtor()
+    if (!Ctor) return null
+    ctx = new Ctor()
+    master = ctx.createGain()
+    master.gain.value = 0.32
+    master.connect(ctx.destination)
+    return ctx
+  }
 
   function ensure(): AudioContext | null {
     if (muted) return null
-    const Ctor = audioContextCtor()
-    if (!Ctor) return null
-    if (!ctx) {
-      ctx = new Ctor()
-      master = ctx.createGain()
-      master.gain.value = 0.32
-      master.connect(ctx.destination)
-    }
+    const ctx = create()
+    if (!ctx) return null
     // iOS suspends the context whenever the app goes to the background.
     // The promise rejects if the context is closed before the resume lands (a dev remount).
     if (ctx.state === 'suspended') ctx.resume().catch(() => {})
@@ -86,6 +102,7 @@ export function createSfx(initiallyMuted = false): Sfx {
     gain.gain.exponentialRampToValueAtTime(opts.gain, start + 0.012)
     gain.gain.exponentialRampToValueAtTime(0.0001, start + opts.duration)
     osc.connect(gain).connect(master!)
+    track(osc)
     osc.start(start)
     osc.stop(start + opts.duration + 0.02)
   }
@@ -106,17 +123,35 @@ export function createSfx(initiallyMuted = false): Sfx {
     gain.gain.setValueAtTime(opts.gain, start)
     gain.gain.exponentialRampToValueAtTime(0.0001, start + opts.duration)
     source.connect(filter).connect(gain).connect(master!)
+    track(source)
     source.start(start)
     source.stop(start + opts.duration)
   }
 
+  function silence(): void {
+    for (const node of live) {
+      try {
+        node.stop()
+      } catch {
+        /* it had already run its course */
+      }
+      node.disconnect()
+    }
+    live.clear()
+  }
+
   return {
+    warm() {
+      if (!muted) create()
+    },
+    silence,
     unlock() {
       ensure()
     },
     setMuted(next: boolean) {
       muted = next
       // Unmuting never creates a context: that waits for the first tap or key (`unlock`).
+      if (muted) silence()
       if (muted && ctx) void ctx.suspend()
       else if (!muted && ctx) ensure()
     },
@@ -191,12 +226,10 @@ export function createSfx(initiallyMuted = false): Sfx {
           tone(context, { type: 'sine', from: 1175, duration: 0.5, gain: 0.16, at: 0.13 })
           tone(context, { type: 'triangle', from: 2350, duration: 0.25, gain: 0.04, at: 0.13 })
           return
-        case 'ui':
-          tone(context, { type: 'sine', from: 420, to: 560, duration: 0.07, gain: 0.1 })
-          return
       }
     },
     dispose() {
+      live.clear()
       if (ctx) ctx.close().catch(() => {})
       ctx = null
       master = null

@@ -32,7 +32,7 @@ export function drawPipes(
     paintBlock(c, p, 0, 0, PIPE_WIDTH + PIPE_CAP_OVERHANG * 2, PIPE_CAP_HEIGHT, 2),
   )
   for (const pipe of pipes) {
-    // Whole pixels keep the outline crisp while the pipe scrolls
+    // Whole pixels keep the outline crisp while the pipe scrolls.
     const x = Math.round(pipe.x)
     drawSegment(ctx, body, cap, x, 0, pipe.gapY - pipe.half, true)
     drawSegment(ctx, body, cap, x, pipe.gapY + pipe.half, world.groundY, false)
@@ -49,10 +49,9 @@ function drawSegment(
   capAtBottom: boolean,
 ): void {
   if (bottom <= top) return
-  // Bodies run past the frame edge and into the ground so no end line shows
   const bodyTop = capAtBottom ? top - PIPE_OVERRUN : top
   const bodyBottom = capAtBottom ? bottom : bottom + PIPE_OVERRUN
-  // Cropped from the tall body at its own resolution, so nothing is resampled
+  // Cropped from the tall body at its own resolution, so nothing is resampled.
   const rows = Math.min(body.canvas.height, Math.max(1, Math.round((bodyBottom - bodyTop) * body.scale)))
   ctx.drawImage(body.canvas, 0, 0, body.canvas.width, rows, x, bodyTop, PIPE_WIDTH, rows / body.scale)
 

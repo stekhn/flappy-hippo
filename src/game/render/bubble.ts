@@ -6,8 +6,10 @@ import type { LayerCache } from './layers.ts'
  * thin rim whose light runs round it (the shield's violet into a lilac white, turning with
  * `sheen`), one crisp highlight where the light is and a small one opposite. Whatever is inside
  * stays fully visible; the colour lives in the rim. The hippo's shield and the pickup are the
- * same bubble, so picking one up looks like putting it on. Its gradients are made once per
- * palette (unit-sized, scaled to `r`) and turned with the context, never rebuilt per frame.
+ * same bubble, so picking one up looks like putting it on.
+ *
+ * With a cache, skin and rim are baked at the radius `base` and stamped turned by `sheen` and
+ * scaled to `r` (a bubble breathes); the highlights stay where the light is, so they are live.
  */
 export function drawBubbleSkin(
   ctx: CanvasRenderingContext2D,
@@ -15,7 +17,25 @@ export function drawBubbleSkin(
   r: number,
   sheen: number,
   cache?: LayerCache,
+  base = r,
 ): void {
+  if (cache) {
+    const pad = 1
+    const sprite = cache.sprite(`bubble-${base}`, -base - pad, -base - pad, 2 * (base + pad), 2 * (base + pad), (c) =>
+      paintSkinAndRim(c, p, base, 0),
+    )
+    ctx.save()
+    ctx.rotate(sheen)
+    if (r !== base) ctx.scale(r / base, r / base)
+    ctx.drawImage(sprite.canvas, sprite.left, sprite.top, sprite.width, sprite.height)
+    ctx.restore()
+  } else {
+    paintSkinAndRim(ctx, p, r, sheen)
+  }
+  drawHighlights(ctx, r)
+}
+
+function paintSkinAndRim(ctx: CanvasRenderingContext2D, p: Palette, r: number, sheen: number): void {
   const makeSkin = () => {
     const skin = ctx.createRadialGradient(0, 0, 0.5, 0, 0, 1)
     skin.addColorStop(0, 'rgba(255, 255, 255, 0)')
@@ -25,7 +45,7 @@ export function drawBubbleSkin(
   }
   ctx.save()
   ctx.scale(r, r)
-  ctx.fillStyle = cache ? cache.gradient('bubble-skin', makeSkin) : makeSkin()
+  ctx.fillStyle = makeSkin()
   ctx.beginPath()
   ctx.arc(0, 0, 1, 0, Math.PI * 2)
   ctx.fill()
@@ -34,7 +54,7 @@ export function drawBubbleSkin(
   const large = r > 12
   const rimWidth = large ? 1.8 : 1.3
   ctx.save()
-  // Safari before 16.2 has no conic gradients; the rim is then plain violet
+  // Safari before 16.2 has no conic gradients; the rim is then plain violet.
   if (typeof (ctx as { createConicGradient?: unknown }).createConicGradient === 'function') {
     const makeRim = () => {
       const turn = ctx.createConicGradient(0, 0, 0)
@@ -47,7 +67,7 @@ export function drawBubbleSkin(
       return turn
     }
     ctx.rotate(sheen)
-    ctx.strokeStyle = cache ? cache.gradient('bubble-rim', makeRim) : makeRim()
+    ctx.strokeStyle = makeRim()
   } else {
     ctx.strokeStyle = p.bubbleEdge
   }
@@ -56,7 +76,10 @@ export function drawBubbleSkin(
   ctx.arc(0, 0, r - rimWidth / 2, 0, Math.PI * 2)
   ctx.stroke()
   ctx.restore()
+}
 
+function drawHighlights(ctx: CanvasRenderingContext2D, r: number): void {
+  const large = r > 12
   ctx.lineCap = 'round'
   ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)'
   ctx.lineWidth = large ? 2 : 1.3

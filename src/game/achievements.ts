@@ -24,11 +24,17 @@ export type AchievementId =
   | 'pots-run-12'
   | 'movers-run-10'
   | 'movers-100'
+  | 'hit-cat'
+  | 'hit-dog'
+  | 'hit-bin'
+  | 'hit-bench'
+  | 'hit-post'
 
 /** What brings a secret achievement into view; the interface words it. */
 export interface Reveal {
   when: (p: Progress) => boolean
-  hint: { kind: 'score' | 'hard' | 'melons'; at: number }
+  /** What brings it out, where that can be put in numbers. Without one it stays a secret. */
+  hint?: { kind: 'score' | 'hard' | 'melons'; at: number }
 }
 
 /**
@@ -176,6 +182,36 @@ export const ACHIEVEMENTS: Achievement[] = [
     icon: '🌊',
     reached: (p) => p.stats.movers >= 100,
     reveal: fromScore(STAGE_MOVERS),
+  },
+  {
+    id: 'hit-cat',
+    icon: '🐈',
+    reached: (p) => p.stats.hitCat >= 1,
+    reveal: { when: () => false },
+  },
+  {
+    id: 'hit-dog',
+    icon: '🐕',
+    reached: (p) => p.stats.hitDog >= 1,
+    reveal: { when: () => false },
+  },
+  {
+    id: 'hit-bin',
+    icon: '🗑️',
+    reached: (p) => p.stats.hitBin >= 1,
+    reveal: { when: () => false },
+  },
+  {
+    id: 'hit-bench',
+    icon: '🪑',
+    reached: (p) => p.stats.hitBench >= 1,
+    reveal: { when: () => false },
+  },
+  {
+    id: 'hit-post',
+    icon: '📮',
+    reached: (p) => p.stats.hitPost >= 1,
+    reveal: { when: () => false },
   },
 ]
 

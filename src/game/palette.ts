@@ -15,9 +15,7 @@ export function resolvePalette(dark: boolean): Palette {
   const melon = cssVar('--game-melon', dark ? '#7fe0a0' : '#178a48')
   // A step lighter than the brand and a softer edge: pipes must read, not dominate.
   const pipe = mix(brand, dark ? '#9cc4ff' : '#dbe9ff', 0.14)
-  // The shield is the one violet thing in the game: leaning to magenta, a good way round the
-  // wheel from the pipes' blue and short of the melon's red.
-  const bubbleEdge = cssVar('--game-shield', dark ? '#d6a5ff' : '#ad4bf2')
+  const bubbleEdge = dark ? '#d6a5ff' : '#ad4bf2'
   const wood = dark ? '#8a6f45' : '#d2a86a'
   const hippoDark = dark ? '#5f6a78' : '#5c6774'
   const grassLit = dark ? '#57a875' : '#63c57f'
@@ -76,16 +74,19 @@ export function resolvePalette(dark: boolean): Palette {
     bubbleSkin: alpha(bubbleEdge, 0.22),
     bubbleSkinInner: alpha(bubbleEdge, 0.05),
     bubbleGlow: alpha(bubbleEdge, 0.5),
-    bubbleLilac: mix(bubbleEdge, '#ffffff', 0.65),
-    bubbleEmblem: alpha(bubbleEdge, 0.3),
+    bubbleLilac: mix(bubbleEdge, '#ffffff', 0.7),
+    shieldInk: cssVar('--game-shield', dark ? '#d6a5ff' : '#12307f'),
+    shieldFace: '#dcb8ff',
+    shieldFaceDeep: '#ad4bf2',
+    shieldRimLit: '#2f63e8',
+    shieldRim: '#10318f',
+    shieldMark: '#10318f',
     confettiBack: confetti.map((color) => mix(color, '#000000', 0.22)),
     confettiEdge: confetti.map((color) => mix(color, '#000000', 0.42)),
     catCoat: mix(hippoDark, '#000000', 0.5),
     catLine: mix(hippoDark, '#000000', 0.78),
     dogLight: mix(wood, '#ffffff', 0.45),
     dogShade: mix(wood, hippoDark, 0.16),
-    dogDark: mix(wood, hippoDark, 0.32),
-    stream: mix(gold, '#ffffff', 0.35),
     hippoBody: dark ? '#9aa6b8' : '#93a1b5',
     hippoShade: dark ? 'rgba(95, 106, 120, 0.26)' : 'rgba(92, 103, 116, 0.26)',
     hippoDark,
@@ -97,10 +98,9 @@ export function resolvePalette(dark: boolean): Palette {
 
 /** Particle colours, keyed by the tint the simulation asked for. */
 export function tintColor(p: Palette, tint: Tint): string {
-  return tint === 'melon' ? p.melonFlesh : tint === 'pot' ? p.wood : p.bubbleEdge
+  return tint === 'melon' ? p.melonFlesh : tint === 'pot' ? p.wood : p.shieldInk
 }
 
-/** A colour between two hex colours, `t` of the way from `a` to `b`. For variants of one thing. */
 /** `hex` (#rrggbb) at opacity `a`; anything else is returned as it is. */
 export function alpha(hex: string, a: number): string {
   if (!/^#[0-9a-f]{6}$/i.test(hex)) return hex
@@ -108,6 +108,7 @@ export function alpha(hex: string, a: number): string {
   return `rgba(${n >> 16}, ${(n >> 8) & 255}, ${n & 255}, ${a})`
 }
 
+/** A colour between two hex colours, `t` of the way from `a` to `b`. For variants of one thing. */
 export function mix(a: string, b: string, t: number): string {
   if (!/^#[0-9a-f]{6}$/i.test(a) || !/^#[0-9a-f]{6}$/i.test(b)) return a
   const pa = parseInt(a.slice(1), 16)

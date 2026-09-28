@@ -53,7 +53,7 @@ function paintHeap(ctx: CanvasRenderingContext2D, p: Palette): void {
     ctx.ellipse(cx, cy, r, r * 0.75, 0, 0, Math.PI * 2)
     ctx.fill()
   }
-  // The shovel: handle stroked twice for an outline, then the blade's top showing above the earth
+  // The shovel: handle stroked twice for an outline, then the blade's top showing above the earth.
   const handle = new Path2D()
   handle.moveTo(PIPE_WIDTH + 4, -6)
   handle.lineTo(PIPE_WIDTH + 13, -27)

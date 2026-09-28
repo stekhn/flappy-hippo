@@ -17,6 +17,7 @@ const run: RunResult = {
   movers: 2,
   difficulty: 'normal',
   night: false,
+  hit: null,
 }
 
 test('nothing saved yet reads as an empty record', () => {

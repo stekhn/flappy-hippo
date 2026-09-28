@@ -14,7 +14,7 @@ import {
 import { mix } from '../palette.ts'
 import type { GameState, Palette } from '../types.ts'
 import type { World } from '../world.ts'
-import type { LayerCache } from './layers.ts'
+import type { Layer, LayerCache } from './layers.ts'
 import { drawFurniture, paintStreet, STREET_ABOVE, STREET_PERIOD } from './street.ts'
 
 // The backdrop: sky, sun or moon, stars, clouds, two skylines, a hedge line with lamps, and the
@@ -74,6 +74,15 @@ interface Lamp {
   x: number
   h: number
   arms: 'left' | 'right' | 'both'
+}
+
+interface Tree {
+  x: number
+  h: number
+  lean: number
+  lobes: Lobe[]
+  leaves: Lobe[]
+  tone: number
 }
 
 const WINDOW_W = 3
@@ -145,7 +154,9 @@ function makeBushes(seed: number): Bush[] {
   let x = rnd() * 60
   while (x < SCENE_PERIOD) {
     const w = 26 + Math.round(rnd() * 36)
-    const h = 11 + Math.round(rnd() * 9)
+    // A third of them stay low, so the hedge is a run of mounds rather than one even wall.
+    const low = rnd() < 0.35
+    const h = low ? 7 + Math.round(rnd() * 4) : 12 + Math.round(rnd() * 8)
     const count = 3 + Math.floor(rnd() * 3)
     const lobes: Lobe[] = Array.from({ length: count }, (_, k) => {
       const t = (k + 0.5) / count
@@ -181,17 +192,45 @@ function makeLamps(seed: number): Lamp[] {
   return out
 }
 
+/** Low trees, each rising from behind a bush so the hedge cuts its trunk as it does the lamp posts. */
+function makeTrees(seed: number, bushes: Bush[]): Tree[] {
+  const rnd = seeded(seed)
+  const out: Tree[] = []
+  let x = 40 + rnd() * 120
+  while (x < SCENE_PERIOD - 60) {
+    const bush = bushes.reduce((best, b) => (Math.abs(b.x - x) < Math.abs(best.x - x) ? b : best), bushes[0])
+    const at = bush.x + bush.w * bush.scale * (0.25 + rnd() * 0.5)
+    const r = 9 + rnd() * 3
+    const lobes: Lobe[] = [
+      { dx: 0, dy: -r * 0.35, r },
+      { dx: -r * 0.85, dy: r * 0.2, r: r * 0.78 },
+      { dx: r * 0.9, dy: r * 0.1, r: r * 0.82 },
+      { dx: -r * 0.35, dy: r * 0.55, r: r * 0.62 },
+      { dx: r * 0.4, dy: r * 0.6, r: r * 0.58 },
+    ].map((lobe) => ({ dx: lobe.dx + (rnd() - 0.5) * 2, dy: lobe.dy + (rnd() - 0.5) * 2, r: lobe.r }))
+    const leaves: Lobe[] = Array.from({ length: 3 + Math.floor(rnd() * 2) }, () => ({
+      dx: (rnd() - 0.5) * r * 1.6,
+      dy: (rnd() - 0.6) * r * 1.2,
+      r: 1.2 + rnd() * 1,
+    }))
+    out.push({ x: at, h: 38 + rnd() * 10, lean: (rnd() - 0.5) * 0.14, lobes, leaves, tone: 0.35 + rnd() * 0.3 })
+    x = at + 240 + rnd() * 200
+  }
+  return out
+}
+
 const CITY_FAR = makeSkyline(7, 28, 78, false)
 const CITY_NEAR = makeSkyline(13, 24, 84, true)
 const CLOUDS = makeClouds(21, 7)
 const STARS = makeStars(37, 46)
 const BUSHES = makeBushes(43)
 const LAMPS = makeLamps(83)
+const TREES = makeTrees(59, BUSHES)
 
 /** Scene offsets at which a thing must be painted so it also shows where the strip wraps. */
 const WRAPS = [-SCENE_PERIOD, 0, SCENE_PERIOD]
 
-// ---- the sky and what moves in it ---------------------------------------------------------------
+// ---- the sky and what moves in it -------------------------------------------------------------
 
 /** Indexed clouds first, sun or moon last. */
 export interface SkyMotion {
@@ -220,7 +259,7 @@ export function animateSky(sky: SkyMotion, state: GameState, now: number, dt: nu
       continue
     }
     if (sky.drop[i] === 0) continue
-    // Critically damped spring, so a body caught mid-fall turns around smoothly
+    // Critically damped spring, so a body caught mid-fall turns around smoothly.
     const accel = -(CLOUD_RISE_OMEGA ** 2) * sky.drop[i] - 2 * CLOUD_RISE_OMEGA * sky.vel[i]
     sky.vel[i] += accel * dt
     sky.drop[i] += sky.vel[i] * dt
@@ -244,8 +283,29 @@ function skyPose(sky: SkyMotion, i: number): SkyPose {
 }
 
 export function drawSky(ctx: CanvasRenderingContext2D, p: Palette, world: World, cache: LayerCache): void {
-  ctx.fillStyle = cache.sky(ctx, p, world.groundY)
-  ctx.fillRect(0, 0, world.width, world.height)
+  cache.paintSky(ctx, p, world.width, world.height, world.groundY)
+}
+
+function cloudSprite(cache: LayerCache, p: Palette, cloud: Cloud, i: number) {
+  let left = Infinity
+  let top = Infinity
+  let right = -Infinity
+  let bottom = -Infinity
+  for (const puff of cloud.puffs) {
+    left = Math.min(left, puff.dx - puff.r)
+    right = Math.max(right, puff.dx + puff.r)
+    top = Math.min(top, puff.dy - puff.r)
+    bottom = Math.max(bottom, puff.dy + puff.r)
+  }
+  return cache.sprite(`cloud-${i}`, left - 1, top - 1, right - left + 2, bottom - top + 2, (c) => {
+    c.fillStyle = p.cloud
+    c.beginPath()
+    for (const puff of cloud.puffs) {
+      c.moveTo(puff.dx + puff.r, puff.dy)
+      c.arc(puff.dx, puff.dy, puff.r, 0, Math.PI * 2)
+    }
+    c.fill()
+  })
 }
 
 export function drawScenery(
@@ -261,26 +321,19 @@ export function drawScenery(
   if (p.night) drawStars(ctx, p, world, scrolled, now)
   drawOrb(ctx, p, world, skyPose(sky, CLOUDS.length))
 
-  ctx.fillStyle = p.cloud
   const cloudShift = (scrolled * 0.08) % SCENE_PERIOD
+  const sprites = CLOUDS.map((cloud, i) => cloudSprite(cache, p, cloud, i))
   CLOUDS.forEach((cloud, i) => {
     const { drop, alpha, spin } = skyPose(sky, i)
     if (alpha <= 0) return
+    const sprite = sprites[i]
+    if (alpha < 1) ctx.globalAlpha = alpha
     for (const base of [0, SCENE_PERIOD]) {
       const cx = cloud.x - cloudShift + base
       if (cx < -80 || cx > world.width + 80) continue
-      ctx.save()
-      ctx.globalAlpha = alpha
-      ctx.translate(cx, cloud.y * world.groundY + drop)
-      ctx.rotate(spin)
-      ctx.beginPath()
-      for (const puff of cloud.puffs) {
-        ctx.moveTo(puff.dx + puff.r, puff.dy)
-        ctx.arc(puff.dx, puff.dy, puff.r, 0, Math.PI * 2)
-      }
-      ctx.fill()
-      ctx.restore()
+      cache.stamp(ctx, sprite, cx, cloud.y * world.groundY + drop, spin)
     }
+    if (alpha < 1) ctx.globalAlpha = 1
   })
 
   // The three still strips, each baked once and shifted at its own pace.
@@ -297,10 +350,66 @@ export function drawScenery(
   cache.blit(ctx, near, (scrolled * 0.45) % SCENE_PERIOD, world.width)
 
   const hedge = cache.layer('hedge', 84, TUCK, (c, ground) => {
+    paintTrees(c, p, ground)
     paintLamps(c, p, ground)
     paintBushes(c, p, ground)
   })
   cache.blit(ctx, hedge, (scrolled * 0.7) % SCENE_PERIOD, world.width)
+}
+
+export type Strip = 'far' | 'near' | 'hedge' | 'ground'
+
+const STRIPS: Record<Strip, (cache: LayerCache, p: Palette) => Layer> = {
+  far: (cache, p) =>
+    cache.layer('far', HAZE_HEIGHT, 0, (c, ground) => {
+      paintCity(c, p, CITY_FAR, ground, p.cityFar)
+      paintHaze(c, ground, HAZE_HEIGHT, p.haze)
+    }),
+  near: (cache, p) =>
+    cache.layer('near', 112, 0, (c, ground) => {
+      paintCity(c, p, CITY_NEAR, ground, p.cityNear)
+      paintHaze(c, ground, HAZE_NEAR_HEIGHT, p.hazeNear)
+    }),
+  hedge: (cache, p) =>
+    cache.layer('hedge', 84, TUCK, (c, ground) => {
+      paintTrees(c, p, ground)
+      paintLamps(c, p, ground)
+      paintBushes(c, p, ground)
+    }),
+  ground: (cache, p) =>
+    cache.layer('wall', STREET_ABOVE, GROUND_HEIGHT, (c, ground) => paintGround(c, p, ground), STREET_PERIOD),
+}
+
+/** One of the backdrop's strips, tiled across `width` from `shift`, for the page around the board. */
+export function drawStrip(
+  ctx: CanvasRenderingContext2D,
+  p: Palette,
+  cache: LayerCache,
+  strip: Strip,
+  width: number,
+  shift = 0,
+): void {
+  const layer = STRIPS[strip](cache, p)
+  cache.blit(ctx, layer, ((-shift % layer.period) + layer.period) % layer.period, width)
+}
+
+/** One of the sky's clouds, for the page's own sky. */
+export function stampCloud(
+  ctx: CanvasRenderingContext2D,
+  p: Palette,
+  cache: LayerCache,
+  index: number,
+  x: number,
+  y: number,
+  scale: number,
+): void {
+  const i = index % CLOUDS.length
+  const sprite = cloudSprite(cache, p, CLOUDS[i], i)
+  ctx.save()
+  ctx.translate(x, y)
+  ctx.scale(scale, scale)
+  ctx.drawImage(sprite.canvas, sprite.left, sprite.top, sprite.width, sprite.height)
+  ctx.restore()
 }
 
 function drawStars(
@@ -330,7 +439,7 @@ function drawOrb(ctx: CanvasRenderingContext2D, p: Palette, world: World, pose: 
   if (pose.alpha <= 0) return
   ctx.save()
   ctx.globalAlpha = pose.alpha
-  // Upper right, but left of the pipe that waits on the start screen (see firstPipeX)
+  // Upper right, but left of the pipe that waits on the start screen (see firstPipeX).
   ctx.translate(world.width * 0.72, Math.min(58, world.groundY * 0.18) + pose.drop)
   ctx.rotate(pose.spin)
   if (p.night) drawMoon(ctx, p)
@@ -538,8 +647,102 @@ function paintLamps(ctx: CanvasRenderingContext2D, p: Palette, ground: number): 
   }
 }
 
+/** How far the edge colour reaches past the foliage, for a silhouette under it. */
+const FOLIAGE_EDGE = 1.3
+
+/**
+ * A mass of foliage: every lobe again and a little larger in the edge colour for a silhouette,
+ * the body in shade, then the same lobes shifted towards the light and clipped to the body, and
+ * a few leaves loosely over it. `base` is the block the lobes sit on, for a bush that is solid
+ * to the ground rather than a crown on a trunk. Leaves the clip and the alpha to the caller's
+ * `restore`.
+ */
+function paintFoliage(
+  ctx: CanvasRenderingContext2D,
+  lobes: Lobe[],
+  leaves: Lobe[],
+  lit: string,
+  shade: string,
+  edge: string,
+  base?: [number, number, number, number],
+): void {
+  const grow = FOLIAGE_EDGE
+  ctx.fillStyle = edge
+  ctx.beginPath()
+  if (base) ctx.rect(base[0] - grow, base[1], base[2] + grow * 2, base[3] + grow)
+  for (const lobe of lobes) {
+    ctx.moveTo(lobe.dx + lobe.r + grow, lobe.dy)
+    ctx.arc(lobe.dx, lobe.dy, lobe.r + grow, 0, Math.PI * 2)
+  }
+  ctx.fill()
+
+  const body = new Path2D()
+  if (base) body.rect(base[0], base[1], base[2], base[3])
+  for (const lobe of lobes) {
+    body.moveTo(lobe.dx + lobe.r, lobe.dy)
+    body.arc(lobe.dx, lobe.dy, lobe.r, 0, Math.PI * 2)
+  }
+  ctx.fillStyle = shade
+  ctx.fill(body)
+  ctx.clip(body)
+
+  ctx.fillStyle = lit
+  ctx.beginPath()
+  for (const lobe of lobes) {
+    const r = lobe.r * 0.72
+    ctx.moveTo(lobe.dx - lobe.r * 0.2 + r, lobe.dy - lobe.r * 0.28)
+    ctx.arc(lobe.dx - lobe.r * 0.2, lobe.dy - lobe.r * 0.28, r, 0, Math.PI * 2)
+  }
+  ctx.fill()
+
+  ctx.globalAlpha = 0.8
+  ctx.beginPath()
+  for (const leaf of leaves) {
+    ctx.moveTo(leaf.dx + leaf.r, leaf.dy)
+    ctx.ellipse(leaf.dx, leaf.dy, leaf.r, leaf.r * 0.6, -0.5, 0, Math.PI * 2)
+  }
+  ctx.fill()
+}
+
+function paintTrees(ctx: CanvasRenderingContext2D, p: Palette, ground: number): void {
+  for (const tree of TREES) {
+    const lit = mix(p.bushLit, p.bushShade, tree.tone)
+    const shade = mix(p.bushShade, p.bushEdge, tree.tone * 0.5)
+    const top = -tree.h
+    const tilt = tree.lean * tree.h
+    for (const base of WRAPS) {
+      const x = tree.x + base
+      if (x + 20 < 0 || x - 20 > SCENE_PERIOD) continue
+      ctx.save()
+      ctx.translate(x, ground)
+      ctx.fillStyle = p.clod
+      ctx.strokeStyle = p.earthDeep
+      ctx.lineWidth = 1.2
+      ctx.lineJoin = 'round'
+      ctx.beginPath()
+      ctx.moveTo(-2.8, TUCK)
+      ctx.lineTo(2.8, TUCK)
+      ctx.lineTo(1.6 + tilt, top + 6)
+      ctx.lineTo(-1.6 + tilt, top + 6)
+      ctx.closePath()
+      ctx.fill()
+      ctx.stroke()
+      ctx.fillStyle = p.earthDeep
+      ctx.beginPath()
+      ctx.moveTo(0.6, TUCK)
+      ctx.lineTo(2.8, TUCK)
+      ctx.lineTo(1.6 + tilt, top + 6)
+      ctx.lineTo(0.4 + tilt, top + 6)
+      ctx.closePath()
+      ctx.fill()
+      ctx.translate(tilt, top)
+      paintFoliage(ctx, tree.lobes, tree.leaves, lit, shade, p.bushEdge)
+      ctx.restore()
+    }
+  }
+}
+
 function paintBushes(ctx: CanvasRenderingContext2D, p: Palette, ground: number): void {
-  const EDGE = 1.3
   for (const bush of BUSHES) {
     const lit = mix(p.bushLit, p.bushShade, bush.tone)
     const shade = mix(p.bushShade, p.bushEdge, bush.tone * 0.5)
@@ -550,48 +753,12 @@ function paintBushes(ctx: CanvasRenderingContext2D, p: Palette, ground: number):
       // Each bush is its own instance: flipped or not, scaled about its foot.
       ctx.translate(x + (bush.mirror ? bush.w * bush.scale : 0), ground)
       ctx.scale(bush.mirror ? -bush.scale : bush.scale, bush.scale)
-
-      // The base runs only between the outer lobes' centres, so the ends are always rounded by
-      // a lobe and never a bare corner of the rectangle.
+      // The block runs only between the outer lobes' centres, so the ends are always rounded off
+      // by a lobe and never a bare corner.
       const first = bush.lobes[0].dx
       const last = bush.lobes[bush.lobes.length - 1].dx
-
-      // Silhouette outline: every lobe again, a little larger, in the edge colour underneath.
-      ctx.fillStyle = p.bushEdge
-      ctx.beginPath()
-      ctx.rect(first - EDGE, -bush.h * 0.6, last - first + EDGE * 2, bush.h * 0.6 + EDGE + TUCK)
-      for (const lobe of bush.lobes) {
-        ctx.moveTo(lobe.dx + lobe.r + EDGE, lobe.dy)
-        ctx.arc(lobe.dx, lobe.dy, lobe.r + EDGE, 0, Math.PI * 2)
-      }
-      ctx.fill()
-
-      // The body in shade, then the lit side: the same lobes shifted towards the light, clipped
-      // to the body so nothing pokes out of the silhouette.
-      const body = new Path2D()
-      body.rect(first, -bush.h * 0.6, last - first, bush.h * 0.6 + TUCK)
-      for (const lobe of bush.lobes) {
-        body.moveTo(lobe.dx + lobe.r, lobe.dy)
-        body.arc(lobe.dx, lobe.dy, lobe.r, 0, Math.PI * 2)
-      }
-      ctx.fillStyle = shade
-      ctx.fill(body)
-      ctx.clip(body)
-      ctx.fillStyle = lit
-      ctx.beginPath()
-      for (const lobe of bush.lobes) {
-        const r = lobe.r * 0.72
-        ctx.moveTo(lobe.dx - lobe.r * 0.2 + r, lobe.dy - lobe.r * 0.28)
-        ctx.arc(lobe.dx - lobe.r * 0.2, lobe.dy - lobe.r * 0.28, r, 0, Math.PI * 2)
-      }
-      ctx.fill()
-      ctx.globalAlpha = 0.8
-      ctx.beginPath()
-      for (const leaf of bush.leaves) {
-        ctx.moveTo(leaf.dx + leaf.r, leaf.dy)
-        ctx.ellipse(leaf.dx, leaf.dy, leaf.r, leaf.r * 0.6, -0.5, 0, Math.PI * 2)
-      }
-      ctx.fill()
+      const block: [number, number, number, number] = [first, -bush.h * 0.6, last - first, bush.h * 0.6 + TUCK]
+      paintFoliage(ctx, bush.lobes, bush.leaves, lit, shade, p.bushEdge, block)
       ctx.restore()
     }
   }
@@ -608,7 +775,7 @@ const TUCK = 4
  * the earth carries a few clods and darkens toward the bottom. The plants stand on the grass.
  */
 function paintGround(ctx: CanvasRenderingContext2D, p: Palette, ground: number): void {
-  // Earth, with clods scattered on a fixed seed so the strip tiles without a seam
+  // Earth, with clods scattered on a fixed seed so the strip tiles without a seam.
   ctx.fillStyle = p.earth
   ctx.fillRect(0, ground + GRASS_HEIGHT - 1, STREET_PERIOD, GROUND_HEIGHT - GRASS_HEIGHT + 1)
   ctx.fillStyle = p.earthDeep
@@ -623,7 +790,7 @@ function paintGround(ctx: CanvasRenderingContext2D, p: Palette, ground: number):
     ctx.fill()
   }
   // The grass: one band with a scalloped top, filled lit, then again a touch lower in the
-  // middle green, so a lit rim runs along the tufts
+  // middle green, so a lit rim runs along the tufts.
   const band = new Path2D()
   band.moveTo(0, ground + GRASS_HEIGHT)
   band.lineTo(0, ground + 1)
@@ -642,7 +809,7 @@ function paintGround(ctx: CanvasRenderingContext2D, p: Palette, ground: number):
   ctx.restore()
   ctx.fillStyle = p.grassShadow
   ctx.fillRect(0, ground + GRASS_HEIGHT - 1.2, STREET_PERIOD, 1.4)
-  // An ink edge along the tufts, as the bushes and the pipes have one
+  // An ink edge along the tufts, as the bushes and the pipes have one.
   const edge = new Path2D()
   edge.moveTo(0, ground + 1)
   for (let x = 0; x < STREET_PERIOD; x += 8) {

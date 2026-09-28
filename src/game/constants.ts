@@ -42,8 +42,6 @@ export const PIPE_CAP_HEIGHT = 12
 export const PIPE_CAP_OVERHANG = 4
 /** Pipe bodies run past the frame edge and into the ground so no end line shows. */
 export const PIPE_OVERRUN = 4
-export const PIPE_BAND_WIDTH = 6
-export const PIPE_BAND_INSET = 3
 export const CAP_SHADOW_HEIGHT = 3
 /** Smallest distance between a gap's edge and the ceiling or the ground. */
 export const GAP_MARGIN = 30
@@ -52,7 +50,7 @@ export const OUTLINE = 1.5
 export const INNER_LINE = 1.1
 /** Pipes are drawn with a lighter hand than the hippo: a thinner edge, soft round shading. */
 export const PIPE_OUTLINE = 1.2
-// Light comes from the top left: a soft highlight on the left, a soft shade on the right
+/** Light comes from the top left: a soft highlight on the left, a soft shade on the right. */
 export const PIPE_HIGHLIGHT = 'rgba(255, 255, 255, 0.2)'
 export const PIPE_SHADE = 'rgba(0, 0, 0, 0.1)'
 export const CAP_SHADOW = 'rgba(0, 0, 0, 0.1)'
@@ -80,8 +78,10 @@ export const FLOATER_MS = 800
 /** The screen shudders for this long on a crash. */
 export const SHAKE_MS = 260
 
-// The later stages. A long round keeps getting harder, but never by chance: everything new is
-// telegraphed and can be answered with skill.
+/**
+ * The later stages. A long round keeps getting harder, but never by chance: everything new is
+ * telegraphed and can be answered with skill.
+ */
 
 /**
  * Test mode, code only: brings the stages forward to 10 and 20 points so a moving pipe or a pot
@@ -143,6 +143,9 @@ export const MOON_RADIUS = 16
 export const FLAP_ANIMATION_MS = 300
 /** A stray tap right after a crash must not skip the game-over card. */
 export const RESTART_DELAY_MS = 450
+/** How the melon wedge is turned, everywhere it appears: the cut face up and a little askew. */
+export const MELON_TILT_DEG = -150
+export const MELON_TILT = (MELON_TILT_DEG * Math.PI) / 180
 /** Coming back from a pause counts down 3-2-1 before the hippo moves again. */
 export const COUNTDOWN_MS = 1500
 /** How long after a crash the scene keeps animating (falling sky, dust) before it goes still. */

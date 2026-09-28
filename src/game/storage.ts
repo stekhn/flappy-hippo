@@ -1,11 +1,12 @@
+import { dropLocal, readLocal, writeLocal } from '../local.ts'
 import type { DifficultyId } from './difficulty.ts'
+import type { RunSummary } from './types.ts'
 
 // Everything the game remembers lives in localStorage under one key, so a single read on boot
 // restores records, stats, the score table and unlocked achievements. There is no account and no
 // network: clearing site data really is a full reset.
 
 const PROGRESS_KEY = 'flappy-hippo.progress'
-/** Kept from the very first prototype, so an old best score still counts. */
 const LEGACY_BEST_KEY = 'flappy-hippo-best'
 const MAX_SCORES = 10
 
@@ -27,6 +28,12 @@ export interface Stats {
   /** Moving pipes cleared, all time and the most in one round. */
   movers: number
   moversRun: number
+  /** Rounds that ended on a cat, a dog, a bin, a bench or a postbox. */
+  hitCat: number
+  hitDog: number
+  hitBin: number
+  hitBench: number
+  hitPost: number
 }
 
 export interface ScoreEntry {
@@ -59,6 +66,11 @@ export const EMPTY_STATS: Stats = {
   potsRun: 0,
   movers: 0,
   moversRun: 0,
+  hitCat: 0,
+  hitDog: 0,
+  hitBin: 0,
+  hitBench: 0,
+  hitPost: 0,
 }
 
 export function emptyProgress(): Progress {
@@ -128,43 +140,19 @@ function byScore(a: ScoreEntry, b: ScoreEntry): number {
 }
 
 export function loadProgress(): Progress {
-  try {
-    return parseProgress(localStorage.getItem(PROGRESS_KEY), localStorage.getItem(LEGACY_BEST_KEY))
-  } catch {
-    // Private mode, or storage disabled — the game still plays, it just forgets.
-    return emptyProgress()
-  }
+  return parseProgress(readLocal(PROGRESS_KEY), readLocal(LEGACY_BEST_KEY))
 }
 
 export function saveProgress(progress: Progress): void {
-  try {
-    localStorage.setItem(PROGRESS_KEY, JSON.stringify(progress))
-  } catch {
-    /* ignore persistence failure */
-  }
+  writeLocal(PROGRESS_KEY, JSON.stringify(progress))
 }
 
 export function clearProgress(): void {
-  try {
-    localStorage.removeItem(PROGRESS_KEY)
-    localStorage.removeItem(LEGACY_BEST_KEY)
-  } catch {
-    /* ignore */
-  }
+  dropLocal(PROGRESS_KEY, LEGACY_BEST_KEY)
 }
 
-/** What one finished round contributed. */
-export interface RunResult {
-  score: number
-  pipes: number
-  melons: number
-  shields: number
-  saves: number
-  seconds: number
-  /** Pots dodged and moving pipes cleared this round. */
-  pots: number
-  movers: number
-  difficulty: DifficultyId
+/** What one finished round contributed: the runtime's numbers, plus the sky it was played under. */
+export interface RunResult extends RunSummary {
   night: boolean
 }
 
@@ -183,6 +171,11 @@ export function recordRun(progress: Progress, run: RunResult, at: number): Progr
     potsRun: Math.max(progress.stats.potsRun, run.pots),
     movers: progress.stats.movers + run.movers,
     moversRun: Math.max(progress.stats.moversRun, run.movers),
+    hitCat: progress.stats.hitCat + (run.hit === 'cat' ? 1 : 0),
+    hitDog: progress.stats.hitDog + (run.hit === 'dog' ? 1 : 0),
+    hitBin: progress.stats.hitBin + (run.hit === 'bin' ? 1 : 0),
+    hitBench: progress.stats.hitBench + (run.hit === 'bench' ? 1 : 0),
+    hitPost: progress.stats.hitPost + (run.hit === 'postbox' ? 1 : 0),
   }
   const scores =
     run.score > 0

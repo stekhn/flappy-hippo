@@ -30,7 +30,7 @@ test('after the opening ramp the long ramp keeps tightening, and holds from the 
   assert.ok(later.speed > end.speed && later.speed < top.speed)
   assert.ok(later.gap < end.gap && later.gap > top.gap)
   assert.equal(later.jump, end.jump)
-  // Pipes come a little more often at the top, not just faster
+  // Pipes come a little more often at the top, not just faster.
   assert.ok(top.spacing / top.speed < end.spacing / end.speed)
   assert.ok(top.speed < end.speed * 1.25 && top.gap > end.gap * 0.9)
   assert.deepEqual(beyond, top)

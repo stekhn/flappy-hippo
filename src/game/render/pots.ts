@@ -35,7 +35,7 @@ export function drawPots(ctx: CanvasRenderingContext2D, p: Palette, pots: Pot[],
 
 function paintBalcony(ctx: CanvasRenderingContext2D, p: Palette): void {
   const left = -BALCONY_WIDTH / 2
-  // The parapet: the wall's bricks, bevelled the same way
+  // The parapet: the wall's bricks, bevelled the same way.
   ctx.fillStyle = p.ground
   ctx.fillRect(left, 0, BALCONY_WIDTH, PARAPET_HEIGHT)
   const joints = new Path2D()
@@ -62,7 +62,7 @@ function paintBalcony(ctx: CanvasRenderingContext2D, p: Palette): void {
   ctx.stroke(joints)
   ctx.strokeStyle = p.groundHighlight
   ctx.stroke(edges)
-  // The cap the pot stands on, a touch wider and lighter, and the slab under everything
+  // The cap the pot stands on, a touch wider and lighter, and the slab under everything.
   ctx.lineWidth = OUTLINE
   ctx.strokeStyle = p.groundLine
   ctx.fillStyle = mix(p.ground, '#ffffff', 0.28)
@@ -75,7 +75,6 @@ function paintBalcony(ctx: CanvasRenderingContext2D, p: Palette): void {
   ctx.roundRect(left + 3, PARAPET_HEIGHT + CAP_HEIGHT, BALCONY_WIDTH - 6, SLAB_HEIGHT, [0, 0, 1.5, 1.5])
   ctx.fill()
   ctx.stroke()
-  // The outer edges of the parapet
   ctx.beginPath()
   ctx.moveTo(left, 0)
   ctx.lineTo(left, PARAPET_HEIGHT)
@@ -85,7 +84,7 @@ function paintBalcony(ctx: CanvasRenderingContext2D, p: Palette): void {
 }
 
 function paintPot(ctx: CanvasRenderingContext2D, p: Palette): void {
-  // Soil above the rim, then the plant out of it: three leaves and one small flower
+  // Soil above the rim, then the plant out of it: three leaves and one small flower.
   ctx.fillStyle = mix(p.wood, '#000000', 0.55)
   ctx.beginPath()
   ctx.ellipse(0, -8.3, 6.4, 1.6, 0, 0, Math.PI * 2)
@@ -120,7 +119,7 @@ function paintPot(ctx: CanvasRenderingContext2D, p: Palette): void {
   ctx.beginPath()
   ctx.arc(-1, -16.5, 0.9, 0, Math.PI * 2)
   ctx.fill()
-  // The pot: a tapered body under a wider rim, lit from the left like everything else
+  // The pot: a tapered body under a wider rim, lit from the left like everything else.
   ctx.lineWidth = OUTLINE
   ctx.strokeStyle = p.hippoDark
   ctx.fillStyle = p.wood

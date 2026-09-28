@@ -186,7 +186,7 @@ function surveySpawns(frames: number, score = 0) {
     for (const pickup of state.pickups) {
       if (seenPickups.has(pickup)) continue
       seenPickups.add(pickup)
-      // Measured from the pipe's resting centre: a mover's gap may already have swung by now
+      // Measured from the pipe's resting centre: a mover's gap may already have swung by now.
       if (pickup.kind === 'melon') melons.push({ y: pickup.y, gapY: spawns[spawns.length - 1].baseY })
     }
     for (const pot of state.pots) {
@@ -269,15 +269,32 @@ test('moving pipes keep their whole swing in the field and within the jump of th
   }
 })
 
-test('reaching a stage announces it once', () => {
+test('a stage forces its first obstacle and is announced once, as that obstacle nears', () => {
   const state = running()
   state.score = STAGE_MOVERS - 1
+  state.solidUntil = Number.MAX_SAFE_INTEGER
   state.pipes = [pipeAt(world.hippoX - PIPE_WIDTH + 1, state.hippoY, 80)]
-  const events = step(state)
+  let events = step(state)
   assert.equal(state.score, STAGE_MOVERS)
+  assert.equal(state.stage, 0, 'nothing is announced until the first mover is near')
+  assert.ok(!events.some((event) => event.type === 'stage'))
+  state.nextSpawn = state.scrolled + 1
+  let announced = 0
+  let mover: Pipe | undefined
+  for (let i = 0; i < 2400 && !mover?.passed; i++) {
+    state.hippoY = world.groundY / 2
+    state.velocity = 0
+    events = step(state, 1 / 60, 2000 + i * 16)
+    mover ??= state.pipes.find((pipe) => pipe.swing > 0)
+    for (const event of events) {
+      if (event.type !== 'stage') continue
+      announced += 1
+      assert.ok(mover && !mover.passed && mover.x > world.hippoX, 'announced while the mover is still ahead')
+    }
+  }
+  assert.ok(mover?.passed, 'the next pipe to spawn moves')
+  assert.equal(announced, 1)
   assert.equal(state.stage, 1)
-  assert.ok(events.some((event) => event.type === 'stage' && event.stage === 1))
-  assert.ok(!step(state).some((event) => event.type === 'stage'))
 })
 
 test('melons hang within reach of the gap they are spawned with', () => {

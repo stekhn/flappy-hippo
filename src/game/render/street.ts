@@ -1,8 +1,16 @@
 import { BRICK_WIDTH, OUTLINE, SCENE_PERIOD } from '../constants.ts'
 import { mix } from '../palette.ts'
-import type { Palette } from '../types.ts'
+import type { Furniture, Palette } from '../types.ts'
 import type { LayerCache } from './layers.ts'
 import { seeded } from './scenery.ts'
+
+// The foreground: what stands on the wall and scrolls with it. A small vocabulary of plants and
+// litter, all rooted in the joints between the top row's bricks (the scene repeats on a multiple
+// of the brick width, so they stay in the cracks however far the wall has scrolled), baked into
+// the wall's strip; and, drawn live and far apart, the street furniture. All in the same outlined
+// style as the hippo and the pipes and in their colours, and sparse: the hippo and the pipes are
+// the show, this is the set dressing. The two animals are exported for scripts/make-animal-svg.ts,
+// which records them as SVG files.
 
 /** How far above the ground line the tallest plant on the street reaches (a tall tuft, full size). */
 export const STREET_ABOVE = 26
@@ -12,15 +20,7 @@ export const STREET_ABOVE = 26
  */
 export const STREET_PERIOD = SCENE_PERIOD * 4
 
-// The foreground: what stands on the wall and scrolls with it. A small vocabulary of plants and
-// litter, all rooted in the joints between the top row's bricks (the scene repeats on a multiple
-// of the brick width, so they stay in the cracks however far the wall has scrolled), baked into
-// the wall's strip; and, drawn live and far apart, the street furniture. All in the same outlined
-// style as the hippo and the pipes and in their colours, and sparse: the hippo and the pipes are
-// the show, this is the set dressing.
-
 type Plant = 'tuft' | 'tall' | 'clover' | 'dandelion' | 'buttercups' | 'can' | 'paper'
-type Furniture = 'bench' | 'postbox' | 'bin' | 'cat' | 'dog'
 
 interface Blade {
   dx: number
@@ -159,7 +159,7 @@ export function paintStreet(ctx: CanvasRenderingContext2D, p: Palette, ground: n
     for (const base of WRAPS) {
       const x = prop.x + base
       if (x < -30 || x > STREET_PERIOD + 30) continue
-      // A touch of shade where it stands in the grass
+      // A touch of shade where it stands in the grass.
       ctx.fillStyle = p.grassShadow
       ctx.beginPath()
       ctx.ellipse(x, ground + 1.6, 3.2, 1, 0, 0, Math.PI * 2)
@@ -273,7 +273,7 @@ export function drawFurniture(
       if (!thing) continue
       const still = STILL[thing.kind]
       if (still) {
-        // A fixture never moves: painted once, stamped from then on
+        // A fixture never moves: painted once, stamped from then on.
         const sprite = cache.sprite(`furniture-${thing.kind}`, still.left, still.top, still.width, still.height, (c) =>
           DRAW[thing.kind](c, p, 0, 0, 0, 0),
         )
@@ -289,6 +289,23 @@ export function drawFurniture(
     }
   }
   ctx.restore()
+}
+
+/** How near the hippo has to come down to a spot to count as having landed on it. */
+const HIT_REACH = 18
+
+/** What stands where the hippo came down, so a round can be remembered by what it flattened. */
+export function furnitureUnder(scrolled: number, x: number, round: number): Furniture | null {
+  const at = scrolled + x
+  const period = Math.floor(at / STREET_PERIOD)
+  const along = at - period * STREET_PERIOD
+  for (const [i, spot] of STREET.spots.entries()) {
+    for (const step of [0, -1, 1]) {
+      if (Math.abs(spot + step * STREET_PERIOD - along) > HIT_REACH) continue
+      return furnitureAt(round * ROUND_STRIDE + (period + step) * SPOTS_PER_PERIOD + i)?.kind ?? null
+    }
+  }
+  return null
 }
 
 /** Bounds of the fixtures about their foot, for their sprites; the animals are drawn live. */
@@ -354,7 +371,6 @@ function drawDandelion(ctx: CanvasRenderingContext2D, p: Palette, x: number, bas
   ctx.moveTo(x, base + 2)
   ctx.quadraticCurveTo(x + lean * 0.4, base - h * 0.6, x + lean, base - h)
   ctx.stroke()
-  // Leaves
   ctx.strokeStyle = p.grassLit
   ctx.lineWidth = 1.6
   ctx.beginPath()
@@ -363,7 +379,7 @@ function drawDandelion(ctx: CanvasRenderingContext2D, p: Palette, x: number, bas
   ctx.moveTo(x, base + 1)
   ctx.quadraticCurveTo(x + 3, base - 1.5, x + 4.5, base - 4)
   ctx.stroke()
-  // The seed head: a soft disc with a ring of seeds
+  // The seed head: a soft disc with a ring of seeds.
   const hx = x + lean
   const hy = base - h
   ctx.fillStyle = p.flower
@@ -470,13 +486,13 @@ function drawPaper(ctx: CanvasRenderingContext2D, p: Palette, x: number, base: n
 function drawBench(ctx: CanvasRenderingContext2D, p: Palette, x: number, base: number): void {
   ctx.lineWidth = OUTLINE
   ctx.strokeStyle = p.hippoDark
-  // Legs and back posts
+  // Legs and back posts.
   ctx.fillStyle = p.hippoDark
   for (const lx of [x - 10, x + 10]) {
     ctx.fillRect(lx - 1, base - 9, 2, 9.5)
     ctx.fillRect(lx - 1, base - 18, 2, 9)
   }
-  // Seat and back slats
+  // Seat and back slats.
   ctx.fillStyle = p.wood
   for (const [y, w] of [
     [base - 12, 27],
@@ -498,19 +514,18 @@ function drawBench(ctx: CanvasRenderingContext2D, p: Palette, x: number, base: n
 function drawPostbox(ctx: CanvasRenderingContext2D, p: Palette, x: number, base: number): void {
   ctx.lineWidth = OUTLINE
   ctx.strokeStyle = p.hippoDark
-  // Post with a foot
+  // Post with a foot.
   ctx.fillStyle = p.hippoDark
   ctx.fillRect(x - 1.4, base - 12, 2.8, 12.5)
   ctx.beginPath()
   ctx.roundRect(x - 3, base - 1.5, 6, 2, 0.8)
   ctx.fill()
-  // Body
   ctx.fillStyle = p.postbox
   ctx.beginPath()
   ctx.roundRect(x - 6.5, base - 24, 13, 12.5, 1.2)
   ctx.fill()
   ctx.stroke()
-  // The hood: an arch a little wider than the body, with a lit crown
+  // The hood: an arch a little wider than the body, with a lit crown.
   ctx.beginPath()
   ctx.moveTo(x - 7.5, base - 24)
   ctx.quadraticCurveTo(x - 7.5, base - 29.5, x, base - 29.5)
@@ -526,7 +541,7 @@ function drawPostbox(ctx: CanvasRenderingContext2D, p: Palette, x: number, base:
   ctx.lineTo(x + 2, base - 24.5)
   ctx.closePath()
   ctx.fill()
-  // Slot with a lip, and the plate below
+  // Slot with a lip, and the plate below.
   ctx.fillStyle = p.hippoDark
   ctx.beginPath()
   ctx.roundRect(x - 4.5, base - 22.5, 9, 1.8, 0.9)
@@ -585,7 +600,7 @@ export function drawCat(ctx: CanvasRenderingContext2D, p: Palette, x: number, ba
   const line = p.catLine
   const lick = routine(age, 5, 0.3, seed)
   const licking = lick > 0
-  // The tail first, outlined by stroking it twice; its tip sways
+  // The tail first, outlined by stroking it twice; its tip sways.
   const sway = Math.sin(age * 1.6 + seed * 7) * 1.4
   const tail = new Path2D()
   tail.moveTo(x - 3.5, base - 2.5)
@@ -598,7 +613,7 @@ export function drawCat(ctx: CanvasRenderingContext2D, p: Palette, x: number, ba
   ctx.stroke(tail)
   ctx.lineWidth = OUTLINE
   ctx.strokeStyle = line
-  // Body: a pear, wide at the haunches, the chest out; a white bib on it
+  // Body: a pear, wide at the haunches, the chest out; a white bib on it.
   ctx.fillStyle = coat
   ctx.beginPath()
   ctx.moveTo(x - 5.2, base)
@@ -612,7 +627,7 @@ export function drawCat(ctx: CanvasRenderingContext2D, p: Palette, x: number, ba
   ctx.beginPath()
   ctx.ellipse(x + 2, base - 5, 1.7, 3, -0.15, 0, Math.PI * 2)
   ctx.fill()
-  // Front legs with white socks: the near one lifts to the face while licking
+  // Front legs with white socks: the near one lifts to the face while licking.
   const leg = (): void => {
     ctx.fillStyle = coat
     ctx.beginPath()
@@ -637,7 +652,7 @@ export function drawCat(ctx: CanvasRenderingContext2D, p: Palette, x: number, ba
   }
   leg()
   ctx.restore()
-  // The head, on a neck pivot so it can dip to the paw
+  // The head, on a neck pivot so it can dip to the paw.
   ctx.save()
   ctx.translate(x + 0.5, base - 10)
   if (licking) ctx.rotate(0.28)
@@ -684,7 +699,7 @@ export function drawCat(ctx: CanvasRenderingContext2D, p: Palette, x: number, ba
   ctx.closePath()
   ctx.fill()
   if (licking) {
-    // The tongue out to meet the paw
+    // The tongue out to meet the paw.
     ctx.beginPath()
     ctx.ellipse(0.7, -1, 0.7, 1, 0.3, 0, Math.PI * 2)
     ctx.fill()
@@ -705,8 +720,6 @@ export function drawCat(ctx: CanvasRenderingContext2D, p: Palette, x: number, ba
   ctx.strokeStyle = p.hippoDark
 }
 
-// The animals are exported for scripts/make-animal-svg.ts, which turns them into SVG files.
-
 /**
  * A small yellow dog after the classic cartoon: sitting up, a big round head with long ears
  * hanging behind it either side, big eyes, a big black nose, a smile. It keeps still but for
@@ -722,7 +735,7 @@ export function drawDog(ctx: CanvasRenderingContext2D, p: Palette, x: number, ba
   const hy = base - 20.5
   ctx.lineWidth = OUTLINE
   ctx.strokeStyle = p.hippoDark
-  // Tail up, wagging, outlined by stroking it twice
+  // Tail up, wagging, outlined by stroking it twice.
   const tail = new Path2D()
   tail.moveTo(x - 7, base - 7)
   tail.quadraticCurveTo(x - 10.5 + wag, base - 10, x - 10 + wag, base - 14.5)
@@ -733,61 +746,65 @@ export function drawDog(ctx: CanvasRenderingContext2D, p: Palette, x: number, ba
   ctx.stroke(tail)
   ctx.lineWidth = OUTLINE
   ctx.strokeStyle = p.hippoDark
-  // Both ears hang behind the head
-  const ear = (ex: number, tilt: number): void => {
+  const ear = (ex: number, ey: number, mirror: boolean): void => {
     ctx.save()
-    ctx.translate(ex, hy - 3.5)
-    ctx.rotate(tilt)
+    ctx.translate(ex, ey)
+    ctx.scale(mirror ? -0.93 : 0.93, 0.93)
+    ctx.rotate(-0.3)
     ctx.fillStyle = shade
     ctx.beginPath()
-    ctx.moveTo(-1.6, 0)
-    ctx.bezierCurveTo(-3.2, 4, -3.2, 9, -1.4, 11)
+    ctx.moveTo(-2.97, 0.24)
+    ctx.bezierCurveTo(-3.2, 2.08, -3.2, 9, -1.4, 11)
     ctx.bezierCurveTo(0, 12.4, 2.4, 11.4, 2.2, 9)
-    ctx.bezierCurveTo(2, 6, 1.6, 2.5, 1.6, 0)
+    ctx.bezierCurveTo(2, 6, 0.64, 1.5, 0, 0)
+    ctx.bezierCurveTo(-0.4, -0.98, -2.85, -0.75, -2.97, 0.24)
     ctx.closePath()
     ctx.fill()
     ctx.stroke()
     ctx.restore()
   }
-  ear(hx - 5.4, 0.35)
-  ear(hx + 5.6, -0.3)
-  // Sitting: haunches wide at the bottom, the chest up, a hind paw peeking out, front legs straight
+  ear(hx + 5.75, hy - 5.45, false)
   ctx.fillStyle = coat
   ctx.beginPath()
-  ctx.moveTo(x - 8.5, base)
-  ctx.bezierCurveTo(x - 10, base - 7, x - 6, base - 13, x - 1, base - 15)
-  ctx.bezierCurveTo(x + 3, base - 16, x + 6.5, base - 13, x + 7, base - 8)
-  ctx.bezierCurveTo(x + 7.3, base - 5, x + 7.5, base - 2, x + 7.2, base)
+  ctx.moveTo(x - 6.72, base)
+  ctx.bezierCurveTo(x - 8.05, base - 7, x - 4.5, base - 13, x - 0.06, base - 15)
+  ctx.bezierCurveTo(x + 3.49, base - 16, x + 6.6, base - 13, x + 7.04, base - 8)
+  ctx.bezierCurveTo(x + 7.31, base - 5, x + 7.48, base - 2, x + 7.22, base)
   ctx.closePath()
   ctx.fill()
   ctx.stroke()
   ctx.fillStyle = light
   ctx.beginPath()
-  ctx.ellipse(x + 3, base - 6, 2.6, 4.2, -0.1, 0, Math.PI * 2)
+  ctx.ellipse(x + 4.42, base - 7.18, 1.86, 4.07, 0, 0, Math.PI * 2)
   ctx.fill()
-  ctx.fillStyle = coat
-  ctx.beginPath()
-  ctx.roundRect(x - 7.5, base - 2.6, 5, 2.6, 1.2)
-  ctx.fill()
-  ctx.stroke()
-  for (const lx of [x + 0.6, x + 4.4]) {
-    ctx.beginPath()
-    ctx.roundRect(lx, base - 8.5, 3, 8.5, [1.2, 1.2, 1.5, 1.5])
-    ctx.fill()
-    ctx.stroke()
-  }
-  // The head
   ctx.fillStyle = coat
   ctx.beginPath()
   ctx.arc(hx, hy, 6.4, 0, Math.PI * 2)
   ctx.fill()
   ctx.stroke()
-  // Muzzle with the smile; the tongue out and panting now and then; the nose on top with its highlight
   ctx.fillStyle = light
   ctx.beginPath()
   ctx.ellipse(hx + 2.6, hy + 2.4, 4.2, 3.1, 0, 0, Math.PI * 2)
   ctx.fill()
   ctx.stroke()
+  if (pant > 0) {
+    const out = 1.5 + Math.min(pant * 6, 1) * 0.7 + Math.sin(pant * Math.PI * 9) * 0.35
+    const tx = hx + 1.55
+    const ty = hy + 4.47
+    ctx.fillStyle = p.melonFlesh
+    ctx.beginPath()
+    ctx.roundRect(tx, ty, 2.8, out + 1, [0, 0, 1.4, 1.4])
+    ctx.fill()
+    ctx.lineWidth = 0.95
+    ctx.beginPath()
+    const bottom = ty + out + 1
+    ctx.moveTo(tx + 2.8, ty)
+    ctx.lineTo(tx + 2.8, bottom - 1.4)
+    ctx.quadraticCurveTo(tx + 2.8, bottom, tx + 1.4, bottom)
+    ctx.quadraticCurveTo(tx, bottom, tx, bottom - 1.4)
+    ctx.lineTo(tx, ty)
+    ctx.stroke()
+  }
   ctx.lineWidth = 0.9
   ctx.beginPath()
   ctx.arc(hx + 2.8, hy + 2.4, 2.4, Math.PI * 0.15, Math.PI * 0.85)
@@ -801,7 +818,7 @@ export function drawDog(ctx: CanvasRenderingContext2D, p: Palette, x: number, ba
   ctx.beginPath()
   ctx.ellipse(hx + 3.6, hy - 0.4, 0.9, 0.5, 0, 0, Math.PI * 2)
   ctx.fill()
-  // Big eyes close together, the pupils toward where it is looking
+  // Big eyes close together, the pupils toward where it is looking.
   for (const [ex, r] of [
     [hx - 0.6, 2],
     [hx + 3, 2],
@@ -816,23 +833,24 @@ export function drawDog(ctx: CanvasRenderingContext2D, p: Palette, x: number, ba
     ctx.ellipse(ex + 0.6, hy - 2.4, r * 0.42, r * 0.55, 0, 0, Math.PI * 2)
     ctx.fill()
   }
-  // The tongue, red, lolling out of the front of the mouth under the nose, bobbing as it pants
-  if (pant > 0) {
-    const out = 1.8 + Math.min(pant * 6, 1) * 1.6 + Math.sin(pant * Math.PI * 9) * 0.5
-    ctx.fillStyle = p.melonFlesh
+  ear(hx - 5.7, hy - 5.84, true)
+  ctx.fillStyle = coat
+  for (const lx of [x + 1.61, x + 4.72]) {
     ctx.beginPath()
-    ctx.roundRect(hx + 4, hy + 4.2, 2.8, out + 1, [0, 0, 1.4, 1.4])
+    ctx.roundRect(lx, base - 6.98, 2.5, 7.73, 1.1)
     ctx.fill()
     ctx.stroke()
-    ctx.strokeStyle = 'rgba(0, 0, 0, 0.2)'
-    ctx.lineWidth = 0.7
-    ctx.beginPath()
-    ctx.moveTo(hx + 5.4, hy + 5.2)
-    ctx.lineTo(hx + 5.4, hy + 4.2 + out - 0.2)
-    ctx.stroke()
-    ctx.lineWidth = OUTLINE
-    ctx.strokeStyle = p.hippoDark
   }
+  ctx.beginPath()
+  ctx.roundRect(x - 7.42, base - 1.75, 7.73, 2.5, 1.1)
+  ctx.fill()
+  ctx.stroke()
+  ctx.fillStyle = light
+  ctx.beginPath()
+  ctx.roundRect(x + 1.91, base - 1.05, 1.9, 1.5, 0.6)
+  ctx.roundRect(x + 5.02, base - 1.05, 1.9, 1.5, 0.6)
+  ctx.roundRect(x - 1.49, base - 1.45, 1.5, 1.9, 0.6)
+  ctx.fill()
 }
 
 /** One of the hippo's eyes, small: white, outlined, a dark pupil a touch off centre. */

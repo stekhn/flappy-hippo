@@ -53,7 +53,6 @@ export function drawHippo(
   // Just after a shield pops the hippo blinks, the way an arcade sprite signals "still invincible".
   if (pose.sparkle > 0) ctx.globalAlpha = 0.45 + 0.55 * Math.abs(Math.sin(now / 70))
   ctx.rotate(pose.tilt)
-  // Drawn a touch larger than the hitbox, and squashed or stretched with the motion.
   ctx.scale(HIPPO_DRAW_SCALE * (1 - pose.stretch * 0.5), HIPPO_DRAW_SCALE * (1 + pose.stretch))
   ctx.lineWidth = HIPPO_OUTLINE
   ctx.strokeStyle = p.hippoDark
@@ -76,7 +75,7 @@ export function drawHippo(
   ctx.translate(4, -2 + pose.headDrop)
   ctx.rotate(pose.headNod)
 
-  // Drawn before the head, so only the ear's grey tip peeks out
+  // Drawn before the head, so only the ear's grey tip peeks out.
   ctx.save()
   ctx.translate(10.7, -9)
   ctx.rotate(-0.08 + flick * 0.8 - earDroop)
@@ -128,7 +127,7 @@ function drawGlow(ctx: CanvasRenderingContext2D, p: Palette, pose: HippoPose, ca
   }
   ctx.save()
   ctx.translate(pose.x, pose.y)
-  // Faint: the bubble is clear now, and a strong halo would fog it up again
+  // Faint: a strong halo would fog the bubble up.
   ctx.globalAlpha = 0.25 * pose.shieldIn
   ctx.fillStyle = cache ? cache.gradient('shield-glow', make) : make()
   ctx.fillRect(-r, -r, r * 2, r * 2)
@@ -141,14 +140,13 @@ function drawCrack(ctx: CanvasRenderingContext2D, p: Palette, pose: HippoPose): 
   const r = BUBBLE_RADIUS + t * 22
   ctx.save()
   ctx.translate(pose.x, pose.y)
-  ctx.globalAlpha = (1 - t) * 0.9
-  ctx.strokeStyle = p.bubbleEdge
-  ctx.lineWidth = 3 * (1 - t) + 0.5
+  ctx.globalAlpha = (1 - t) * 0.95
+  ctx.strokeStyle = p.shieldInk
+  ctx.lineWidth = 4 * (1 - t) + 1
   ctx.beginPath()
   ctx.arc(0, 0, r, 0, Math.PI * 2)
   ctx.stroke()
-  ctx.strokeStyle = '#ffffff'
-  ctx.lineWidth = 1.5
+  ctx.lineWidth = 1.8
   ctx.beginPath()
   for (let k = 0; k < 6; k++) {
     const a = (k / 6) * Math.PI * 2 + 0.4
@@ -173,7 +171,7 @@ function drawBubble(
   const r = (BUBBLE_RADIUS + Math.sin(now / 320) * 1.2) * Math.max(grow, 0.05)
   ctx.save()
   ctx.translate(pose.x, pose.y)
-  drawBubbleSkin(ctx, p, r, now / 900, cache)
+  drawBubbleSkin(ctx, p, r, now / 900, cache, BUBBLE_RADIUS)
   for (let i = 1; i < pose.shield; i++) {
     const bob = Math.sin(now / 340 + i * 1.7) * 2
     ctx.save()

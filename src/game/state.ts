@@ -111,7 +111,9 @@ export function initialState({ world, difficulty, best, round = 0 }: InitOptions
     moversPassed: 0,
     pipesSincePot: POT_SPACING,
     stage: 0,
-    stageAt: 0,
+    pending: 0,
+    dueMover: false,
+    duePot: false,
     scrolled: 0,
     nextSpawn: Math.max(tuning.spacing - travelled, 0),
     score: 0,
@@ -189,7 +191,9 @@ export function fallTime(distance: number): number {
  */
 function spawnPot(state: GameState, world: World, pipe: Pipe, tuning: Tuning, pickup: 'shield' | 'melon' | null): void {
   state.pipesSincePot += 1
-  if (pickup === 'melon' || state.pipesSincePot < POT_SPACING || Math.random() >= tuning.pots) return
+  if (pickup === 'melon' || state.pipesSincePot < POT_SPACING) return
+  if (!state.duePot && Math.random() >= tuning.pots) return
+  state.duePot = false
   state.pipesSincePot = 0
   const margin = POT_RADIUS + GAP_MARGIN
   const aim = pipe.baseY + (Math.random() * 2 - 1) * tuning.jump * POT_AIM
@@ -225,6 +229,9 @@ function stepPots(state: GameState, dt: number, dx: number, world: World, tuning
   for (const pot of state.pots) {
     pot.x -= dx
     if (pot.smashed) continue
+    if (state.pending === 2 && !pot.passed && pot.x - world.hippoX < tuning.speed * NOTICE_LEAD_S) {
+      announce(state, 2, events)
+    }
     if (!pot.falling) {
       pot.spin = Math.sin(state.elapsed * 14 + pot.seed) * 0.12
       if (pot.x - world.hippoX <= tuning.speed * pot.lead) pot.falling = true
@@ -322,13 +329,22 @@ function stepConfetti(pieces: Confetti[], dt: number): Confetti[] {
   return keep(pieces, (piece) => piece.life > 0)
 }
 
+/** Seconds before a stage's first obstacle reaches the hippo that the stage is announced. */
+const NOTICE_LEAD_S = 2
+
+function announce(state: GameState, stage: number, events: GameEvent[]): void {
+  state.stage = stage
+  state.pending = 0
+  events.push({ type: 'stage', stage })
+}
+
 /** Everything that may follow a point: a new stage, confetti every ten, and the moment a record falls. */
-function celebrate(state: GameState, world: World, now: number, events: GameEvent[]): void {
+function celebrate(state: GameState, world: World, events: GameEvent[]): void {
   const stage = state.score >= STAGE_POTS ? 2 : state.score >= STAGE_MOVERS ? 1 : 0
-  if (stage > state.stage) {
-    state.stage = stage
-    state.stageAt = now
-    events.push({ type: 'stage', stage })
+  if (stage > Math.max(state.stage, state.pending)) {
+    state.pending = stage
+    if (stage === 1) state.dueMover = true
+    else state.duePot = true
   }
   if (state.score % MILESTONE_STEP === 0) {
     throwConfetti(state, world)
@@ -381,7 +397,7 @@ function collect(state: GameState, world: World, now: number, events: GameEvent[
       burst(state, pickup.x, pickup.y, 14, 'melon', 110, 1)
       state.floaters.push({ kind: 'melon', value: MELON_POINTS, x: pickup.x, y: pickup.y - 6, born: now })
       events.push({ type: 'melon', score: state.score })
-      celebrate(state, world, now, events)
+      celebrate(state, world, events)
       continue
     }
     state.shields += 1
@@ -440,7 +456,9 @@ export function advance(
   while (state.scrolled >= state.nextSpawn) {
     const overshoot = state.scrolled - state.nextSpawn
     const previous: Anchor = state.pipes.at(-1) ?? { baseY: world.groundY / 2, swing: 0 }
-    const pipe = makePipe(world, spawnX(world) - overshoot, tuning, previous, Math.random() < tuning.movers)
+    const moving = state.dueMover || Math.random() < tuning.movers
+    state.dueMover = false
+    const pipe = makePipe(world, spawnX(world) - overshoot, tuning, previous, moving)
     state.pipes.push(pipe)
     spawnPot(state, world, pipe, tuning, spawnPickup(state, world, pipe, tuning))
     state.nextSpawn += tuning.spacing
@@ -450,13 +468,16 @@ export function advance(
     pipe.x -= dx
     // A mover's gap swings about its base on the round's own clock, so a pause holds it still.
     if (pipe.swing > 0) pipe.gapY = pipe.baseY + pipe.swing * Math.sin(state.elapsed * MOVER_OMEGA + pipe.phase)
+    if (state.pending === 1 && pipe.swing > 0 && !pipe.passed && pipe.x - world.hippoX < tuning.speed * NOTICE_LEAD_S) {
+      announce(state, 1, events)
+    }
     if (pipe.passed || pipe.x + PIPE_WIDTH >= world.hippoX) continue
     pipe.passed = true
     state.pipesCleared += 1
     if (pipe.swing > 0) state.moversPassed += 1
     state.score += 1
     events.push({ type: 'score', score: state.score })
-    celebrate(state, world, now, events)
+    celebrate(state, world, events)
   }
   keep(state.pipes, (pipe) => pipe.x + PIPE_WIDTH > -10)
 
@@ -469,7 +490,6 @@ export function advance(
 
   if (!hasCollision(state, world) && !struck) return
   if (now < state.solidUntil) return
-  // A pot that hits breaks, whatever it hits
   if (struck) smash(state, struck, struck.y, events)
   if (state.charges > 0) {
     // One bubble takes the hit: it pops, the hippo is nudged clear and stays solid long enough

@@ -38,7 +38,3 @@ export function drawShadedEllipse(
   ctx.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2)
   ctx.stroke()
 }
-
-export function easeOut(t: number): number {
-  return 1 - (1 - t) ** 3
-}
