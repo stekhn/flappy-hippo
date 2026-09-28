@@ -3,8 +3,10 @@ import type { ReactNode } from 'react'
 import { ThemeContext, defaultTheme, persistTheme, systemPrefersDark } from '../theme.ts'
 import type { ThemePref } from '../theme.ts'
 
-/** Holds the theme preference (persisted), resolves 'system' against the live OS setting, and
- *  writes the concrete light|dark value to <html data-theme> so the CSS token overrides apply. */
+/**
+ * Holds the theme preference (persisted), resolves 'system' against the live OS setting, and
+ * writes the concrete light|dark value to <html data-theme> so the CSS token overrides apply.
+ */
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setThemeState] = useState<ThemePref>(defaultTheme)
   const [systemDark, setSystemDark] = useState<boolean>(systemPrefersDark)

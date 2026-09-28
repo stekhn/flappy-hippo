@@ -1,3 +1,5 @@
+import { dropLocal, readLocal, writeLocal } from '../local.ts'
+
 export type Locale = 'de' | 'en'
 
 const STORAGE_KEY = 'flappy-hippo.lang'
@@ -12,13 +14,13 @@ const STORAGE_KEY = 'flappy-hippo.lang'
 export function detectLocale(): Locale {
   try {
     const param = new URLSearchParams(location.search).get('lang')
-    if (param === 'auto') localStorage.removeItem(STORAGE_KEY)
-    else if (param === 'de' || param === 'en') localStorage.setItem(STORAGE_KEY, param)
-    const forced = localStorage.getItem(STORAGE_KEY)
-    if (forced === 'de' || forced === 'en') return forced
+    if (param === 'auto') dropLocal(STORAGE_KEY)
+    else if (param === 'de' || param === 'en') writeLocal(STORAGE_KEY, param)
   } catch {
-    /* no URL or storage to read: the browser decides */
+    /* no URL to read: the browser decides */
   }
+  const forced = readLocal(STORAGE_KEY)
+  if (forced === 'de' || forced === 'en') return forced
   try {
     const first = (navigator.languages?.[0] ?? navigator.language ?? '').toLowerCase()
     return first === 'de' || first.startsWith('de-') ? 'de' : 'en'

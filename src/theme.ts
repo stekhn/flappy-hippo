@@ -4,6 +4,7 @@
 // derived from the same attribute, so the scene and the chrome switch together.
 
 import { createContext, useContext } from 'react'
+import { readLocal, writeLocal } from './local.ts'
 
 export type ThemePref = 'system' | 'light' | 'dark'
 export type ResolvedTheme = 'light' | 'dark'
@@ -14,24 +15,15 @@ const STORAGE_KEY = 'flappy-hippo.theme'
 
 /** Saved preference, else 'system' (follow the OS). */
 export function defaultTheme(): ThemePref {
-  try {
-    const saved = localStorage.getItem(STORAGE_KEY)
-    if (saved === 'system' || saved === 'light' || saved === 'dark') return saved
-  } catch {
-    /* localStorage may be unavailable (private mode), fall through */
-  }
+  const saved = readLocal(STORAGE_KEY)
+  if (saved === 'system' || saved === 'light' || saved === 'dark') return saved
   return 'system'
 }
 
 export function persistTheme(theme: ThemePref): void {
-  try {
-    localStorage.setItem(STORAGE_KEY, theme)
-  } catch {
-    /* ignore persistence failure */
-  }
+  writeLocal(STORAGE_KEY, theme)
 }
 
-/** Whether the OS currently prefers a dark colour scheme. */
 export function systemPrefersDark(): boolean {
   try {
     return typeof matchMedia !== 'undefined' && matchMedia('(prefers-color-scheme: dark)').matches

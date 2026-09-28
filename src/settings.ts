@@ -1,4 +1,5 @@
 import type { DifficultyId } from './game/difficulty.ts'
+import { readLocal, writeLocal } from './local.ts'
 
 /** Everything in the settings sheet except the theme, which lives in theme.ts. */
 export interface Settings {
@@ -16,9 +17,9 @@ export const DEFAULT_SETTINGS: Settings = {
 const STORAGE_KEY = 'flappy-hippo.settings'
 
 export function loadSettings(): Settings {
+  const raw = readLocal(STORAGE_KEY)
+  if (!raw) return { ...DEFAULT_SETTINGS }
   try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    if (!raw) return { ...DEFAULT_SETTINGS }
     const parsed = JSON.parse(raw) as Partial<Settings>
     return {
       difficulty:
@@ -34,9 +35,5 @@ export function loadSettings(): Settings {
 }
 
 export function persistSettings(settings: Settings): void {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(settings))
-  } catch {
-    /* ignore persistence failure */
-  }
+  writeLocal(STORAGE_KEY, JSON.stringify(settings))
 }

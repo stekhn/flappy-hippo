@@ -28,7 +28,6 @@ export function isIos(): boolean {
   return /iP(hone|ad|od)/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1)
 }
 
-/** Whether the OS share sheet is available. */
 export function canShare(): boolean {
   return typeof navigator !== 'undefined' && typeof navigator.share === 'function'
 }
