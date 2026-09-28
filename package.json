@@ -19,7 +19,7 @@
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview",
-    "test": "node --test \"src/**/*.test.ts\"",
+    "test": "node --test \"src/*/*.test.ts\" \"src/*/*/*.test.ts\"",
     "assets": "node --experimental-strip-types scripts/make-assets.ts",
     "screenshots": "node --experimental-strip-types scripts/make-screenshots.ts"
   },

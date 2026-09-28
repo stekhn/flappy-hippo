@@ -25,7 +25,7 @@ async function raster(svg: Buffer, size: number): Promise<Buffer> {
     .toBuffer()
 }
 
-// ---- icons -----------------------------------------------------------------------------------
+// ---- icons ------------------------------------------------------------------------------------
 // The icon is a render of the hippo on flat blue (src/assets/icon.jpeg). The blue is keyed out
 // by flood-filling from the borders, the hippo is set on the game's sky with a soft shadow, and
 // that one picture serves every purpose: as it is for "maskable" (the face sits inside the
@@ -46,8 +46,12 @@ interface Cutout {
   box: [number, number, number, number]
 }
 
-/** The hippo with the blue behind it turned transparent, edge pixels un-mixed from that blue. */
-async function cutout(source: Buffer): Promise<Cutout> {
+/**
+ * The subject with the ground colour turned transparent, edge pixels un-mixed from it. With
+ * `enclosed`, pockets the flood cannot reach are keyed as well, but only where their colour is
+ * the ground's: a letter's counter goes, a white highlight inside the subject stays.
+ */
+async function cutout(source: Buffer, enclosed = false): Promise<Cutout> {
   const { data, info } = await sharp(source).raw().toBuffer({ resolveWithObject: true })
   const width = info.width
   const height = info.height
@@ -73,6 +77,7 @@ async function cutout(source: Buffer): Promise<Cutout> {
   // Flood from the borders through near-background pixels, so a dark blue inside the hippo (the
   // eyes) is never keyed.
   const NEAR = 45
+  const POCKET = 10
   const isBackground = new Uint8Array(count)
   const stack: number[] = []
   for (let x = 0; x < width; x++) stack.push(x, (height - 1) * width + x)
@@ -87,6 +92,29 @@ async function cutout(source: Buffer): Promise<Cutout> {
     if (x < width - 1) stack.push(p + 1)
     if (y > 0) stack.push(p - width)
     if (y < height - 1) stack.push(p + width)
+  }
+  if (enclosed) {
+    const seen = new Uint8Array(count)
+    for (let start = 0; start < count; start++) {
+      if (seen[start] || isBackground[start] || distance[start] >= NEAR) continue
+      const pocket: number[] = [start]
+      const sum = [0, 0, 0]
+      seen[start] = 1
+      for (let head = 0; head < pocket.length; head++) {
+        const p = pocket[head]
+        for (let c = 0; c < 3; c++) sum[c] += data[p * 3 + c]
+        const x = p % width
+        const y = (p - x) / width
+        for (const q of [x > 0 ? p - 1 : -1, x < width - 1 ? p + 1 : -1, y > 0 ? p - width : -1, y < height - 1 ? p + width : -1]) {
+          if (q >= 0 && !seen[q] && !isBackground[q] && distance[q] < NEAR) {
+            seen[q] = 1
+            pocket.push(q)
+          }
+        }
+      }
+      const off = Math.hypot(sum[0] / pocket.length - bg[0], sum[1] / pocket.length - bg[1], sum[2] / pocket.length - bg[2])
+      if (off < POCKET) for (const p of pocket) isBackground[p] = 1
+    }
   }
   // Alpha: 0 on the background, a ramp on the pixels bordering it (the JPEG's soft edge), 1
   // inside. Semi-transparent pixels get the blue's share taken out of their colour.
@@ -220,3 +248,188 @@ const preview = await sharp(await asset('poster.jpeg')).resize(1200, 800).jpeg({
 await writeFile(join(root, 'public', 'preview.jpg'), preview)
 console.log(`public/preview.jpg (${Math.round(preview.length / 1024)} KB)`)
 await writeFile(join(root, 'public', 'mask-icon.svg'), await asset('mask-icon.svg'))
+
+// ---- wordmark ---------------------------------------------------------------------------------
+// The poster's lettering for the desktop frame (src/assets/wordmark.png, on white): the white is
+// keyed out the way the icon's blue is, stray specks go, and it is cropped to the lettering at a
+// width a 2x display shows full size.
+const mark = await cutout(await asset('wordmark.png'), true)
+const cleaned = await dropSpecks(mark, 1500, 'wordmark')
+const margin = 6
+const [l, t, r, b] = cleaned.box
+const wordmark = await sharp(cleaned.png)
+  .extract({ left: l - margin, top: t - margin, width: r - l + 1 + margin * 2, height: b - t + 1 + margin * 2 })
+  .resize({ width: 1600 })
+  .webp({ quality: 88, alphaQuality: 90 })
+  .toBuffer()
+await out('wordmark.webp', wordmark)
+
+interface Islands {
+  data: Buffer
+  width: number
+  height: number
+  /** The island each pixel belongs to, -1 where the pixel is transparent. */
+  label: Int32Array
+  /** Opaque pixels per island. */
+  sizes: number[]
+  /** Left, top, right and bottom of each island, inclusive. */
+  boxes: [number, number, number, number][]
+}
+
+/** Four-neighbour connected components over everything opaque enough to see. */
+async function findIslands(image: Cutout): Promise<Islands> {
+  const { data, info } = await sharp(image.png).raw().toBuffer({ resolveWithObject: true })
+  const width = info.width
+  const height = info.height
+  const count = width * height
+  const label = new Int32Array(count).fill(-1)
+  const sizes: number[] = []
+  const boxes: [number, number, number, number][] = []
+  const stack: number[] = []
+  for (let start = 0; start < count; start++) {
+    if (label[start] >= 0 || data[start * 4 + 3] < 8) continue
+    const id = sizes.length
+    sizes.push(0)
+    boxes.push([width, height, 0, 0])
+    label[start] = id
+    stack.push(start)
+    while (stack.length > 0) {
+      const p = stack.pop() as number
+      const x = p % width
+      const y = (p - x) / width
+      const box = boxes[id]
+      sizes[id] += 1
+      if (x < box[0]) box[0] = x
+      if (y < box[1]) box[1] = y
+      if (x > box[2]) box[2] = x
+      if (y > box[3]) box[3] = y
+      for (const q of [x > 0 ? p - 1 : -1, x < width - 1 ? p + 1 : -1, y > 0 ? p - width : -1, y < height - 1 ? p + width : -1]) {
+        if (q >= 0 && label[q] < 0 && data[q * 4 + 3] >= 8) {
+          label[q] = id
+          stack.push(q)
+        }
+      }
+    }
+  }
+  return { data, width, height, label, sizes, boxes }
+}
+
+/** Clears opaque islands smaller than `minPixels`: dust on the key, never the subject. */
+async function dropSpecks(image: Cutout, minPixels: number, name: string): Promise<Cutout> {
+  const { data, width, height, label, sizes } = await findIslands(image)
+  const box: [number, number, number, number] = [width, height, 0, 0]
+  let dropped = 0
+  for (let p = 0; p < width * height; p++) {
+    if (label[p] < 0) continue
+    if (sizes[label[p]] < minPixels) {
+      data[p * 4 + 3] = 0
+      dropped += 1
+      continue
+    }
+    const x = p % width
+    const y = (p - x) / width
+    if (x < box[0]) box[0] = x
+    if (y < box[1]) box[1] = y
+    if (x > box[2]) box[2] = x
+    if (y > box[3]) box[3] = y
+  }
+  console.log(`${name}: ${sizes.length} islands, ${dropped} px of dust cleared`)
+  const png = await sharp(data, { raw: { width, height, channels: 4 } }).png().toBuffer()
+  return { png, width, height, box }
+}
+
+// ---- page props -------------------------------------------------------------------------------
+// The painted props for the desktop frame (src/assets/*.png, each on flat green or red): the
+// ground colour is keyed the way the icon's blue is, the sheets are split into their pieces by
+// looking for islands of opaque pixels, and each piece is written at the width it is drawn at.
+
+interface Cell {
+  left: number
+  top: number
+  width: number
+  height: number
+}
+
+const ROW_GAP = 300
+const PROP_QUALITY = { quality: 82, alphaQuality: 90 } as const
+
+interface Sheet {
+  file: string
+  gap: number
+  min: number
+  /** Key the ground colour wherever it appears, for a subject with pockets of it inside. */
+  enclosed?: boolean
+  /** The pieces to keep, by index into the sheet's cells, top row first and left to right. */
+  cut: { name: string; cell: number; width: number }[]
+}
+
+const SHEETS: Sheet[] = [
+  { file: 'cat.jpeg', gap: 40, min: 20000, cut: [{ name: 'cat', cell: 0, width: 300 }] },
+  { file: 'construction.png', gap: 60, min: 20000, enclosed: true, cut: [{ name: 'construction', cell: 0, width: 560 }] },
+  { file: 'flower-pot.png', gap: 40, min: 20000, cut: [{ name: 'pot', cell: 0, width: 200 }] },
+  {
+    file: 'pipes.png',
+    gap: 40,
+    min: 20000,
+    cut: [
+      { name: 'pipe-hanging', cell: 0, width: 280 },
+      { name: 'pipe-standing', cell: 2, width: 280 },
+    ],
+  },
+  {
+    file: 'plants.png',
+    gap: 26,
+    min: 4000,
+    cut: [
+      { name: 'bush-wide', cell: 4, width: 460 },
+      { name: 'bush-mid', cell: 5, width: 340 },
+      { name: 'grass', cell: 8, width: 150 },
+      { name: 'daisies', cell: 12, width: 150 },
+    ],
+  },
+]
+
+/** Opaque islands of `image`, boxes within `gap` px merged, smaller than `minPixels` dropped. */
+async function islands(image: Cutout, gap: number, minPixels: number): Promise<Cell[]> {
+  const { boxes, sizes } = await findIslands(image)
+  const kept = boxes.filter((_, i) => sizes[i] >= minPixels)
+  for (let merging = true; merging; ) {
+    merging = false
+    for (let i = 0; i < kept.length && !merging; i++) {
+      for (let j = i + 1; j < kept.length; j++) {
+        const a = kept[i]
+        const b = kept[j]
+        if (a[0] - gap > b[2] || b[0] - gap > a[2] || a[1] - gap > b[3] || b[1] - gap > a[3]) continue
+        kept[i] = [Math.min(a[0], b[0]), Math.min(a[1], b[1]), Math.max(a[2], b[2]), Math.max(a[3], b[3])]
+        kept.splice(j, 1)
+        merging = true
+        break
+      }
+    }
+  }
+  const cells = kept
+    .map(([left, top, right, bottom]) => ({ left, top, width: right - left + 1, height: bottom - top + 1 }))
+    .sort((a, b) => a.top - b.top)
+  const rows: Cell[][] = []
+  for (const cell of cells) {
+    const row = rows[rows.length - 1]
+    if (row && cell.top - row[0].top <= ROW_GAP) row.push(cell)
+    else rows.push([cell])
+  }
+  return rows.flatMap((row) => row.sort((a, b) => a.left - b.left))
+}
+
+for (const { file, gap, min, enclosed, cut } of SHEETS) {
+  const keyed = await dropSpecks(await cutout(await asset(file), enclosed), 400, file)
+  const cells = await islands(keyed, gap, min)
+  for (const piece of cut) {
+    const cell = cells[piece.cell]
+    if (!cell) throw new Error(`${file}: no piece ${piece.cell} among ${cells.length}`)
+    const webp = await sharp(keyed.png)
+      .extract(cell)
+      .resize({ width: piece.width, withoutEnlargement: true })
+      .webp(PROP_QUALITY)
+      .toBuffer()
+    await out(`props/${piece.name}.webp`, webp)
+  }
+}

@@ -87,12 +87,12 @@ class RecordedPath {
     const full = sweep >= Math.PI * 2 - 1e-9
     if (full) sweep = Math.PI * 2
     const [sx, sy] = point(a0)
-    // A line from the current point, as the canvas does; a fresh subpath otherwise
+    // A line from the current point, as the canvas does; a fresh subpath otherwise.
     this.d += this.cursor ? `L${num(sx)} ${num(sy)}` : `M${num(sx)} ${num(sy)}`
     const flag = ccw ? 0 : 1
     if (full) {
       // Four quarter arcs: a single arc cannot describe a whole circle, and two halves leave the
-      // renderer to pick the side of an exact half-turn, which it sometimes gets wrong
+      // renderer to pick the side of an exact half-turn, which it sometimes gets wrong.
       for (let q = 1; q <= 4; q++) {
         const [qx, qy] = point(a0 + (ccw ? -q : q) * (Math.PI / 2))
         this.d += `A${num(rx)} ${num(ry)} ${num(deg(rotation))} 0 ${flag} ${num(qx)} ${num(qy)}`
@@ -118,7 +118,7 @@ interface State {
 
 /** Enough of a 2D context for the animals: paths, fills, strokes, transforms, styles. */
 class SvgContext {
-  // Round caps and joins, as the street sets them before it draws an animal
+  // The street sets round caps and joins before drawing an animal; the recorder starts there.
   private state: State = { matrix: IDENTITY, fillStyle: '#000', strokeStyle: '#000', lineWidth: 1, lineCap: 'round', lineJoin: 'round', globalAlpha: 1 }
   private stack: State[] = []
   private path = new RecordedPath()
@@ -193,7 +193,7 @@ const palette = resolvePalette(false)
 const ctx = new SvgContext()
 ;(kind === 'dog' ? drawDog : drawCat)(ctx as unknown as CanvasRenderingContext2D, palette, 0, 0, age, 0)
 
-// The bounds, generous: the animals stand on y = 0 and face right from x = 0
+// The bounds, generous: the animals stand on y = 0 and face right from x = 0.
 const box = kind === 'dog' ? '-14 -30 30 32' : '-14 -22 26 24'
 const svg = [
   `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${box}" width="${box.split(' ')[2]}" height="${box.split(' ')[3]}">`,
