@@ -26,7 +26,9 @@ export default defineConfig(({ command, isPreview }) => ({
       // A new version waits until the player says so — never a reload in the middle of a round.
       // See src/components/UpdatePrompt.tsx.
       registerType: 'prompt',
-      includeAssets: ['favicon.svg', 'favicon-32.png', 'apple-touch-icon.png', 'mask-icon.svg', 'robots.txt'],
+      // The manifest's icons are precached on top of the globs unless this is off, and that put
+      // the three 512 px icons back in however they were ignored below.
+      includeManifestIcons: false,
       manifest: {
         id: BASE,
         name: 'Flappy Hippo',
@@ -88,7 +90,7 @@ export default defineConfig(({ command, isPreview }) => ({
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,svg,png,woff2,txt}'],
+        globPatterns: ['**/*.{js,css,html,svg,png,webp,woff2,txt}'],
         // Store material only: the install dialog and the launcher fetch these themselves, and
         // the 512 px icons are photographic, a third of a megabyte each.
         globIgnores: ['screenshots/**', 'icon-512.png', 'icon-maskable-512.png', 'icon-mono-512.png'],

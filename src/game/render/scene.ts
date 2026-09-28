@@ -47,11 +47,11 @@ export function drawScene(
   drawPipes(ctx, p, state.pipes, world, cache)
   drawPickups(ctx, p, state.pickups, now, cache)
   drawGround(ctx, p, world, state.scrolled, state.round, now, cache)
-  // On the street, so over the wall: the road works before a moving pipe, and the pots
+  // On the street, so over the wall: the road works before a moving pipe, and the pots.
   drawRoadworks(ctx, p, state.pipes, world, cache)
   drawPots(ctx, p, state.pots, cache)
   if (effects) drawParticles(ctx, p, state.particles)
-  // In front of the world, behind the hippo: the party never hides the hero
+  // In front of the world, behind the hippo: the party never hides the hero.
   if (effects) drawConfetti(ctx, p, state.confetti)
 
   if (effects) drawFloaters(ctx, p, state, now)
@@ -94,11 +94,57 @@ export function drawScene(
   ctx.restore()
 }
 
+const FLOATER_FONT = "700 13px Fredoka, 'Nunito', sans-serif"
+
+/** Draws once, under the sky, what costs frames on first appearance: the font, and every gradient's shader. */
+export function warmUp(ctx: CanvasRenderingContext2D, p: Palette, world: World, now: number, cache: LayerCache): void {
+  const x = world.width / 2
+  const y = world.height / 2
+  ctx.save()
+  ctx.font = FLOATER_FONT
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+  ctx.lineWidth = 3
+  ctx.strokeText(`+3 ${words.canvas.shield}`, x, y)
+  ctx.fillText(`+3 ${words.canvas.shield}`, x, y)
+  ctx.restore()
+  drawPickups(
+    ctx,
+    p,
+    [
+      { kind: 'melon', x: x - 40, y, taken: false, seed: 1 },
+      { kind: 'shield', x: x + 40, y, taken: false, seed: 2 },
+    ],
+    now,
+    cache,
+  )
+  drawHippo(
+    ctx,
+    p,
+    {
+      x,
+      y,
+      tilt: 0,
+      flap: 0.5,
+      defeated: false,
+      headNod: 0,
+      headDrop: 0,
+      shield: 2,
+      shieldIn: 1,
+      pop: 0.5,
+      stretch: 0,
+      sparkle: 1,
+    },
+    now,
+    cache,
+  )
+}
+
 /** "+3" and friends, rising and fading from where they were earned. */
 function drawFloaters(ctx: CanvasRenderingContext2D, p: Palette, state: GameState, now: number): void {
   if (state.floaters.length === 0) return
   ctx.save()
-  ctx.font = "700 13px Fredoka, 'Nunito', sans-serif"
+  ctx.font = FLOATER_FONT
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
   ctx.lineJoin = 'round'
@@ -110,7 +156,7 @@ function drawFloaters(ctx: CanvasRenderingContext2D, p: Palette, state: GameStat
     ctx.strokeStyle = p.sky
     const text = floater.kind === 'melon' ? `+${floater.value}` : words.canvas.shield
     ctx.strokeText(text, floater.x, y)
-    ctx.fillStyle = floater.kind === 'melon' ? p.melon : p.bubbleEdge
+    ctx.fillStyle = floater.kind === 'melon' ? p.melon : p.shieldInk
     ctx.fillText(text, floater.x, y)
   }
   ctx.restore()

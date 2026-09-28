@@ -44,6 +44,16 @@ export class LayerCache {
   private gradients = new Map<string, CanvasGradient>()
   private skyGradient: CanvasGradient | null = null
   private skyHeight = 0
+  private sky: HTMLCanvasElement | null = null
+  private skySize = { width: 0, height: 0 }
+  private baked: string[] = []
+
+  takeBakes(): string[] {
+    if (this.baked.length === 0) return this.baked
+    const taken = this.baked
+    this.baked = []
+    return taken
+  }
 
   /** Call once per frame; a change in resolution, palette or field drops the bakes that depend on it. */
   prepare(scale: number, palette: Palette, groundY: number): void {
@@ -58,6 +68,27 @@ export class LayerCache {
     this.groundY = groundY
     this.layers.clear()
     this.skyGradient = null
+    this.sky = null
+  }
+
+  /** The sky as a picture, made once: a gradient fill costs a software canvas several times as much. */
+  paintSky(ctx: CanvasRenderingContext2D, palette: Palette, width: number, height: number, groundY: number): void {
+    if (!this.sky || this.skySize.width !== width || this.skySize.height !== height) {
+      const canvas = document.createElement('canvas')
+      canvas.width = Math.ceil(width * this.scale)
+      canvas.height = Math.ceil(height * this.scale)
+      const c = canvas.getContext('2d', { alpha: false })
+      if (!c) throw new Error('Canvas 2D is not available')
+      c.scale(this.scale, this.scale)
+      c.fillStyle = this.skyGradientFor(c, palette, groundY)
+      // The whole bitmap, not just the field: the canvas is opaque, and its last column and row
+      // are only partly inside the field. Unfilled they are black, a hairline at the frame edge.
+      c.fillRect(0, 0, canvas.width / this.scale, canvas.height / this.scale)
+      this.sky = canvas
+      this.skySize = { width, height }
+      this.baked.push('sky')
+    }
+    ctx.drawImage(this.sky, 0, 0, this.sky.width / this.scale, this.sky.height / this.scale)
   }
 
   /**
@@ -78,6 +109,7 @@ export class LayerCache {
     paint(ctx, above)
     const layer = { canvas, above, below, period }
     this.layers.set(name, layer)
+    this.baked.push(`strip ${name}`)
     return layer
   }
 
@@ -86,11 +118,12 @@ export class LayerCache {
    * Returns where the first copy was placed, for anything drawn live that must line up with it.
    */
   blit(ctx: CanvasRenderingContext2D, layer: Layer, shift: number, width: number): number {
-    const height = layer.above + layer.below
     const y = this.groundY - layer.above
-    // Snapped to device pixels, so the bake is never resampled and stays crisp while scrolling.
+    // Snapped to device pixels and drawn at the bake's own pixel size: a copy, never a resample.
     const origin = Math.round(-shift * this.scale) / this.scale
-    for (let x = origin; x < width; x += layer.period) ctx.drawImage(layer.canvas, x, y, layer.period, height)
+    const w = layer.canvas.width / this.scale
+    const h = layer.canvas.height / this.scale
+    for (let x = origin; x < width; x += layer.period) ctx.drawImage(layer.canvas, x, y, w, h)
     return origin
   }
 
@@ -120,23 +153,25 @@ export class LayerCache {
     paint(ctx)
     const sprite = { canvas, left, top, width, height, scale: this.scale }
     this.sprites.set(name, sprite)
+    this.baked.push(`sprite ${name}`)
     return sprite
   }
 
   /** Draws a sprite with its origin at (x, y), turned by `rotation` and mirrored if `flip`. */
   stamp(ctx: CanvasRenderingContext2D, sprite: Sprite, x: number, y: number, rotation = 0, flip = false): void {
+    const w = sprite.canvas.width / sprite.scale
+    const h = sprite.canvas.height / sprite.scale
     if (rotation === 0 && !flip) {
-      // Snapped to device pixels, as the strips are, so an upright sprite stays crisp.
       const px = Math.round((x + sprite.left) * this.scale) / this.scale
       const py = Math.round((y + sprite.top) * this.scale) / this.scale
-      ctx.drawImage(sprite.canvas, px, py, sprite.width, sprite.height)
+      ctx.drawImage(sprite.canvas, px, py, w, h)
       return
     }
     ctx.save()
     ctx.translate(x, y)
     if (rotation !== 0) ctx.rotate(rotation)
     if (flip) ctx.scale(-1, 1)
-    ctx.drawImage(sprite.canvas, sprite.left, sprite.top, sprite.width, sprite.height)
+    ctx.drawImage(sprite.canvas, sprite.left, sprite.top, w, h)
     ctx.restore()
   }
 
@@ -150,7 +185,7 @@ export class LayerCache {
   }
 
   /** The sky's gradient, made once per palette and field height. */
-  sky(ctx: CanvasRenderingContext2D, palette: Palette, height: number): CanvasGradient {
+  private skyGradientFor(ctx: CanvasRenderingContext2D, palette: Palette, height: number): CanvasGradient {
     if (this.skyGradient && this.skyHeight === height) return this.skyGradient
     const gradient = ctx.createLinearGradient(0, 0, 0, height)
     gradient.addColorStop(0, palette.sky)

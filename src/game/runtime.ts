@@ -1,18 +1,19 @@
+import { readLocal, writeLocal } from '../local.ts'
 import { createSfx } from './audio.ts'
 import type { Sfx } from './audio.ts'
-import { COUNTDOWN_MS, MAX_FRAME_S, OVER_SETTLE_MS, RESTART_DELAY_MS } from './constants.ts'
+import { COUNTDOWN_MS, HIPPO_RADIUS, MAX_FRAME_S, OVER_SETTLE_MS, RESTART_DELAY_MS } from './constants.ts'
 
-/** How long a run of resizes must be quiet before the canvas is refitted. */
-const RESIZE_SETTLE_MS = 120
 import { difficultyById } from './difficulty.ts'
 import type { Difficulty, DifficultyId } from './difficulty.ts'
 import { resolvePalette } from './palette.ts'
 import { LayerCache } from './render/layers.ts'
-import { drawScene } from './render/scene.ts'
+import { FrameMonitor, perfEnabled } from './perf.ts'
+import { drawScene, warmUp } from './render/scene.ts'
+import { furnitureUnder } from './render/street.ts'
 import { animateSky, initialSky } from './render/scenery.ts'
 import type { SkyMotion } from './render/scenery.ts'
 import { advance, flap, gameOver, initialState } from './state.ts'
-import type { GameEvent, GameState, Palette } from './types.ts'
+import type { Furniture, GameEvent, GameState, Palette, RunSummary } from './types.ts'
 import { canvasSize, fitWorld } from './world.ts'
 import type { World } from './world.ts'
 
@@ -35,20 +36,6 @@ export interface Snapshot {
   stage: number
 }
 
-/** Numbers for the stats and the score table, read once when a round ends. */
-export interface RunSummary {
-  score: number
-  pipes: number
-  melons: number
-  shields: number
-  saves: number
-  seconds: number
-  pots: number
-  movers: number
-  /** The difficulty the round was actually played on, not the one now selected. */
-  difficulty: DifficultyId
-}
-
 export interface RuntimeOptions {
   canvas: HTMLCanvasElement
   /** The element the board is fitted into — the canvas' own box shrinks to the board. */
@@ -62,18 +49,66 @@ export interface RuntimeOptions {
   onEvent: (event: GameEvent) => void
 }
 
+/** How long a run of resizes must be quiet before the canvas is refitted. */
+const RESIZE_SETTLE_MS = 120
+
 /**
- * Resolution governor. The canvas is repainted whole every frame, so fill rate is the one cost
- * that scales with the device: a 3x phone would push three million pixels a frame for a cartoon
- * that reads fine at 2x. The cap starts at 2 and, if frames still run long for a while, steps
- * down — the dynamic-resolution trick console games use to hold their frame rate.
+ * Quality governor. Fill rate is the cost that scales with the device, and a browser without an
+ * accelerated canvas (Firefox on Android) pays it on the CPU: while most frames run long, the
+ * pixel-ratio cap steps down, and at its floor the frosted blur goes too. The finding is kept
+ * on the device for a week.
  */
 const DPR_CAP = 2
 const DPR_FLOOR = 1
 /** A frame longer than this missed 60 fps. */
 const SLOW_FRAME_S = 0.019
-/** This many slow frames in a row (about a second and a half) and the resolution steps down. */
-const SLOW_STREAK = 90
+/**
+ * A long frame counts only when the frame's own work took at least this long: a browser saving
+ * battery paces frames at 30 fps with the work small, and is not a slow device.
+ */
+const BUSY_S = 0.008
+/** A gap longer than this is a stall, not a slow device. */
+const STALL_S = 0.25
+/** Frames are judged a second at a time; this share of long ones steps the quality down. */
+const JUDGE_S = 1
+const JUDGE_SHARE = 2 / 3
+/** Frames after a refit that go unjudged: the rebake costs one. */
+const SETTLE_FRAMES = 10
+const QUALITY_KEY = 'flappy-hippo.quality'
+const QUALITY_TTL_MS = 7 * 24 * 3600 * 1000
+
+interface Quality {
+  dpr: number
+  lite: boolean
+  at: number
+}
+
+function loadQuality(): Quality {
+  const raw = readLocal(QUALITY_KEY)
+  try {
+    const saved = JSON.parse(raw ?? 'null') as Partial<Quality> | null
+    const at = saved?.at
+    if (typeof at === 'number' && Date.now() - at < QUALITY_TTL_MS) {
+      const dpr = saved?.dpr
+      if (typeof dpr === 'number' && dpr >= DPR_FLOOR && dpr <= DPR_CAP) {
+        return { dpr, lite: saved?.lite === true, at }
+      }
+    }
+  } catch {
+    /* an unreadable value */
+  }
+  return { dpr: DPR_CAP, lite: false, at: 0 }
+}
+
+function saveQuality(quality: Omit<Quality, 'at'>): void {
+  writeLocal(QUALITY_KEY, JSON.stringify({ ...quality, at: Date.now() }))
+}
+
+/** styles.css drops the backdrop blur under this flag. */
+function applyLite(on: boolean): void {
+  if (on) document.documentElement.dataset.lite = 'true'
+  else delete document.documentElement.dataset.lite
+}
 
 function buzz(enabled: boolean, pattern: number | number[]): void {
   if (!enabled || typeof navigator === 'undefined' || !navigator.vibrate) return
@@ -114,7 +149,15 @@ export class GameRuntime {
   /** World units to device pixels, for baking at full resolution. */
   private scale = 1
   private dprCap = DPR_CAP
+  private lite = false
+  private readonly monitor = perfEnabled() ? new FrameMonitor() : null
+  /** Whether the previous frame was painted live, so this one's gap says something. */
+  private wasLive = false
+  private fontsIn = false
+  private judgedS = 0
+  private judged = 0
   private slowFrames = 0
+  private settle = SETTLE_FRAMES
   private events: GameEvent[] = []
   private frame = 0
   private last = 0
@@ -133,16 +176,20 @@ export class GameRuntime {
   private snapshot: Snapshot
   private observer: ResizeObserver | null = null
   private resizeTimer = 0
+  /** What the round ended on, if the hippo came down on a piece of street furniture. */
+  private hit: Furniture | null = null
   /** The box and pixel ratio the canvas was last fitted to. */
   private fitted = { width: 0, height: 0, dpr: 0 }
 
-  // Switching apps, tabs or windows must not cost the round.
+  /** Switching apps, tabs or windows must not cost the round. */
   private readonly onHidden = () => {
-    if (document.hidden) this.pause()
+    if (document.hidden) this.leave()
   }
-  private readonly onBlur = () => this.pause()
-  // Browsers only let audio start from an activating gesture — a finger lifting or a key going
-  // down count, a touch beginning does not. Unlocking here means the very first flap is heard.
+  private readonly onBlur = () => this.leave()
+  /**
+   * Browsers only let audio start from an activating gesture: a finger lifting or a key going
+   * down count, a touch beginning does not. Unlocking here means the very first flap is heard.
+   */
   private readonly onActivate = () => this.sfx.unlock()
 
   constructor(options: RuntimeOptions) {
@@ -151,8 +198,14 @@ export class GameRuntime {
     this.canvas = options.canvas
     this.ctx = ctx
     this.options = options
+    const quality = loadQuality()
+    this.dprCap = quality.dpr
+    this.lite = quality.lite
+    applyLite(this.lite)
+    this.monitor?.event(`on; quality ${quality.dpr}x${quality.lite ? ', lite' : ''}; ${navigator.userAgent}`)
     this.haptics = options.haptics
     this.sfx = createSfx(!options.sound)
+    this.sfx.warm()
     this.difficulty = difficultyById(options.difficulty)
     this.palette = resolvePalette(options.dark)
     this.world = fitWorld(options.box.clientWidth, options.box.clientHeight)
@@ -162,6 +215,12 @@ export class GameRuntime {
 
   start(): void {
     this.measure()
+    if (typeof document !== 'undefined' && document.fonts) {
+      document.fonts.ready.then(() => {
+        this.fontsIn = true
+        this.dirty = true
+      })
+    }
     // A phone's address bar slides away over a dozen frames, each one a resize: refit once it settles.
     this.observer = new ResizeObserver(() => {
       clearTimeout(this.resizeTimer)
@@ -190,6 +249,7 @@ export class GameRuntime {
     this.observer?.disconnect()
     this.observer = null
     this.sfx.dispose()
+    this.monitor?.dispose()
   }
 
   /** Re-fits the play field to the box and rebuilds the backing store at device resolution. */
@@ -197,7 +257,7 @@ export class GameRuntime {
     const { width, height } = this.options.box.getBoundingClientRect()
     if (width < 1 || height < 1) return
     const dpr = Math.min(window.devicePixelRatio || 1, this.dprCap)
-    // Setting a canvas' size clears it and costs a fresh backing store: only for a real change
+    // Setting a canvas' size clears it and costs a fresh backing store: only for a real change.
     if (width === this.fitted.width && height === this.fitted.height && dpr === this.fitted.dpr) return
     this.fitted = { width, height, dpr }
     const next = fitWorld(width, height)
@@ -211,6 +271,9 @@ export class GameRuntime {
     const scale = size.scale * dpr
     this.scale = scale
     this.ctx.setTransform(scale, 0, 0, scale, 0, 0)
+    this.monitor?.event(
+      `canvas ${this.canvas.width}×${this.canvas.height} px at ${dpr}x for ${Math.round(size.width)}×${Math.round(size.height)} css px`,
+    )
     // A field that grew or shrank must not leave the hippo or the pipes outside it.
     const ratio = next.groundY / this.world.groundY
     this.state.hippoY = Math.min(this.state.hippoY * ratio, next.groundY - 1)
@@ -218,6 +281,7 @@ export class GameRuntime {
     for (const pickup of this.state.pickups) pickup.y *= ratio
     this.world = next
     this.dirty = true
+    this.settle = SETTLE_FRAMES
   }
 
   setTheme(dark: boolean): void {
@@ -292,8 +356,16 @@ export class GameRuntime {
     this.push()
   }
 
+  /** Away from the game: the round waits, and nothing already scheduled plays on into the silence. */
+  private leave(): void {
+    this.pause()
+    this.sfx.silence()
+  }
+
   restart(): void {
     const now = performance.now()
+    this.hit = null
+    this.sfx.silence()
     this.applyPending()
     this.state = initialState({
       world: this.world,
@@ -373,6 +445,7 @@ export class GameRuntime {
   summary(): RunSummary {
     const { score, pipesCleared, melons, shields, saves, elapsed, potsDodged, moversPassed } = this.state
     return {
+      hit: this.hit,
       score,
       pipes: pipesCleared,
       melons,
@@ -411,8 +484,12 @@ export class GameRuntime {
     const elapsed = (now - this.last) / 1000
     const dt = Math.min(elapsed, MAX_FRAME_S)
     this.last = now
-    if (!this.live(now) && !this.dirty) return
-    this.govern(elapsed)
+    const live = this.live(now)
+    if (!live && !this.dirty) {
+      this.wasLive = false
+      return
+    }
+    const began = performance.now()
 
     // Suspended (the menu is up), paused, or counting back in: nothing moves, but a frame that
     // was marked dirty — a theme switch made from that very menu — is still painted once.
@@ -423,23 +500,57 @@ export class GameRuntime {
     }
     if (this.effects && !this.suspended) animateSky(this.sky, this.state, now, dt)
     this.cache.prepare(this.scale, this.palette, this.world.groundY)
+    if (this.fontsIn) {
+      this.fontsIn = false
+      warmUp(this.ctx, this.palette, this.world, now, this.cache)
+      this.monitor?.event(`warm-up drawn: ${this.cache.takeBakes().join(', ') || 'nothing new'}`)
+    }
     drawScene(this.ctx, this.state, this.world, this.palette, this.sky, now, this.effects, this.cache)
     this.dirty = false
+    const drawn = performance.now()
     this.push(now)
+    const work = (drawn - began) / 1000
+    this.govern(elapsed, work)
+    const bakes = this.cache.takeBakes()
+    if (this.monitor && this.wasLive && live) {
+      this.monitor.frame(now, elapsed * 1000, work * 1000, performance.now() - drawn, {
+        phase: this.state.phase,
+        score: this.state.score,
+        bakes,
+        dpr: this.fitted.dpr,
+      })
+    }
+    this.wasLive = live
   }
 
-  /** Steps the resolution down when the device has not kept 60 fps for a while. */
-  private govern(elapsed: number): void {
-    if (this.state.phase !== 'running' || this.paused || this.frozen) return
-    if (elapsed <= SLOW_FRAME_S) {
-      this.slowFrames = 0
+  /** Judges the frames of each second; the idle title card counts too, it is what a first launch shows. */
+  private govern(elapsed: number, busy: number): void {
+    if (this.paused || this.frozen || this.suspended || elapsed > STALL_S) return
+    if (this.settle > 0) {
+      this.settle -= 1
       return
     }
-    this.slowFrames += 1
-    if (this.slowFrames < SLOW_STREAK || this.dprCap <= DPR_FLOOR) return
-    this.dprCap = Math.max(DPR_FLOOR, this.dprCap - 0.5)
+    this.judgedS += elapsed
+    this.judged += 1
+    if (elapsed > SLOW_FRAME_S && busy > BUSY_S) this.slowFrames += 1
+    if (this.judgedS < JUDGE_S) return
+    const slow = this.slowFrames >= this.judged * JUDGE_SHARE
+    this.judgedS = 0
+    this.judged = 0
     this.slowFrames = 0
-    this.measure()
+    if (!slow) return
+    if (this.dprCap > DPR_FLOOR) {
+      this.dprCap = Math.max(DPR_FLOOR, this.dprCap - 0.5)
+      this.monitor?.event(`quality: most frames ran long, resolution capped at ${this.dprCap}x`)
+      this.measure()
+    } else if (!this.lite) {
+      this.lite = true
+      applyLite(true)
+      this.monitor?.event('quality: still slow at 1x, blur off')
+    } else {
+      return
+    }
+    saveQuality({ dpr: this.dprCap, lite: this.lite })
   }
 
   private drain(): void {
@@ -484,6 +595,11 @@ export class GameRuntime {
         buzz(this.haptics, [10, 40, 10, 40, 30])
         return
       case 'crash':
+        // Only a landing counts: hitting a pipe far above the street flattens nothing.
+        this.hit =
+          this.state.hippoY >= this.world.groundY - HIPPO_RADIUS - 1
+            ? furnitureUnder(this.state.scrolled, this.world.hippoX, this.state.round)
+            : null
         this.sfx.play('crash')
         buzz(this.haptics, [40, 60, 90])
         return
@@ -511,7 +627,7 @@ export class GameRuntime {
   private push(now = performance.now()): void {
     const s = this.state
     const prev = this.snapshot
-    // Compared field by field before anything is allocated: this runs every frame
+    // Compared field by field before anything is allocated: this runs every frame.
     const same =
       s.phase === prev.phase &&
       this.paused === prev.paused &&
