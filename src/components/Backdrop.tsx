@@ -38,9 +38,17 @@ interface Placement {
   name: PropName
   /** Across the page, 0 at the left edge and 1 at the right. */
   at: number
-  /** Tall, as a share of the room under the board. */
+  /** Tall, as a share of PROP_SPAN. */
   height: number
 }
+
+/**
+ * What a prop of height 1 measures, in the same world units the scene is drawn in. Tying the
+ * props to the scene's scale rather than to the room under the board keeps them one size: the
+ * room swings by a factor of three across desktop windows, the scene's scale barely moves. A
+ * prop taller than the room left over simply goes behind the board.
+ */
+const PROP_SPAN = 124
 
 /** Standing on the page's bottom edge, back to front, and clear of the middle where the shortcuts sit. */
 const GROUND: Placement[] = [
@@ -148,7 +156,6 @@ export function Backdrop({ box, canvas, dark }: BackdropProps) {
       if (!ctx) return
       const palette = resolvePalette(dark)
       const pixel = (Math.min(rect.width, rect.height) / SHORT_SIDE) * dpr
-      const room = Math.max(bounds.height - rect.height, 0) * 0.5 * dpr
       const ground = target.height
       far.current.prepare(pixel, palette, 0)
 
@@ -185,7 +192,7 @@ export function Backdrop({ box, canvas, dark }: BackdropProps) {
       for (const { name, at, height } of GROUND) {
         const image = props?.get(name)
         if (!image) continue
-        const tall = height * room
+        const tall = height * PROP_SPAN * pixel
         const wide = tall * (image.naturalWidth / image.naturalHeight)
         const x = target.width * at
         const foot = ground + tall * 0.05

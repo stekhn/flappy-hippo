@@ -205,7 +205,7 @@ export function MenuSheet({
       ) : (
         <div
           {...dialog}
-          className="glass animate-rise flex max-h-[88dvh] w-full max-w-[30rem] flex-col rounded-t-[1.75rem] border-b-0 outline-none"
+          className="glass animate-rise flex max-h-[88%] w-full max-w-[30rem] flex-col rounded-t-[1.75rem] border-b-0 outline-none"
           style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}
         >
           <div className="flex shrink-0 items-center gap-2 px-3 pt-3 pb-2">

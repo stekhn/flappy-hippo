@@ -11,7 +11,7 @@ export interface Settings {
 export const DEFAULT_SETTINGS: Settings = {
   difficulty: 'normal',
   sound: true,
-  haptics: true,
+  haptics: false,
 }
 
 const STORAGE_KEY = 'flappy-hippo.settings'
@@ -27,7 +27,7 @@ export function loadSettings(): Settings {
           ? parsed.difficulty
           : 'normal',
       sound: parsed.sound !== false,
-      haptics: parsed.haptics !== false,
+      haptics: parsed.haptics === true,
     }
   } catch {
     return { ...DEFAULT_SETTINGS }
