@@ -3,6 +3,7 @@ import type { DifficultyId } from '../game/difficulty.ts'
 import type { Progress } from '../game/storage.ts'
 import { useGameRuntime } from '../hooks/useGameRuntime.ts'
 import { useInstallPrompt } from '../hooks/useInstallPrompt.ts'
+import { useLandscape } from '../hooks/useLandscape.ts'
 import { useProgress } from '../hooks/useProgress.ts'
 import { useRoom } from '../hooks/useRoom.ts'
 import { useSettings } from '../hooks/useSettings.ts'
@@ -32,8 +33,8 @@ function menuFromUrl(): MenuTab | null {
   }
 }
 
-/** The lettering hangs from this depth, so the claim reaches a little into the board. */
-const WORDMARK_BOX = 320
+/** How far the lettering reaches past the board's top edge, so it sits on the board, not above it. */
+const WORDMARK_DIP = 18
 
 /** Room above the board, in CSS pixels, before the wordmark, its claim, and the shortcut line show. */
 const WORDMARK_MIN = 110
@@ -52,6 +53,7 @@ export function Game() {
   const { settings, update } = useSettings()
   const { progress, record, preview, reset, restore } = useProgress()
   const { canInstall, install } = useInstallPrompt()
+  const { rotated, toggle: turnView } = useLandscape()
   const { current: toast, push: showToasts } = useToasts()
   const [menu, setMenu] = useState<MenuTab | null>(menuFromUrl)
   const [touch] = useState(isTouch)
@@ -140,7 +142,10 @@ export function Game() {
       <Backdrop box={boxRef} canvas={canvasRef} dark={resolved === 'dark'} />
 
       {showWordmark && (
-        <div className="pointer-events-none absolute inset-x-0 top-0 z-[5] flex items-end justify-center" style={{ height: WORDMARK_BOX }}>
+        <div
+          className="pointer-events-none absolute inset-x-0 top-0 z-[5] flex items-end justify-center"
+          style={{ height: room + WORDMARK_DIP }}
+        >
           <Wordmark height={room} claim={room >= CLAIM_MIN ? t.desktop.claim : null} dark={resolved === 'dark'} />
         </div>
       )}
@@ -177,9 +182,12 @@ export function Game() {
             best={progress.best[settings.difficulty]}
             touch={touch}
             logoAbove={showWordmark}
+            dark={resolved === 'dark'}
+            rotated={rotated}
             onDifficulty={(id: DifficultyId) => update('difficulty', id)}
             onStart={controls.flap}
             onOpenMenu={setMenu}
+            onTurn={turnView}
           />
         )}
 

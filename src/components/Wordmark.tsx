@@ -5,7 +5,7 @@ interface WordmarkProps {
 }
 
 /** The lettering is lit for daylight; at night it is dimmed to sit in the dark sky. */
-const NIGHT = 0.85
+export const WORDMARK_NIGHT = 0.85
 
 export function Wordmark({ height, claim, dark }: WordmarkProps) {
   const imageHeight = Math.round(height * (claim ? 0.64 : 0.86))
@@ -13,10 +13,7 @@ export function Wordmark({ height, claim, dark }: WordmarkProps) {
   return (
     <div
       className="pointer-events-none flex flex-col items-center justify-center"
-      style={{
-        transform: `translateY(${claim ? -claimSize * 1.45 : -height * 0.1}px)`,
-        filter: dark ? `brightness(${NIGHT})` : undefined,
-      }}
+      style={{ filter: dark ? `brightness(${WORDMARK_NIGHT})` : undefined }}
       aria-hidden="true"
     >
       <img
