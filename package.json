@@ -1,10 +1,10 @@
 {
   "name": "flappy-hippo",
   "private": true,
-  "version": "1.2.0",
+  "version": "1.3.0",
   "description": "A flying hippo, one button, no account: a Flappy game as an installable web app.",
   "license": "MIT",
-  "author": "Steffen K\u00fchne",
+  "author": "Steffen Kühne",
   "homepage": "https://stekhn.github.io/flappy-hippo/",
   "repository": {
     "type": "git",
