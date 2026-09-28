@@ -105,14 +105,23 @@ async function cutout(source: Buffer, enclosed = false): Promise<Cutout> {
         for (let c = 0; c < 3; c++) sum[c] += data[p * 3 + c]
         const x = p % width
         const y = (p - x) / width
-        for (const q of [x > 0 ? p - 1 : -1, x < width - 1 ? p + 1 : -1, y > 0 ? p - width : -1, y < height - 1 ? p + width : -1]) {
+        for (const q of [
+          x > 0 ? p - 1 : -1,
+          x < width - 1 ? p + 1 : -1,
+          y > 0 ? p - width : -1,
+          y < height - 1 ? p + width : -1,
+        ]) {
           if (q >= 0 && !seen[q] && !isBackground[q] && distance[q] < NEAR) {
             seen[q] = 1
             pocket.push(q)
           }
         }
       }
-      const off = Math.hypot(sum[0] / pocket.length - bg[0], sum[1] / pocket.length - bg[1], sum[2] / pocket.length - bg[2])
+      const off = Math.hypot(
+        sum[0] / pocket.length - bg[0],
+        sum[1] / pocket.length - bg[1],
+        sum[2] / pocket.length - bg[2],
+      )
       if (off < POCKET) for (const p of pocket) isBackground[p] = 1
     }
   }
@@ -153,7 +162,9 @@ async function cutout(source: Buffer, enclosed = false): Promise<Cutout> {
       if (y > box[3]) box[3] = y
     }
   }
-  const png = await sharp(out, { raw: { width, height, channels: 4 } }).png().toBuffer()
+  const png = await sharp(out, { raw: { width, height, channels: 4 } })
+    .png()
+    .toBuffer()
   return { png, width, height, box }
 }
 
@@ -207,9 +218,17 @@ async function monochrome(hippo: Cutout, size: number): Promise<Buffer> {
   const alpha = await sharp(hippo.png).resize(w, w).extractChannel('alpha').raw().toBuffer()
   const white = Buffer.alloc(w * w * 4, 255)
   for (let p = 0; p < w * w; p++) white[p * 4 + 3] = alpha[p]
-  const silhouette = await sharp(white, { raw: { width: w, height: w, channels: 4 } }).png().toBuffer()
+  const silhouette = await sharp(white, { raw: { width: w, height: w, channels: 4 } })
+    .png()
+    .toBuffer()
   return sharp({ create: { width: size, height: size, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } } })
-    .composite([{ input: silhouette, left: Math.round(size / 2 - ((l + r) / 2) * scale), top: Math.round(size / 2 - ((t + b) / 2) * scale) }])
+    .composite([
+      {
+        input: silhouette,
+        left: Math.round(size / 2 - ((l + r) / 2) * scale),
+        top: Math.round(size / 2 - ((t + b) / 2) * scale),
+      },
+    ])
     .png({ compressionLevel: 9 })
     .toBuffer()
 }
@@ -244,7 +263,10 @@ await out('favicon-32.png', await raster(await readFile(join(root, 'public', 'fa
 // The link preview (Open Graph, Twitter card): the poster, at a size every network accepts and
 // a weight a chat client fetches without blinking. Its 3:2 keeps the title and the cat; feeds
 // that want 1.91:1 crop a little sky and wall.
-const preview = await sharp(await asset('poster.jpeg')).resize(1200, 800).jpeg({ quality: 82, mozjpeg: true }).toBuffer()
+const preview = await sharp(await asset('poster.jpeg'))
+  .resize(1200, 800)
+  .jpeg({ quality: 82, mozjpeg: true })
+  .toBuffer()
 await writeFile(join(root, 'public', 'preview.jpg'), preview)
 console.log(`public/preview.jpg (${Math.round(preview.length / 1024)} KB)`)
 await writeFile(join(root, 'public', 'mask-icon.svg'), await asset('mask-icon.svg'))
@@ -303,7 +325,12 @@ async function findIslands(image: Cutout): Promise<Islands> {
       if (y < box[1]) box[1] = y
       if (x > box[2]) box[2] = x
       if (y > box[3]) box[3] = y
-      for (const q of [x > 0 ? p - 1 : -1, x < width - 1 ? p + 1 : -1, y > 0 ? p - width : -1, y < height - 1 ? p + width : -1]) {
+      for (const q of [
+        x > 0 ? p - 1 : -1,
+        x < width - 1 ? p + 1 : -1,
+        y > 0 ? p - width : -1,
+        y < height - 1 ? p + width : -1,
+      ]) {
         if (q >= 0 && label[q] < 0 && data[q * 4 + 3] >= 8) {
           label[q] = id
           stack.push(q)
@@ -334,7 +361,9 @@ async function dropSpecks(image: Cutout, minPixels: number, name: string): Promi
     if (y > box[3]) box[3] = y
   }
   console.log(`${name}: ${sizes.length} islands, ${dropped} px of dust cleared`)
-  const png = await sharp(data, { raw: { width, height, channels: 4 } }).png().toBuffer()
+  const png = await sharp(data, { raw: { width, height, channels: 4 } })
+    .png()
+    .toBuffer()
   return { png, width, height, box }
 }
 
@@ -365,7 +394,13 @@ interface Sheet {
 
 const SHEETS: Sheet[] = [
   { file: 'cat.jpeg', gap: 40, min: 20000, cut: [{ name: 'cat', cell: 0, width: 300 }] },
-  { file: 'construction.png', gap: 60, min: 20000, enclosed: true, cut: [{ name: 'construction', cell: 0, width: 560 }] },
+  {
+    file: 'construction.png',
+    gap: 60,
+    min: 20000,
+    enclosed: true,
+    cut: [{ name: 'construction', cell: 0, width: 560 }],
+  },
   { file: 'flower-pot.png', gap: 40, min: 20000, cut: [{ name: 'pot', cell: 0, width: 200 }] },
   {
     file: 'pipes.png',
@@ -393,7 +428,7 @@ const SHEETS: Sheet[] = [
 async function islands(image: Cutout, gap: number, minPixels: number): Promise<Cell[]> {
   const { boxes, sizes } = await findIslands(image)
   const kept = boxes.filter((_, i) => sizes[i] >= minPixels)
-  for (let merging = true; merging; ) {
+  for (let merging = true; merging;) {
     merging = false
     for (let i = 0; i < kept.length && !merging; i++) {
       for (let j = i + 1; j < kept.length; j++) {

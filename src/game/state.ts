@@ -223,7 +223,14 @@ function smash(state: GameState, pot: Pot, y: number, events: GameEvent[]): void
  * falling ones tumble down, smash on the wall, or are counted as dodged once they are behind
  * the hippo. Returns the pot the hippo is touching, if any.
  */
-function stepPots(state: GameState, dt: number, dx: number, world: World, tuning: Tuning, events: GameEvent[]): Pot | null {
+function stepPots(
+  state: GameState,
+  dt: number,
+  dx: number,
+  world: World,
+  tuning: Tuning,
+  events: GameEvent[],
+): Pot | null {
   let struck: Pot | null = null
   const reach = HIPPO_RADIUS + POT_RADIUS
   for (const pot of state.pots) {
@@ -257,15 +264,7 @@ function stepPots(state: GameState, dt: number, dx: number, world: World, tuning
   return struck
 }
 
-function burst(
-  state: GameState,
-  x: number,
-  y: number,
-  count: number,
-  tint: Tint,
-  speed: number,
-  weight: number,
-): void {
+function burst(state: GameState, x: number, y: number, count: number, tint: Tint, speed: number, weight: number): void {
   for (let i = 0; i < count; i++) {
     const angle = (i / count) * Math.PI * 2 + Math.random() * 0.5
     const power = speed * (0.4 + Math.random() * 0.8)
@@ -373,13 +372,9 @@ function stepParticles(particles: Particle[], dt: number): Particle[] {
 export function hasCollision(state: GameState, world: World): boolean {
   if (state.hippoY + HIPPO_RADIUS >= world.groundY) return true
   return state.pipes.some((pipe) => {
-    const withinX =
-      world.hippoX + HIPPO_RADIUS > pipe.x && world.hippoX - HIPPO_RADIUS < pipe.x + PIPE_WIDTH
+    const withinX = world.hippoX + HIPPO_RADIUS > pipe.x && world.hippoX - HIPPO_RADIUS < pipe.x + PIPE_WIDTH
     if (!withinX) return false
-    return (
-      state.hippoY - HIPPO_RADIUS < pipe.gapY - pipe.half ||
-      state.hippoY + HIPPO_RADIUS > pipe.gapY + pipe.half
-    )
+    return state.hippoY - HIPPO_RADIUS < pipe.gapY - pipe.half || state.hippoY + HIPPO_RADIUS > pipe.gapY + pipe.half
   })
 }
 

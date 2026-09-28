@@ -17,16 +17,7 @@ import { EmojiBadge } from './EmojiBadge.tsx'
 import { blurIfPointer } from './focus.ts'
 import { Segmented } from './Segmented.tsx'
 import { Toggle } from './Toggle.tsx'
-import {
-  IconChart,
-  IconCheck,
-  IconGear,
-  IconHelp,
-  IconInstall,
-  IconRestart,
-  IconStar,
-  IconTrash,
-} from './icons.tsx'
+import { IconChart, IconCheck, IconGear, IconHelp, IconInstall, IconRestart, IconStar, IconTrash } from './icons.tsx'
 
 export type MenuTab = 'settings' | 'scores' | 'awards' | 'help'
 
@@ -319,9 +310,7 @@ function SettingsTab({
         <div className="tile flex w-full items-center justify-between gap-4 px-4 py-3">
           <span className="min-w-0">
             <span className="t-label block">{t.menu.settings.dataTitle}</span>
-            <span className="t-hint block">
-              {undo ? t.menu.settings.deleted : t.menu.settings.dataHint}
-            </span>
+            <span className="t-hint block">{undo ? t.menu.settings.deleted : t.menu.settings.dataHint}</span>
           </span>
           {undo ? (
             <button
@@ -378,9 +367,7 @@ function ScoresTab({ progress }: { progress: Progress }) {
               <li key={`${entry.at}-${index}`} className="flex items-center gap-3 py-2.5">
                 <span className="t-number text-muted w-5 text-right text-base">{index + 1}</span>
                 <span className="t-number w-12 text-xl">{entry.score}</span>
-                <span className="t-hint flex-1 truncate">
-                  {t.difficulties[entry.difficulty]}
-                </span>
+                <span className="t-hint flex-1 truncate">{t.difficulties[entry.difficulty]}</span>
                 <span className="t-hint">{entry.at ? formatDate(entry.at) : ''}</span>
               </li>
             ))}
@@ -408,9 +395,7 @@ function Figure({ label, value }: { label: string; value: number | string }) {
   return (
     <div className="tile px-4 py-3">
       <dt className="t-hint">{label}</dt>
-      <dd className="t-number mt-1 text-[1.5rem]">
-        {typeof value === 'number' ? formatNumber(value) : value}
-      </dd>
+      <dd className="t-number mt-1 text-[1.5rem]">{typeof value === 'number' ? formatNumber(value) : value}</dd>
     </div>
   )
 }

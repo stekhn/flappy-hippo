@@ -217,9 +217,7 @@ export const ACHIEVEMENTS: Achievement[] = [
 
 /** Ids newly reached by this progress record, in list order. */
 export function newlyUnlocked(progress: Progress): string[] {
-  return ACHIEVEMENTS.filter((a) => !progress.achievements[a.id] && a.reached(progress)).map(
-    (a) => a.id,
-  )
+  return ACHIEVEMENTS.filter((a) => !progress.achievements[a.id] && a.reached(progress)).map((a) => a.id)
 }
 
 /** Marks the given ids as unlocked at `at` (pure). */

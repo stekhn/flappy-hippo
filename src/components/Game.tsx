@@ -208,12 +208,7 @@ export function Game() {
         )}
 
         {showOver && (
-          <OverCard
-            snapshot={snapshot}
-            touch={touch}
-            dark={resolved === 'dark'}
-            onRestart={controls.restart}
-          />
+          <OverCard snapshot={snapshot} touch={touch} dark={resolved === 'dark'} onRestart={controls.restart} />
         )}
 
         <AchievementToast toast={toast} />

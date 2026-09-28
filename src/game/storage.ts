@@ -179,10 +179,7 @@ export function recordRun(progress: Progress, run: RunResult, at: number): Progr
   }
   const scores =
     run.score > 0
-      ? [
-          ...progress.scores,
-          { score: run.score, difficulty: run.difficulty, melons: run.melons, at },
-        ]
+      ? [...progress.scores, { score: run.score, difficulty: run.difficulty, melons: run.melons, at }]
           .sort(byScore)
           .slice(0, MAX_SCORES)
       : progress.scores

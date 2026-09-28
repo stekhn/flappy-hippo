@@ -181,7 +181,14 @@ function surveySpawns(frames: number, score = 0) {
     for (const pipe of state.pipes) {
       if (seen.has(pipe)) continue
       seen.add(pipe)
-      spawns.push({ at: state.scrolled, gapY: pipe.gapY, half: pipe.half, baseY: pipe.baseY, swing: pipe.swing, score: state.score })
+      spawns.push({
+        at: state.scrolled,
+        gapY: pipe.gapY,
+        half: pipe.half,
+        baseY: pipe.baseY,
+        swing: pipe.swing,
+        score: state.score,
+      })
     }
     for (const pickup of state.pickups) {
       if (seenPickups.has(pickup)) continue
@@ -200,7 +207,10 @@ function surveySpawns(frames: number, score = 0) {
 
 test('pots and moving pipes wait for their stages', () => {
   const { spawns, pots } = surveySpawns(1500)
-  assert.ok(spawns.some((s) => s.score < STAGE_POTS), 'the survey must start before the pot stage')
+  assert.ok(
+    spawns.some((s) => s.score < STAGE_POTS),
+    'the survey must start before the pot stage',
+  )
   for (const pot of pots) assert.ok(pot.score >= STAGE_POTS, `a pot at ${pot.score} points`)
   for (const s of spawns) if (s.swing > 0) assert.ok(s.score >= STAGE_MOVERS, `a mover at ${s.score} points`)
 })

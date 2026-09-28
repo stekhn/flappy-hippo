@@ -123,7 +123,10 @@ export function makeStreet(seed: number): Street {
     plants.push({
       kind,
       x,
-      blades: kind === 'tuft' || kind === 'tall' ? makeBlades(rnd, kind === 'tall' ? 3 + Math.floor(rnd() * 2) : 4 + Math.floor(rnd() * 4), kind === 'tall') : [],
+      blades:
+        kind === 'tuft' || kind === 'tall'
+          ? makeBlades(rnd, kind === 'tall' ? 3 + Math.floor(rnd() * 2) : 4 + Math.floor(rnd() * 4), kind === 'tall')
+          : [],
       seed: rnd(),
       mirror: rnd() < 0.5,
       scale: plant ? 0.85 + rnd() * 0.35 : 1,
@@ -227,7 +230,8 @@ export function furnitureAt(n: number): Thing | null {
     const mirror = hash(i * 3 + 1) < 0.5
     const seed = hash(i * 3 + 2)
     if (roll < EMPTY_CHANCE) schedule.push(null)
-    else if (roll < EMPTY_CHANCE + ANIMAL_CHANCE) schedule.push({ kind: roll < EMPTY_CHANCE + ANIMAL_CHANCE / 2 ? 'cat' : 'dog', mirror, seed })
+    else if (roll < EMPTY_CHANCE + ANIMAL_CHANCE)
+      schedule.push({ kind: roll < EMPTY_CHANCE + ANIMAL_CHANCE / 2 ? 'cat' : 'dog', mirror, seed })
     else schedule.push({ kind: FIXTURES[placed++ % FIXTURES.length], mirror, seed })
   }
   return schedule[n]
@@ -595,7 +599,14 @@ function routine(age: number, period: number, share: number, seed: number): numb
  * lifts a front paw to its face and licks it, eyes shut, head down to meet the paw. Faces right;
  * the caller may flip it.
  */
-export function drawCat(ctx: CanvasRenderingContext2D, p: Palette, x: number, base: number, age: number, seed: number): void {
+export function drawCat(
+  ctx: CanvasRenderingContext2D,
+  p: Palette,
+  x: number,
+  base: number,
+  age: number,
+  seed: number,
+): void {
   const coat = p.catCoat
   const line = p.catLine
   const lick = routine(age, 5, 0.3, seed)
@@ -725,7 +736,14 @@ export function drawCat(ctx: CanvasRenderingContext2D, p: Palette, x: number, ba
  * hanging behind it either side, big eyes, a big black nose, a smile. It keeps still but for
  * its tail, which wags, and its tongue, which comes out now and then to pant. Faces right.
  */
-export function drawDog(ctx: CanvasRenderingContext2D, p: Palette, x: number, base: number, age: number, seed: number): void {
+export function drawDog(
+  ctx: CanvasRenderingContext2D,
+  p: Palette,
+  x: number,
+  base: number,
+  age: number,
+  seed: number,
+): void {
   const coat = p.postbox
   const light = p.dogLight
   const shade = p.dogShade

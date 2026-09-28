@@ -63,12 +63,16 @@ export class FrameMonitor {
         .sort((a, b) => b.duration - a.duration)
         .slice(0, 3)
         .map((s) => {
-          const where = s.sourceURL ? `${s.sourceURL.replace(/^.*\/(src\/)/, '$1').split('?')[0]}:${s.sourceCharPosition ?? ''}` : ''
+          const where = s.sourceURL
+            ? `${s.sourceURL.replace(/^.*\/(src\/)/, '$1').split('?')[0]}:${s.sourceCharPosition ?? ''}`
+            : ''
           return `${s.duration.toFixed(0)} ms ${s.sourceFunctionName || s.invoker || 'script'} ${where}`.trim()
         })
       console.warn(
         `${TAG} long animation frame ${loaf.duration.toFixed(0)} ms (blocking ${(loaf.blockingDuration ?? 0).toFixed(0)} ms, style/layout/paint ${render} ms)` +
-          (scripts.length > 0 ? `: ${scripts.join('; ')}` : ': no script over 4 ms — the time went to style, layout, paint or the compositor'),
+          (scripts.length > 0
+            ? `: ${scripts.join('; ')}`
+            : ': no script over 4 ms — the time went to style, layout, paint or the compositor'),
       )
     })
     this.observe('longtask', (entry) => {

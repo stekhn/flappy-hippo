@@ -8,8 +8,7 @@ export function useRoom(box: RefObject<HTMLElement | null>, canvas: RefObject<HT
     const boxEl = box.current
     const canvasEl = canvas.current
     if (!boxEl || !canvasEl) return
-    const update = () =>
-      setRoom(Math.max(0, Math.floor((boxEl.clientHeight - canvasEl.offsetHeight) / 2)))
+    const update = () => setRoom(Math.max(0, Math.floor((boxEl.clientHeight - canvasEl.offsetHeight) / 2)))
     const observer = new ResizeObserver(update)
     observer.observe(boxEl)
     observer.observe(canvasEl)

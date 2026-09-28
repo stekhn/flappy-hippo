@@ -9,7 +9,10 @@
     <!-- viewport-fit=cover lets the game paint behind the notch. Pinch zoom stays allowed; a double
          tap does not zoom because the page sets touch-action. -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="description" content="Flappy Hippo: make the hippo fly and dodge the pipes. Playable offline, no account, no ads." />
+    <meta
+      name="description"
+      content="Flappy Hippo: make the hippo fly and dodge the pipes. Playable offline, no account, no ads."
+    />
     <meta name="application-name" content="Flappy Hippo" />
     <link rel="canonical" href="https://stekhn.github.io/flappy-hippo/" />
     <link rel="alternate" hreflang="en" href="https://stekhn.github.io/flappy-hippo/?lang=en" />
@@ -19,13 +22,19 @@
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Flappy Hippo" />
     <meta property="og:title" content="Flappy Hippo" />
-    <meta property="og:description" content="Make the hippo fly and dodge the pipes. Playable offline, no account, no ads." />
+    <meta
+      property="og:description"
+      content="Make the hippo fly and dodge the pipes. Playable offline, no account, no ads."
+    />
     <meta property="og:url" content="https://stekhn.github.io/flappy-hippo/" />
     <meta property="og:image" content="https://stekhn.github.io/flappy-hippo/preview.jpg" />
     <meta property="og:image:type" content="image/jpeg" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="800" />
-    <meta property="og:image:alt" content="Flappy Hippo: a winged hippo flying between blue pipes over the city, a melon ahead, a black cat on the wall." />
+    <meta
+      property="og:image:alt"
+      content="Flappy Hippo: a winged hippo flying between blue pipes over the city, a melon ahead, a black cat on the wall."
+    />
     <meta property="og:locale" content="en_US" />
     <meta property="og:locale:alternate" content="de_DE" />
     <meta name="twitter:card" content="summary_large_image" />
@@ -64,19 +73,18 @@
     </script>
     <script>
       // Resolve the theme before first paint to avoid a flash. Mirrors src/theme.ts.
-      (function () {
+      ;(function () {
         try {
-          var t = localStorage.getItem('flappy-hippo.theme');
+          var t = localStorage.getItem('flappy-hippo.theme')
           var dark =
-            t === 'dark' ||
-            ((t === 'system' || t === null) && matchMedia('(prefers-color-scheme: dark)').matches);
-          document.documentElement.dataset.theme = dark ? 'dark' : 'light';
-          var meta = document.querySelector('meta[name="theme-color"]');
-          if (meta) meta.content = dark ? '#111a26' : '#e5f0ff';
+            t === 'dark' || ((t === 'system' || t === null) && matchMedia('(prefers-color-scheme: dark)').matches)
+          document.documentElement.dataset.theme = dark ? 'dark' : 'light'
+          var meta = document.querySelector('meta[name="theme-color"]')
+          if (meta) meta.content = dark ? '#111a26' : '#e5f0ff'
         } catch (e) {
           /* leave the default (light) */
         }
-      })();
+      })()
     </script>
   </head>
   <body>

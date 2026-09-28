@@ -51,9 +51,7 @@ export function OverCard({ snapshot, touch, dark, onRestart }: OverCardProps) {
       </h2>
 
       <p className="mt-3 flex items-baseline justify-center gap-2">
-        <span
-          className={`t-number text-[3.5rem] leading-none ${snapshot.newBest ? 'text-gold-ink' : 'text-brand'}`}
-        >
+        <span className={`t-number text-[3.5rem] leading-none ${snapshot.newBest ? 'text-gold-ink' : 'text-brand'}`}>
           {snapshot.score}
         </span>
         <span className="t-label">{t.pointsWord(snapshot.score)}</span>

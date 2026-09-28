@@ -412,13 +412,7 @@ export function stampCloud(
   ctx.restore()
 }
 
-function drawStars(
-  ctx: CanvasRenderingContext2D,
-  p: Palette,
-  world: World,
-  scrolled: number,
-  now: number,
-): void {
+function drawStars(ctx: CanvasRenderingContext2D, p: Palette, world: World, scrolled: number, now: number): void {
   const shift = (scrolled * 0.04) % SCENE_PERIOD
   ctx.save()
   ctx.fillStyle = p.star
@@ -530,13 +524,7 @@ function paintRoof(ctx: CanvasRenderingContext2D, b: Building, x: number, top: n
   }
 }
 
-function paintWindows(
-  ctx: CanvasRenderingContext2D,
-  p: Palette,
-  b: Building,
-  x: number,
-  top: number,
-): void {
+function paintWindows(ctx: CanvasRenderingContext2D, p: Palette, b: Building, x: number, top: number): void {
   const gridW = b.cols * (WINDOW_W + WINDOW_GAP) - WINDOW_GAP
   const left = x + Math.round((b.w - gridW) / 2)
   ctx.fillStyle = p.window
@@ -839,5 +827,15 @@ export function drawGround(
 ): void {
   const wall = cache.layer('wall', STREET_ABOVE, GROUND_HEIGHT, (c, ground) => paintGround(c, p, ground), STREET_PERIOD)
   const origin = cache.blit(ctx, wall, scrolled % STREET_PERIOD, world.width)
-  drawFurniture(ctx, p, origin, Math.floor(scrolled / STREET_PERIOD), round, world.width, world.groundY, now / 1000, cache)
+  drawFurniture(
+    ctx,
+    p,
+    origin,
+    Math.floor(scrolled / STREET_PERIOD),
+    round,
+    world.width,
+    world.groundY,
+    now / 1000,
+    cache,
+  )
 }

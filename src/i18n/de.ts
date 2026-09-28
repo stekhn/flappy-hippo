@@ -127,8 +127,14 @@ export const de: Messages = {
     help: {
       howToPlay: 'So wird gespielt',
       rules: [
-        { lead: 'Tippen oder Leertaste', rest: 'lässt das Nilpferd einmal mit den Flügeln schlagen. Gedrückt halten bringt nichts.' },
-        { lead: 'Jedes Hindernis', rest: 'gibt einen Punkt, jede Melone drei. Melonen hängen zwischen den Röhren, ein Umweg, der sich lohnen kann.' },
+        {
+          lead: 'Tippen oder Leertaste',
+          rest: 'lässt das Nilpferd einmal mit den Flügeln schlagen. Gedrückt halten bringt nichts.',
+        },
+        {
+          lead: 'Jedes Hindernis',
+          rest: 'gibt einen Punkt, jede Melone drei. Melonen hängen zwischen den Röhren, ein Umweg, der sich lohnen kann.',
+        },
         { lead: 'Die Blase', rest: 'in einer Lücke hält einen Treffer aus. Danach ist das Nilpferd kurz sicher.' },
         { lead: 'Die Decke', rest: 'ist eine Grenze, kein Ende. Gefährlich sind nur Boden und Röhren.' },
       ],

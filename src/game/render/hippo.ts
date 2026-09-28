@@ -158,13 +158,7 @@ function drawCrack(ctx: CanvasRenderingContext2D, p: Palette, pose: HippoPose): 
 }
 
 /** The shield: a soap bubble round the hippo; spare charges trail behind as bubbles of their own. */
-function drawBubble(
-  ctx: CanvasRenderingContext2D,
-  p: Palette,
-  pose: HippoPose,
-  now: number,
-  cache?: LayerCache,
-): void {
+function drawBubble(ctx: CanvasRenderingContext2D, p: Palette, pose: HippoPose, now: number, cache?: LayerCache): void {
   // Grows in with a little overshoot when just picked up (ease-out-back).
   const t = Math.min(Math.max(pose.shieldIn, 0), 1) - 1
   const grow = 1 + 2.70158 * t * t * t + 1.70158 * t * t

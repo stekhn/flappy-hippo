@@ -1,11 +1,4 @@
-import {
-  FLAP_ANIMATION_MS,
-  FLOATER_MS,
-  INVULNERABLE_MS,
-  SHAKE_MS,
-  SHIELD_IN_MS,
-  SHIELD_POP_MS,
-} from '../constants.ts'
+import { FLAP_ANIMATION_MS, FLOATER_MS, INVULNERABLE_MS, SHAKE_MS, SHIELD_IN_MS, SHIELD_POP_MS } from '../constants.ts'
 import { t as words } from '../../i18n/index.ts'
 import type { GameState, Palette } from '../types.ts'
 import type { World } from '../world.ts'
@@ -76,9 +69,7 @@ export function drawScene(
       x: world.hippoX,
       y: state.hippoY + (idle ? Math.sin(now / 280) * 5 : 0),
       tilt,
-      flap: idle
-        ? 0.15 + 0.15 * Math.sin(now / 350)
-        : Math.min((now - state.flappedAt) / FLAP_ANIMATION_MS, 1),
+      flap: idle ? 0.15 + 0.15 * Math.sin(now / 350) : Math.min((now - state.flappedAt) / FLAP_ANIMATION_MS, 1),
       defeated,
       headNod: DEFEAT.headNod * sink,
       headDrop: DEFEAT.headDrop * sink,

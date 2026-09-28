@@ -62,7 +62,12 @@ class RecordedPath {
   }
 
   roundRect(x: number, y: number, w: number, h: number, radii: number | number[] = 0): void {
-    const r = typeof radii === 'number' ? [radii, radii, radii, radii] : radii.length === 4 ? radii : [radii[0], radii[0], radii[0], radii[0]]
+    const r =
+      typeof radii === 'number'
+        ? [radii, radii, radii, radii]
+        : radii.length === 4
+          ? radii
+          : [radii[0], radii[0], radii[0], radii[0]]
     const [tl, tr, br, bl] = r.map((v) => Math.min(v, w / 2, h / 2))
     this.d +=
       `M${num(x + tl)} ${num(y)}` +
@@ -81,7 +86,10 @@ class RecordedPath {
     const point = (a: number): [number, number] => {
       const px = rx * Math.cos(a)
       const py = ry * Math.sin(a)
-      return [cx + px * Math.cos(rotation) - py * Math.sin(rotation), cy + px * Math.sin(rotation) + py * Math.cos(rotation)]
+      return [
+        cx + px * Math.cos(rotation) - py * Math.sin(rotation),
+        cy + px * Math.sin(rotation) + py * Math.cos(rotation),
+      ]
     }
     let sweep = ccw ? a0 - a1 : a1 - a0
     const full = sweep >= Math.PI * 2 - 1e-9
@@ -119,40 +127,103 @@ interface State {
 /** Enough of a 2D context for the animals: paths, fills, strokes, transforms, styles. */
 class SvgContext {
   // The street sets round caps and joins before drawing an animal; the recorder starts there.
-  private state: State = { matrix: IDENTITY, fillStyle: '#000', strokeStyle: '#000', lineWidth: 1, lineCap: 'round', lineJoin: 'round', globalAlpha: 1 }
+  private state: State = {
+    matrix: IDENTITY,
+    fillStyle: '#000',
+    strokeStyle: '#000',
+    lineWidth: 1,
+    lineCap: 'round',
+    lineJoin: 'round',
+    globalAlpha: 1,
+  }
   private stack: State[] = []
   private path = new RecordedPath()
   readonly elements: string[] = []
 
-  get fillStyle(): string { return this.state.fillStyle }
-  set fillStyle(v: string) { this.state.fillStyle = v }
-  get strokeStyle(): string { return this.state.strokeStyle }
-  set strokeStyle(v: string) { this.state.strokeStyle = v }
-  get lineWidth(): number { return this.state.lineWidth }
-  set lineWidth(v: number) { this.state.lineWidth = v }
-  get lineCap(): string { return this.state.lineCap }
-  set lineCap(v: string) { this.state.lineCap = v }
-  get lineJoin(): string { return this.state.lineJoin }
-  set lineJoin(v: string) { this.state.lineJoin = v }
-  get globalAlpha(): number { return this.state.globalAlpha }
-  set globalAlpha(v: number) { this.state.globalAlpha = v }
+  get fillStyle(): string {
+    return this.state.fillStyle
+  }
+  set fillStyle(v: string) {
+    this.state.fillStyle = v
+  }
+  get strokeStyle(): string {
+    return this.state.strokeStyle
+  }
+  set strokeStyle(v: string) {
+    this.state.strokeStyle = v
+  }
+  get lineWidth(): number {
+    return this.state.lineWidth
+  }
+  set lineWidth(v: number) {
+    this.state.lineWidth = v
+  }
+  get lineCap(): string {
+    return this.state.lineCap
+  }
+  set lineCap(v: string) {
+    this.state.lineCap = v
+  }
+  get lineJoin(): string {
+    return this.state.lineJoin
+  }
+  set lineJoin(v: string) {
+    this.state.lineJoin = v
+  }
+  get globalAlpha(): number {
+    return this.state.globalAlpha
+  }
+  set globalAlpha(v: number) {
+    this.state.globalAlpha = v
+  }
 
-  save(): void { this.stack.push({ ...this.state }) }
-  restore(): void { const s = this.stack.pop(); if (s) this.state = s }
-  translate(x: number, y: number): void { this.state.matrix = multiply(this.state.matrix, [1, 0, 0, 1, x, y]) }
-  rotate(a: number): void { this.state.matrix = multiply(this.state.matrix, [Math.cos(a), Math.sin(a), -Math.sin(a), Math.cos(a), 0, 0]) }
-  scale(x: number, y: number): void { this.state.matrix = multiply(this.state.matrix, [x, 0, 0, y, 0, 0]) }
+  save(): void {
+    this.stack.push({ ...this.state })
+  }
+  restore(): void {
+    const s = this.stack.pop()
+    if (s) this.state = s
+  }
+  translate(x: number, y: number): void {
+    this.state.matrix = multiply(this.state.matrix, [1, 0, 0, 1, x, y])
+  }
+  rotate(a: number): void {
+    this.state.matrix = multiply(this.state.matrix, [Math.cos(a), Math.sin(a), -Math.sin(a), Math.cos(a), 0, 0])
+  }
+  scale(x: number, y: number): void {
+    this.state.matrix = multiply(this.state.matrix, [x, 0, 0, y, 0, 0])
+  }
 
-  beginPath(): void { this.path = new RecordedPath() }
-  moveTo(x: number, y: number): void { this.path.moveTo(x, y) }
-  lineTo(x: number, y: number): void { this.path.lineTo(x, y) }
-  quadraticCurveTo(cx: number, cy: number, x: number, y: number): void { this.path.quadraticCurveTo(cx, cy, x, y) }
-  bezierCurveTo(a: number, b: number, c: number, d: number, x: number, y: number): void { this.path.bezierCurveTo(a, b, c, d, x, y) }
-  closePath(): void { this.path.closePath() }
-  rect(x: number, y: number, w: number, h: number): void { this.path.rect(x, y, w, h) }
-  roundRect(x: number, y: number, w: number, h: number, r?: number | number[]): void { this.path.roundRect(x, y, w, h, r) }
-  arc(cx: number, cy: number, r: number, a0: number, a1: number, ccw?: boolean): void { this.path.arc(cx, cy, r, a0, a1, ccw) }
-  ellipse(cx: number, cy: number, rx: number, ry: number, rot: number, a0: number, a1: number, ccw?: boolean): void { this.path.ellipse(cx, cy, rx, ry, rot, a0, a1, ccw) }
+  beginPath(): void {
+    this.path = new RecordedPath()
+  }
+  moveTo(x: number, y: number): void {
+    this.path.moveTo(x, y)
+  }
+  lineTo(x: number, y: number): void {
+    this.path.lineTo(x, y)
+  }
+  quadraticCurveTo(cx: number, cy: number, x: number, y: number): void {
+    this.path.quadraticCurveTo(cx, cy, x, y)
+  }
+  bezierCurveTo(a: number, b: number, c: number, d: number, x: number, y: number): void {
+    this.path.bezierCurveTo(a, b, c, d, x, y)
+  }
+  closePath(): void {
+    this.path.closePath()
+  }
+  rect(x: number, y: number, w: number, h: number): void {
+    this.path.rect(x, y, w, h)
+  }
+  roundRect(x: number, y: number, w: number, h: number, r?: number | number[]): void {
+    this.path.roundRect(x, y, w, h, r)
+  }
+  arc(cx: number, cy: number, r: number, a0: number, a1: number, ccw?: boolean): void {
+    this.path.arc(cx, cy, r, a0, a1, ccw)
+  }
+  ellipse(cx: number, cy: number, rx: number, ry: number, rot: number, a0: number, a1: number, ccw?: boolean): void {
+    this.path.ellipse(cx, cy, rx, ry, rot, a0, a1, ccw)
+  }
 
   fill(path?: RecordedPath): void {
     this.emit(path ?? this.path, `fill="${this.state.fillStyle}"`)
@@ -160,7 +231,10 @@ class SvgContext {
 
   stroke(path?: RecordedPath): void {
     const s = this.state
-    this.emit(path ?? this.path, `fill="none" stroke="${s.strokeStyle}" stroke-width="${num(s.lineWidth)}" stroke-linecap="${s.lineCap}" stroke-linejoin="${s.lineJoin}"`)
+    this.emit(
+      path ?? this.path,
+      `fill="none" stroke="${s.strokeStyle}" stroke-width="${num(s.lineWidth)}" stroke-linecap="${s.lineCap}" stroke-linejoin="${s.lineJoin}"`,
+    )
   }
 
   fillRect(x: number, y: number, w: number, h: number): void {

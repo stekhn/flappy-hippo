@@ -1,12 +1,6 @@
 import { useCallback, useRef, useState } from 'react'
 import { newlyUnlocked, unlock } from '../game/achievements.ts'
-import {
-  clearProgress,
-  emptyProgress,
-  loadProgress,
-  recordRun,
-  saveProgress,
-} from '../game/storage.ts'
+import { clearProgress, emptyProgress, loadProgress, recordRun, saveProgress } from '../game/storage.ts'
 import type { Progress, RunResult } from '../game/storage.ts'
 
 /** The saved record: best scores, lifetime stats, the score table and unlocked achievements. */

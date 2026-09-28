@@ -4,16 +4,7 @@
 // first tap or key press (`unlock`), as browsers only let audio start after a gesture.
 
 export type Cue =
-  | 'flap'
-  | 'score'
-  | 'melon'
-  | 'shield'
-  | 'pop'
-  | 'smash'
-  | 'crash'
-  | 'milestone'
-  | 'record'
-  | 'achievement'
+  'flap' | 'score' | 'melon' | 'shield' | 'pop' | 'smash' | 'crash' | 'milestone' | 'record' | 'achievement'
 
 export interface Sfx {
   /** Makes the context now, suspended: it is slow to make, and the first gesture is mid-round. */
@@ -215,9 +206,7 @@ export function createSfx(initiallyMuted = false): Sfx {
             [659, 0, 0.1],
             [988, 0.08, 0.1],
             [1319, 0.16, 0.32],
-          ].forEach(([f, at, duration]) =>
-            tone(context, { type: 'triangle', from: f, duration, gain: 0.14, at }),
-          )
+          ].forEach(([f, at, duration]) => tone(context, { type: 'triangle', from: f, duration, gain: 0.14, at }))
           return
         case 'achievement':
           // The console two-note: a soft bell, then a brighter one a fifth up, ringing out.

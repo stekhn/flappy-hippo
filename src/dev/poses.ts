@@ -31,8 +31,16 @@ const VARIANTS: Variant[] = [
   { label: 'Flug', note: 'zum Vergleich', pose: {} },
   { label: 'A — Kopf hängt', note: 'Körper gerade, Nicken 0,45', pose: { defeated: true, headNod: 0.45 } },
   { label: 'B — Kopf tief', note: 'gerade, Nicken 0,7, 2 tiefer', pose: { defeated: true, headNod: 0.7, headDrop: 2 } },
-  { label: 'C — leicht vornüber', note: 'Körper 0,25, Nicken 0,35', pose: { defeated: true, tilt: 0.25, headNod: 0.35 } },
-  { label: 'D — Bauchlandung', note: 'Körper 0,1, Nicken 0,5, 2 tiefer', pose: { defeated: true, tilt: 0.1, headNod: 0.5, headDrop: 2 } },
+  {
+    label: 'C — leicht vornüber',
+    note: 'Körper 0,25, Nicken 0,35',
+    pose: { defeated: true, tilt: 0.25, headNod: 0.35 },
+  },
+  {
+    label: 'D — Bauchlandung',
+    note: 'Körper 0,1, Nicken 0,5, 2 tiefer',
+    pose: { defeated: true, tilt: 0.1, headNod: 0.5, headDrop: 2 },
+  },
   { label: 'E — nur Ohren', note: 'gerade, Nicken 0,15', pose: { defeated: true, headNod: 0.15 } },
   { label: 'F — Nase runter', note: 'Nicken 0,9, 3 tiefer', pose: { defeated: true, headNod: 0.9, headDrop: 3 } },
   { label: 'G — bisher', note: 'Körper 0,95, kein Nicken', pose: { defeated: true, tilt: 0.95 } },

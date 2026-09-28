@@ -22,10 +22,7 @@ export function loadSettings(): Settings {
   try {
     const parsed = JSON.parse(raw) as Partial<Settings>
     return {
-      difficulty:
-        parsed.difficulty === 'easy' || parsed.difficulty === 'hard'
-          ? parsed.difficulty
-          : 'normal',
+      difficulty: parsed.difficulty === 'easy' || parsed.difficulty === 'hard' ? parsed.difficulty : 'normal',
       sound: parsed.sound !== false,
       haptics: parsed.haptics === true,
     }

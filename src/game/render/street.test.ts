@@ -16,7 +16,10 @@ test('furniture spots are few, far apart and on brick joints', () => {
 
 test('the furniture schedule is deterministic, takes turns, and rarely shows an animal', () => {
   const things = Array.from({ length: 300 }, (_, n) => furnitureAt(n))
-  assert.deepEqual(things, Array.from({ length: 300 }, (_, n) => furnitureAt(n)))
+  assert.deepEqual(
+    things,
+    Array.from({ length: 300 }, (_, n) => furnitureAt(n)),
+  )
   const fixtures = things.filter((t) => t && t.kind !== 'cat' && t.kind !== 'dog').map((t) => t?.kind)
   for (let i = 1; i < fixtures.length; i++) assert.notEqual(fixtures[i], fixtures[i - 1])
   const animals = things.filter((t) => t && (t.kind === 'cat' || t.kind === 'dog')).length

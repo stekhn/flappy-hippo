@@ -57,12 +57,7 @@ function drawSegment(
 
   const capY = capAtBottom ? bottom - PIPE_CAP_HEIGHT : top
   ctx.fillStyle = CAP_SHADOW
-  ctx.fillRect(
-    x,
-    capAtBottom ? capY - CAP_SHADOW_HEIGHT : capY + PIPE_CAP_HEIGHT,
-    PIPE_WIDTH,
-    CAP_SHADOW_HEIGHT,
-  )
+  ctx.fillRect(x, capAtBottom ? capY - CAP_SHADOW_HEIGHT : capY + PIPE_CAP_HEIGHT, PIPE_WIDTH, CAP_SHADOW_HEIGHT)
   ctx.drawImage(cap.canvas, x - PIPE_CAP_OVERHANG, capY, cap.width, cap.height)
 }
 

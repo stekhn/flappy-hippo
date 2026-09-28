@@ -18,7 +18,9 @@ export function drawPickups(
 ): void {
   const melon = cache.sprite('melon', -MELON_SPAN, -MELON_SPAN, MELON_SPAN * 2, MELON_SPAN * 2, (c) => paintMelon(c, p))
   const emblem = cache.sprite('shield-emblem', -10, -10, 20, 22, (c) => paintEmblem(c, p))
-  const halo = cache.sprite('shield-halo', -MELON_SPAN, -MELON_SPAN, MELON_SPAN * 2, MELON_SPAN * 2, (c) => paintHalo(c, p))
+  const halo = cache.sprite('shield-halo', -MELON_SPAN, -MELON_SPAN, MELON_SPAN * 2, MELON_SPAN * 2, (c) =>
+    paintHalo(c, p),
+  )
   for (const pickup of pickups) {
     if (pickup.taken) continue
     const bob = Math.sin(now / 420 + pickup.seed) * 3

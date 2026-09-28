@@ -29,11 +29,7 @@ export function drawConfetti(ctx: CanvasRenderingContext2D, p: Palette, pieces: 
   ctx.restore()
 }
 
-export function drawParticles(
-  ctx: CanvasRenderingContext2D,
-  p: Palette,
-  particles: Particle[],
-): void {
+export function drawParticles(ctx: CanvasRenderingContext2D, p: Palette, particles: Particle[]): void {
   ctx.save()
   for (const particle of particles) {
     ctx.globalAlpha = Math.max(particle.life / particle.maxLife, 0)

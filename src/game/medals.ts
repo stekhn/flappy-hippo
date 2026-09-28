@@ -15,11 +15,56 @@ export interface Medal {
 }
 
 export const MEDALS: Medal[] = [
-  { id: 'bronze', from: 10, rim: '#6d3a12', dark: '#9c5420', mid: '#cd7f33', light: '#f7c48c', ink: '#5a2f0e', inkDark: '#e2a166' },
-  { id: 'silver', from: 25, rim: '#5f6a75', dark: '#8591a0', mid: '#b7c2ce', light: '#f4f8fc', ink: '#434b54', inkDark: '#cdd7e2' },
-  { id: 'gold', from: 50, rim: '#8a5a00', dark: '#c58f10', mid: '#f2c032', light: '#fff5b4', ink: '#6b4300', inkDark: '#ffd45e' },
-  { id: 'platinum', from: 100, rim: '#6d6f92', dark: '#a3a6c8', mid: '#dcdff2', light: '#ffffff', ink: '#4c4f74', inkDark: '#d3d6ef' },
-  { id: 'diamond', from: 200, rim: '#1c7fbe', dark: '#3fb6e8', mid: '#8fe4fb', light: '#ffffff', ink: '#0f5d94', inkDark: '#84dcf8' },
+  {
+    id: 'bronze',
+    from: 10,
+    rim: '#6d3a12',
+    dark: '#9c5420',
+    mid: '#cd7f33',
+    light: '#f7c48c',
+    ink: '#5a2f0e',
+    inkDark: '#e2a166',
+  },
+  {
+    id: 'silver',
+    from: 25,
+    rim: '#5f6a75',
+    dark: '#8591a0',
+    mid: '#b7c2ce',
+    light: '#f4f8fc',
+    ink: '#434b54',
+    inkDark: '#cdd7e2',
+  },
+  {
+    id: 'gold',
+    from: 50,
+    rim: '#8a5a00',
+    dark: '#c58f10',
+    mid: '#f2c032',
+    light: '#fff5b4',
+    ink: '#6b4300',
+    inkDark: '#ffd45e',
+  },
+  {
+    id: 'platinum',
+    from: 100,
+    rim: '#6d6f92',
+    dark: '#a3a6c8',
+    mid: '#dcdff2',
+    light: '#ffffff',
+    ink: '#4c4f74',
+    inkDark: '#d3d6ef',
+  },
+  {
+    id: 'diamond',
+    from: 200,
+    rim: '#1c7fbe',
+    dark: '#3fb6e8',
+    mid: '#8fe4fb',
+    light: '#ffffff',
+    ink: '#0f5d94',
+    inkDark: '#84dcf8',
+  },
 ]
 
 export function medalFor(score: number): Medal | null {

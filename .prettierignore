@@ -1,0 +1,5 @@
+dist
+dev-dist
+public
+src/assets
+package-lock.json

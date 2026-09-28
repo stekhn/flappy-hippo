@@ -8,7 +8,10 @@ import './styles.css'
 
 document.documentElement.lang = locale
 
-if (TEST_MODE) console.warn(`Flappy Hippo: test mode, stages at ${STAGE_MOVERS} and ${STAGE_POTS} points (TEST_MODE in constants.ts)`)
+if (TEST_MODE)
+  console.warn(
+    `Flappy Hippo: test mode, stages at ${STAGE_MOVERS} and ${STAGE_POTS} points (TEST_MODE in constants.ts)`,
+  )
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

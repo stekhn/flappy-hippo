@@ -39,7 +39,13 @@ function Gem({ medal }: { medal: Medal }) {
   ]
   return (
     <BadgeSvg>
-      <path d="M 15 24 L 24 9 L 40 9 L 49 24 L 32 56 Z" fill={medal.rim} stroke={medal.rim} strokeWidth="4" strokeLinejoin="round" />
+      <path
+        d="M 15 24 L 24 9 L 40 9 L 49 24 L 32 56 Z"
+        fill={medal.rim}
+        stroke={medal.rim}
+        strokeWidth="4"
+        strokeLinejoin="round"
+      />
       {facets.map(([d, fill]) => (
         <path key={d} d={d} fill={fill} stroke={medal.rim} strokeWidth="0.9" strokeLinejoin="round" />
       ))}

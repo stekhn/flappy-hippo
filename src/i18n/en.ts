@@ -10,7 +10,13 @@ const p = (n: number, one: string, other: string) => pluralize('en', n, { one, o
 export const en = {
   difficulties: { easy: 'Easy', normal: 'Normal', hard: 'Hard' } satisfies Record<DifficultyId, string>,
   themes: { system: 'System', light: 'Day', dark: 'Night' } satisfies Record<ThemePref, string>,
-  medals: { bronze: 'Bronze', silver: 'Silver', gold: 'Gold', platinum: 'Platinum', diamond: 'Diamond' } satisfies Record<MedalId, string>,
+  medals: {
+    bronze: 'Bronze',
+    silver: 'Silver',
+    gold: 'Gold',
+    platinum: 'Platinum',
+    diamond: 'Diamond',
+  } satisfies Record<MedalId, string>,
   points: (n: number) => p(n, '{n} point', '{n} points'),
   /** The bare nouns, for where the number stands apart in its own style. */
   pointsWord: (n: number) => p(n, 'point', 'points'),
@@ -136,7 +142,10 @@ export const en = {
       howToPlay: 'How to play',
       rules: [
         { lead: 'Tap or Space', rest: 'makes the hippo beat its wings once. Holding it down changes nothing.' },
-        { lead: 'Every obstacle', rest: 'is worth one point, every melon three. Melons hang between the pipes, a detour that can pay off.' },
+        {
+          lead: 'Every obstacle',
+          rest: 'is worth one point, every melon three. Melons hang between the pipes, a detour that can pay off.',
+        },
         { lead: 'The bubble', rest: 'in a gap takes one hit. After that the hippo is safe for a moment.' },
         { lead: 'The ceiling', rest: 'is a limit, not an end. Only the ground and the pipes are dangerous.' },
       ],

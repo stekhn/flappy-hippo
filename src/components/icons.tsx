@@ -156,7 +156,11 @@ export function IconShield(props: IconProps) {
   return (
     <Icon {...props}>
       <path d="M12 3l7 3v5.5c0 4 -3 7.4 -7 8.5c-4 -1.1 -7 -4.5 -7 -8.5v-5.5z" fill="currentColor" />
-      <path d="M12 6.4l4.2 1.8v3.4c0 2.5 -1.8 4.6 -4.2 5.4c-2.4 -0.8 -4.2 -2.9 -4.2 -5.4v-3.4z" fill="var(--game-shield-inlay)" stroke="none" />
+      <path
+        d="M12 6.4l4.2 1.8v3.4c0 2.5 -1.8 4.6 -4.2 5.4c-2.4 -0.8 -4.2 -2.9 -4.2 -5.4v-3.4z"
+        fill="var(--game-shield-inlay)"
+        stroke="none"
+      />
     </Icon>
   )
 }

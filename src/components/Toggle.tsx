@@ -26,9 +26,7 @@ export function Toggle({ label, hint, checked, onChange }: ToggleProps) {
       </span>
       <span
         aria-hidden="true"
-        className={`relative h-8 w-14 shrink-0 rounded-full transition-colors ${
-          checked ? 'bg-brand' : 'bg-ink/20'
-        }`}
+        className={`relative h-8 w-14 shrink-0 rounded-full transition-colors ${checked ? 'bg-brand' : 'bg-ink/20'}`}
         style={checked ? { boxShadow: 'inset 0 -3px 0 var(--game-brand-deep)' } : undefined}
       >
         <span

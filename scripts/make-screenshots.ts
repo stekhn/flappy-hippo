@@ -94,7 +94,8 @@ const VIEWPORTS = {
  */
 async function flight(page: Page): Promise<void> {
   await page.evaluate(() => {
-    const runtime = (window as Window & { __flappyHippo?: { flap(): void; inspect(): { state: any; world: any } } }).__flappyHippo!
+    const runtime = (window as Window & { __flappyHippo?: { flap(): void; inspect(): { state: any; world: any } } })
+      .__flappyHippo!
     runtime.flap()
     const { state, world } = runtime.inspect()
     state.score = 213
@@ -121,15 +122,45 @@ async function flight(page: Page): Promise<void> {
       { kind: 'shield', x: ahead + 248, y: gap - 55, taken: false, seed: 2 },
     ]
     state.pots = [
-      { x: world.hippoX + 40, y: gap - 110, vy: 220, lead: 0.7, falling: true, spin: 0.7, passed: false, smashed: false, seed: 1 },
-      { x: Math.min(ahead + 120, world.width - 32), y: 13.4, vy: 0, lead: 0.8, falling: false, spin: 0.08, passed: false, smashed: false, seed: 2 },
+      {
+        x: world.hippoX + 40,
+        y: gap - 110,
+        vy: 220,
+        lead: 0.7,
+        falling: true,
+        spin: 0.7,
+        passed: false,
+        smashed: false,
+        seed: 1,
+      },
+      {
+        x: Math.min(ahead + 120, world.width - 32),
+        y: 13.4,
+        vy: 0,
+        lead: 0.8,
+        falling: false,
+        spin: 0.08,
+        passed: false,
+        smashed: false,
+        seed: 2,
+      },
     ]
     for (let i = 0; i < 44; i++) {
       state.confetti.push({
         x: 20 + ((i * 37) % (world.width - 40)),
         y: 40 + ((i * 53) % (world.groundY * 0.55)),
-        vx: 0, vy: 30, angle: i, spin: 3, flip: i * 0.7, flipRate: 8,
-        w: 6, h: 3.5, round: i % 4 === 0, tint: i % 3, life: 1.5, seed: i,
+        vx: 0,
+        vy: 30,
+        angle: i,
+        spin: 3,
+        flip: i * 0.7,
+        flipRate: 8,
+        w: 6,
+        h: 3.5,
+        round: i % 4 === 0,
+        tint: i % 3,
+        life: 1.5,
+        seed: i,
       })
     }
     state.nextSpawn = state.scrolled + ahead + 660
@@ -159,12 +190,21 @@ try {
   for (const scene of SCENES) {
     const page = await browser.newPage()
     const { width, height } = VIEWPORTS[scene.form]
-    await page.setViewport({ width, height, deviceScaleFactor: 2, isMobile: scene.form === 'narrow', hasTouch: scene.form === 'narrow' })
+    await page.setViewport({
+      width,
+      height,
+      deviceScaleFactor: 2,
+      isMobile: scene.form === 'narrow',
+      hasTouch: scene.form === 'narrow',
+    })
     await page.emulateMediaFeatures([{ name: 'prefers-color-scheme', value: scene.dark ? 'dark' : 'light' }])
     await page.evaluateOnNewDocument((progress: unknown) => {
       localStorage.clear()
       localStorage.setItem('flappy-hippo.progress', JSON.stringify(progress))
-      localStorage.setItem('flappy-hippo.settings', JSON.stringify({ difficulty: 'normal', sound: true, haptics: true }))
+      localStorage.setItem(
+        'flappy-hippo.settings',
+        JSON.stringify({ difficulty: 'normal', sound: true, haptics: true }),
+      )
     }, PROGRESS)
     // "Network idle" is not a reliable signal against a dev server; the game hook is.
     await page.goto(URL, { waitUntil: 'load' })
