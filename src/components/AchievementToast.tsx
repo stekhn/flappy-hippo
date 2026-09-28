@@ -23,10 +23,10 @@ export function AchievementToast({ toast }: { toast: Toast | null }) {
       >
         <EmojiBadge icon={achievement.icon} earned />
         <span className="min-w-0 flex-1">
-          <span className="t-label text-gold block text-[0.875rem]">{t.toast.unlocked}</span>
+          <span className="t-label text-gold-ink block text-[0.875rem]">{t.toast.unlocked}</span>
           <span className="t-label block truncate">{t.achievements[achievement.id].label}</span>
         </span>
-        <IconTrophy width={22} height={22} className="text-gold shrink-0" />
+        <IconTrophy width={22} height={22} className="text-gold-ink shrink-0" />
       </div>
     </div>
   )

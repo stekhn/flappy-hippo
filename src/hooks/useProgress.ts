@@ -53,5 +53,12 @@ export function useProgress() {
     setProgress(next)
   }, [])
 
-  return { progress, record, preview, reset }
+  /** Puts a snapshot back, for the undo the menu offers right after a delete. */
+  const restore = useCallback((snapshot: Progress) => {
+    latest.current = snapshot
+    saveProgress(snapshot)
+    setProgress(snapshot)
+  }, [])
+
+  return { progress, record, preview, reset, restore }
 }

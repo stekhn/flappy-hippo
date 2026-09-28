@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import type { ReactNode } from 'react'
+import type { PointerEvent, ReactNode } from 'react'
 import { ACHIEVEMENTS } from '../game/achievements.ts'
 import { STAGE_MOVERS, STAGE_POTS, TOP_SCORE } from '../game/constants.ts'
 import { DIFFICULTIES } from '../game/difficulty.ts'
@@ -13,9 +13,20 @@ import { formatDate, formatNumber, t } from '../i18n/index.ts'
 import { THEME_PREFS } from '../theme.ts'
 import type { ThemePref } from '../theme.ts'
 import { EmojiBadge } from './EmojiBadge.tsx'
+import { blurIfPointer } from './focus.ts'
 import { Segmented } from './Segmented.tsx'
 import { Toggle } from './Toggle.tsx'
-import { IconChart, IconCheck, IconClose, IconGear, IconHelp, IconInstall, IconStar } from './icons.tsx'
+import {
+  IconChart,
+  IconCheck,
+  IconClose,
+  IconGear,
+  IconHelp,
+  IconInstall,
+  IconRestart,
+  IconStar,
+  IconTrash,
+} from './icons.tsx'
 
 export type MenuTab = 'settings' | 'scores' | 'awards' | 'help'
 
@@ -39,6 +50,7 @@ interface MenuSheetProps {
   onTheme: (theme: ThemePref) => void
   onInstall: () => void
   onResetProgress: () => void
+  onRestoreProgress: (snapshot: Progress) => void
 }
 
 /**
@@ -64,6 +76,7 @@ export function MenuSheet({
   onTheme,
   onInstall,
   onResetProgress,
+  onRestoreProgress,
 }: MenuSheetProps) {
   const panel = useRef<HTMLDivElement>(null)
 
@@ -71,7 +84,8 @@ export function MenuSheet({
   // focus before (the menu button, usually) gets it back afterwards.
   useEffect(() => {
     const opener = document.activeElement
-    panel.current?.focus()
+    // Without preventScroll, focusing scrolls every overflow-hidden ancestor as well, board included.
+    panel.current?.focus({ preventScroll: true })
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         event.preventDefault()
@@ -110,22 +124,28 @@ export function MenuSheet({
       type="button"
       role="tab"
       aria-selected={tab === id}
+      title={wide ? undefined : label}
       onClick={() => onTab(id)}
       className={`t-label flex items-center gap-2 rounded-full text-[0.9375rem] transition-[background-color,color,box-shadow] duration-100 ${
-        wide ? 'w-full justify-start px-4 py-2.5' : 'flex-1 flex-col gap-0.5 px-1 py-2'
-      } ${tab === id ? 'bg-brand text-white shadow-[0_3px_0_var(--game-brand-deep)]' : 'text-muted'}`}
+        wide ? 'w-full justify-start px-4 py-2.5' : 'h-12 flex-1 justify-center'
+      } ${tab === id ? 'bg-brand text-white shadow-[inset_0_-3px_0_var(--game-brand-deep)]' : 'text-muted'}`}
     >
-      <Icon width={22} height={22} />
-      {label}
+      <Icon width={wide ? 22 : 24} height={wide ? 22 : 24} />
+      {wide ? label : <span className="sr-only">{label}</span>}
     </button>
   ))
 
+  // A fresh scroll container per tab: a reused one carries the last tab's offset over, and a
+  // shorter list then sits stuck below its end.
   const content = (
     <div
+      key={tab}
       role="tabpanel"
       aria-label={TABS.find((t) => t.id === tab)?.label}
-      className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pt-4 pb-1"
+      tabIndex={0}
+      className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pt-4 pb-1 outline-none focus-visible:outline-solid"
     >
+      <h2 className="sr-only">{TABS.find((t) => t.id === tab)?.label}</h2>
       {tab === 'settings' && (
         <SettingsTab
           settings={settings}
@@ -135,6 +155,8 @@ export function MenuSheet({
           onTheme={onTheme}
           onInstall={onInstall}
           onResetProgress={onResetProgress}
+          onRestoreProgress={onRestoreProgress}
+          progress={progress}
         />
       )}
       {tab === 'scores' && <ScoresTab progress={progress} />}
@@ -149,6 +171,16 @@ export function MenuSheet({
     </button>
   )
 
+  // Both layouts are the same dialog; only the shape and where the tabs sit differ.
+  const dialog = {
+    ref: panel,
+    tabIndex: -1,
+    role: 'dialog',
+    'aria-modal': true,
+    'aria-label': t.menu.label,
+    onPointerDown: (event: PointerEvent<HTMLDivElement>) => event.stopPropagation(),
+  } as const
+
   return (
     <div
       className={`safe-inset animate-scrim absolute inset-0 z-20 flex justify-center bg-sky/40 ${
@@ -158,13 +190,8 @@ export function MenuSheet({
     >
       {wide ? (
         <div
-          ref={panel}
-          tabIndex={-1}
-          role="dialog"
-          aria-modal="true"
-          aria-label={t.menu.label}
+          {...dialog}
           className="glass animate-pop flex max-h-full w-full max-w-[44rem] rounded-[1.75rem] outline-none"
-          onPointerDown={(event) => event.stopPropagation()}
         >
           <div className="flex w-44 shrink-0 flex-col p-3">
             <div className="mb-2">{close}</div>
@@ -182,22 +209,15 @@ export function MenuSheet({
         </div>
       ) : (
         <div
-          ref={panel}
-          tabIndex={-1}
-          role="dialog"
-          aria-modal="true"
-          aria-label={t.menu.label}
+          {...dialog}
           className="glass animate-rise flex max-h-[88dvh] w-full max-w-[30rem] flex-col rounded-t-[1.75rem] border-b-0 outline-none"
           style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}
-          onPointerDown={(event) => event.stopPropagation()}
         >
-          {/* Its own row, so the close button never sits on top of the last tab. */}
-          <div className="relative flex h-16 shrink-0 items-center justify-center px-2">
-            <div className="bg-ink/20 h-1.5 w-12 rounded-full" aria-hidden="true" />
-            <div className="absolute right-3">{close}</div>
-          </div>
-          <div role="tablist" aria-label={t.menu.sections} className="flex gap-1 px-3 pt-1">
-            {tabs}
+          <div className="flex shrink-0 items-center gap-2 px-3 pt-3 pb-2">
+            <div role="tablist" aria-label={t.menu.sections} className="flex min-w-0 flex-1 gap-1">
+              {tabs}
+            </div>
+            {close}
           </div>
           {content}
         </div>
@@ -218,16 +238,28 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
 function SettingsTab({
   settings,
   theme,
+  progress,
   canInstall,
   onSetting,
   onTheme,
   onInstall,
   onResetProgress,
+  onRestoreProgress,
 }: Pick<
   MenuSheetProps,
-  'settings' | 'theme' | 'canInstall' | 'onSetting' | 'onTheme' | 'onInstall' | 'onResetProgress'
+  | 'settings'
+  | 'theme'
+  | 'progress'
+  | 'canInstall'
+  | 'onSetting'
+  | 'onTheme'
+  | 'onInstall'
+  | 'onResetProgress'
+  | 'onRestoreProgress'
 >) {
-  const [confirmReset, setConfirmReset] = useState(false)
+  // The delete happens at once; this holds what it removed so it can be put back. The tab panel
+  // is keyed by tab and the sheet unmounts on close, so the offer ends exactly there.
+  const [undo, setUndo] = useState<Progress | null>(null)
 
   return (
     <>
@@ -290,36 +322,41 @@ function SettingsTab({
       )}
 
       <Section title={t.menu.settings.data}>
-        {confirmReset ? (
-          <div className="flex gap-2">
+        <div className="tile flex w-full items-center justify-between gap-4 px-4 py-3">
+          <span className="min-w-0">
+            <span className="t-label block">{t.menu.settings.dataTitle}</span>
+            <span className="t-hint block">
+              {undo ? t.menu.settings.deleted : t.menu.settings.dataHint}
+            </span>
+          </span>
+          {undo ? (
             <button
               type="button"
-              className="btn-secondary flex-1 px-3"
-              onClick={() => setConfirmReset(false)}
-            >
-              {t.menu.settings.cancel}
-            </button>
-            <button
-              type="button"
-              className="btn-primary flex-1 px-3"
-              onClick={() => {
-                onResetProgress()
-                setConfirmReset(false)
+              onClick={(event) => {
+                blurIfPointer(event)
+                onRestoreProgress(undo)
+                setUndo(null)
               }}
+              className="t-label text-ink border-tile-edge flex shrink-0 items-center gap-1.5 rounded-full border-2 px-3 py-2"
             >
-              {t.menu.settings.confirmReset}
+              <IconRestart width={18} height={18} />
+              {t.menu.settings.undo}
             </button>
-          </div>
-        ) : (
-          <button
-            type="button"
-            className="btn-secondary w-full"
-            onClick={() => setConfirmReset(true)}
-          >
-            {t.menu.settings.reset}
-          </button>
-        )}
-        <p className="t-hint mt-2">{t.menu.settings.dataHint}</p>
+          ) : (
+            <button
+              type="button"
+              aria-label={t.menu.settings.dataTitle}
+              onClick={(event) => {
+                blurIfPointer(event)
+                setUndo(progress)
+                onResetProgress()
+              }}
+              className="text-ink/70 hover:text-ink border-tile-edge flex h-11 w-11 shrink-0 items-center justify-center rounded-full border-2 transition-colors"
+            >
+              <IconTrash width={21} height={21} />
+            </button>
+          )}
+        </div>
       </Section>
     </>
   )
@@ -331,11 +368,11 @@ function ScoresTab({ progress }: { progress: Progress }) {
   return (
     <>
       <Section title={t.menu.scores.records}>
-        <div className="grid grid-cols-3 gap-2">
+        <dl className="grid grid-cols-3 gap-2">
           {DIFFICULTIES.map((difficulty) => (
             <Figure key={difficulty.id} label={t.difficulties[difficulty.id]} value={best[difficulty.id]} />
           ))}
-        </div>
+        </dl>
       </Section>
 
       <Section title={t.menu.scores.bestRounds}>
@@ -392,17 +429,16 @@ function formatDuration(seconds: number): string {
 }
 
 function AwardsTab({ progress }: { progress: Progress }) {
-  const done = ACHIEVEMENTS.filter((a) => progress.achievements[a.id]).length
-
   return (
-    <Section title={t.menu.awards.count(done, ACHIEVEMENTS.length)}>
+    <section className="mb-6">
       <ul className="space-y-2">
         {ACHIEVEMENTS.map((achievement) => {
           const unlocked = Boolean(progress.achievements[achievement.id])
           // The later ones stay secret until the player is close, and say what brings them out.
           const secret = !unlocked && achievement.reveal !== undefined && !achievement.reveal.when(progress)
           const words = t.achievements[achievement.id]
-          const revealHint = achievement.reveal ? t.reveal[achievement.reveal.hint.kind](achievement.reveal.hint.at) : ''
+          const reveal = achievement.reveal
+          const revealHint = reveal?.hint ? t.reveal[reveal.hint.kind](reveal.hint.at) : t.reveal.secret
           return (
             <li
               key={achievement.id}
@@ -413,12 +449,12 @@ function AwardsTab({ progress }: { progress: Progress }) {
                 <span className="t-label block">{secret ? t.menu.awards.hidden : words.label}</span>
                 <span className="block text-[0.9375rem]">{secret ? revealHint : words.hint}</span>
               </span>
-              {unlocked && <IconCheck width={22} height={22} className="text-gold shrink-0" />}
+              {unlocked && <IconCheck width={22} height={22} className="text-gold-ink shrink-0" />}
             </li>
           )
         })}
       </ul>
-    </Section>
+    </section>
   )
 }
 

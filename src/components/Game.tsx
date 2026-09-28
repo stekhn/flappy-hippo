@@ -1,20 +1,25 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import type { DifficultyId } from '../game/difficulty.ts'
+import type { Progress } from '../game/storage.ts'
 import { useGameRuntime } from '../hooks/useGameRuntime.ts'
 import { useInstallPrompt } from '../hooks/useInstallPrompt.ts'
 import { useProgress } from '../hooks/useProgress.ts'
+import { useRoom } from '../hooks/useRoom.ts'
 import { useSettings } from '../hooks/useSettings.ts'
 import { useToasts } from '../hooks/useToasts.ts'
 import { t } from '../i18n/index.ts'
 import { isTouch } from '../platform.ts'
 import { useTheme } from '../theme.ts'
 import { AchievementToast } from './AchievementToast.tsx'
+import { Backdrop } from './Backdrop.tsx'
 import { Hud } from './Hud.tsx'
 import { MenuSheet } from './MenuSheet.tsx'
 import type { MenuTab } from './MenuSheet.tsx'
 import { OverCard } from './OverCard.tsx'
 import { PauseCard } from './PauseCard.tsx'
+import { ShortcutBar } from './ShortcutBar.tsx'
 import { StartCard } from './StartCard.tsx'
+import { Wordmark } from './Wordmark.tsx'
 import { UpdatePrompt } from './UpdatePrompt.tsx'
 
 /** An app shortcut (or a shared link) may ask for a menu tab: ?menu=scores. */
@@ -27,6 +32,16 @@ function menuFromUrl(): MenuTab | null {
   }
 }
 
+/** The lettering hangs from this depth, so the claim reaches a little into the board. */
+const WORDMARK_BOX = 320
+
+/** Room above the board, in CSS pixels, before the wordmark, its claim, and the shortcut line show. */
+const WORDMARK_MIN = 110
+const CLAIM_MIN = 170
+const SHORTCUTS_MIN = 176
+
+const DIFFICULTY_KEYS: Record<string, DifficultyId | undefined> = { Digit1: 'easy', Digit2: 'normal', Digit3: 'hard' }
+
 /**
  * The game screen: a canvas the runtime paints, with the HUD, the overlay cards and the menu in
  * the DOM above it. React never renders a frame — it only reacts to the snapshots the runtime
@@ -35,11 +50,14 @@ function menuFromUrl(): MenuTab | null {
 export function Game() {
   const { theme, setTheme, resolved } = useTheme()
   const { settings, update } = useSettings()
-  const { progress, record, preview, reset } = useProgress()
+  const { progress, record, preview, reset, restore } = useProgress()
   const { canInstall, install } = useInstallPrompt()
   const { current: toast, push: showToasts } = useToasts()
   const [menu, setMenu] = useState<MenuTab | null>(menuFromUrl)
   const [touch] = useState(isTouch)
+  const [flash, setFlash] = useState<{ id: number; text: string } | null>(null)
+  const flashes = useRef(0)
+  const say = useCallback((text: string) => setFlash({ id: (flashes.current += 1), text }), [])
 
   // The query string has done its job once the menu is open; a reload should not reopen it.
   useEffect(() => {
@@ -67,25 +85,43 @@ export function Game() {
     controls.clearBest()
   }, [controls, reset])
 
-  // Keyboard: space flies, P pauses, Shift+P freezes the frame with no card over it (for a
-  // screenshot). Anything typed into a control belongs to that control.
+  const restoreProgress = useCallback(
+    (snapshot: Progress) => {
+      restore(snapshot)
+      controls.restoreBest(snapshot.best[settings.difficulty])
+    },
+    [controls, restore, settings.difficulty],
+  )
+
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      const flapKey = event.code === 'Space' || event.code === 'ArrowUp'
-      const pauseKey = event.code === 'KeyP' || event.code === 'Escape'
-      if (!flapKey && !pauseKey) return
+      if (event.metaKey || event.ctrlKey || event.altKey) return
       const target = event.target as HTMLElement | null
       if (target?.closest('button, input, select, textarea, [contenteditable]')) return
       if (menu !== null) return
+      const { code } = event
+      const difficulty = DIFFICULTY_KEYS[code]
+      if (code === 'Space' || code === 'ArrowUp') controls.flap()
+      else if (code === 'KeyP' && event.shiftKey) controls.freeze()
+      else if (code === 'KeyP' || code === 'Escape') {
+        if (snapshot.paused) controls.resume()
+        else controls.pause()
+      } else if (code === 'KeyM') {
+        update('sound', !settings.sound)
+        say(settings.sound ? t.hud.flash.soundOff : t.hud.flash.soundOn)
+      } else if (difficulty) {
+        update('difficulty', difficulty)
+        say(t.hud.flash.difficulty(t.difficulties[difficulty], snapshot.phase === 'running'))
+      } else return
       event.preventDefault()
-      if (flapKey) controls.flap()
-      else if (event.code === 'KeyP' && event.shiftKey) controls.freeze()
-      else if (snapshot.paused) controls.resume()
-      else controls.pause()
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [controls, menu, snapshot.paused])
+  }, [controls, menu, say, settings.sound, snapshot.paused, snapshot.phase, update])
+
+  const room = useRoom(boxRef, canvasRef)
+  const showWordmark = room >= WORDMARK_MIN
+  const showShortcuts = !touch && room >= SHORTCUTS_MIN
 
   const showStart = snapshot.phase === 'ready' && menu === null
   const showPause = snapshot.paused && snapshot.phase === 'running' && menu === null
@@ -100,6 +136,16 @@ export function Game() {
         controls.flap()
       }}
     >
+      <h1 className="sr-only">Flappy Hippo</h1>
+      <Backdrop box={boxRef} canvas={canvasRef} dark={resolved === 'dark'} />
+
+      {showWordmark && (
+        <div className="pointer-events-none absolute inset-x-0 top-0 z-[5] flex items-end justify-center" style={{ height: WORDMARK_BOX }}>
+          <Wordmark height={room} claim={room >= CLAIM_MIN ? t.desktop.claim : null} dark={resolved === 'dark'} />
+        </div>
+      )}
+      {showShortcuts && <ShortcutBar height={room} />}
+
       {/* Shrink-wraps the board, so the HUD, the cards and the sheet line up with its edges
           instead of with the window on a display too large to fill. */}
       <div className="board relative">
@@ -119,6 +165,7 @@ export function Game() {
         <Hud
           snapshot={snapshot}
           sound={settings.sound}
+          flash={flash}
           onToggleSound={() => update('sound', !settings.sound)}
           onPause={controls.pause}
           onMenu={() => setMenu('settings')}
@@ -129,6 +176,7 @@ export function Game() {
             difficulty={settings.difficulty}
             best={progress.best[settings.difficulty]}
             touch={touch}
+            logoAbove={showWordmark}
             onDifficulty={(id: DifficultyId) => update('difficulty', id)}
             onStart={controls.flap}
             onOpenMenu={setMenu}
@@ -149,8 +197,8 @@ export function Game() {
           <OverCard
             snapshot={snapshot}
             touch={touch}
+            dark={resolved === 'dark'}
             onRestart={controls.restart}
-            onOpenMenu={setMenu}
           />
         )}
 
@@ -170,6 +218,7 @@ export function Game() {
             onTheme={setTheme}
             onInstall={install}
             onResetProgress={resetProgress}
+            onRestoreProgress={restoreProgress}
           />
         )}
       </div>

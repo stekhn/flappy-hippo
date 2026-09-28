@@ -2,7 +2,7 @@ import { t } from '../i18n/index.ts'
 import { CardShell } from './CardShell.tsx'
 import { Keycap } from './Keycap.tsx'
 import { Stat } from './Stat.tsx'
-import { HippoMark, IconHome, IconPlay, IconRestart, IconStar } from './icons.tsx'
+import { IconHome, IconPlay, IconRestart, IconStar } from './icons.tsx'
 
 interface PauseCardProps {
   score: number
@@ -15,7 +15,6 @@ interface PauseCardProps {
 export function PauseCard({ score, touch, onResume, onRestart, onGiveUp }: PauseCardProps) {
   return (
     <CardShell onBackdropTap={onResume} labelledBy="pause-title">
-      <HippoMark width={44} height={43} className="mx-auto mb-1" />
       <h2 id="pause-title" className="t-heading">
         {t.pause.title}
       </h2>

@@ -48,6 +48,7 @@ export interface GameControls {
   setSuspended: (suspended: boolean) => void
   /** After the saved record was wiped. */
   clearBest: () => void
+  restoreBest: (best: number) => void
 }
 
 /**
@@ -169,6 +170,10 @@ export function useGameRuntime({ settings, dark, best, record, preview, onUnlock
       clearBest: () => {
         runtimeRef.current?.setBest(0)
         setStatus(t.status.reset)
+      },
+      restoreBest: (best: number) => {
+        runtimeRef.current?.setBest(best)
+        setStatus(t.status.undone)
       },
     }
   }, [])

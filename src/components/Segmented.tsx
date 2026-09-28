@@ -31,7 +31,7 @@ export function Segmented<T extends string>({ label, value, options, onChange }:
               onChange(option.value)
             }}
             className={`t-label flex-1 rounded-full px-2 py-2 transition-[background-color,color,transform,box-shadow] duration-100 ${
-              active ? 'bg-brand text-white shadow-[0_3px_0_var(--game-brand-deep)]' : 'text-muted'
+              active ? 'bg-brand text-white shadow-[inset_0_-3px_0_var(--game-brand-deep)]' : 'text-muted'
             }`}
           >
             {option.label}

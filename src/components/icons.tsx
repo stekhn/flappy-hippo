@@ -1,4 +1,5 @@
 import type { SVGProps } from 'react'
+import { MELON_TILT_DEG } from '../game/constants.ts'
 
 // A handful of hand-rolled icons in the Tabler style (24px grid, 2px round strokes). Cheaper than
 // an icon package for the dozen glyphs this game needs, and they inherit currentColor.
@@ -116,15 +117,30 @@ export function IconStar(props: IconProps) {
   )
 }
 
-/** A wedge: green rind in the current colour round red flesh with three pips, so it is not a lime. */
+/**
+ * A wedge: green rind in the current colour round red flesh with three pips, so it is not a
+ * lime. Tilted like the melon in the game, the cut face up.
+ */
 export function IconMelon(props: IconProps) {
   return (
     <Icon {...props}>
-      <path d="M3 16a9 9 0 0 1 18 0z" fill="currentColor" />
-      <path d="M5.6 16a6.4 6.4 0 0 1 12.8 0z" fill="var(--game-melon-flesh)" stroke="none" />
-      <circle cx="9.5" cy="14.4" r="1.05" fill="#2a1f24" stroke="none" />
-      <circle cx="14.5" cy="14.4" r="1.05" fill="#2a1f24" stroke="none" />
-      <circle cx="12" cy="11.9" r="1.05" fill="#2a1f24" stroke="none" />
+      <g transform={`rotate(${MELON_TILT_DEG} 12 12)`}>
+        <path d="M3 16a9 9 0 0 1 18 0z" fill="currentColor" />
+        <path d="M5.6 16a6.4 6.4 0 0 1 12.8 0z" fill="var(--game-melon-flesh)" stroke="none" />
+        <circle cx="9.5" cy="14.4" r="1.05" fill="#2a1f24" stroke="none" />
+        <circle cx="14.5" cy="14.4" r="1.05" fill="#2a1f24" stroke="none" />
+        <circle cx="12" cy="11.9" r="1.05" fill="#2a1f24" stroke="none" />
+      </g>
+    </Icon>
+  )
+}
+
+export function IconRotate(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <rect x="8" y="9" width="8" height="12" rx="1.5" />
+      <path d="M4 10a8 8 0 0 1 12 -6.5" />
+      <path d="M13 3.5h3v3" />
     </Icon>
   )
 }
@@ -133,6 +149,7 @@ export function IconShield(props: IconProps) {
   return (
     <Icon {...props}>
       <path d="M12 3l7 3v5.5c0 4 -3 7.4 -7 8.5c-4 -1.1 -7 -4.5 -7 -8.5v-5.5z" fill="currentColor" />
+      <path d="M12 6.4l4.2 1.8v3.4c0 2.5 -1.8 4.6 -4.2 5.4c-2.4 -0.8 -4.2 -2.9 -4.2 -5.4v-3.4z" fill="var(--game-shield-inlay)" stroke="none" />
     </Icon>
   )
 }
@@ -191,6 +208,18 @@ export function IconShare(props: IconProps) {
       <path d="M12 3v12" />
       <path d="M8 7l4 -4l4 4" />
       <path d="M6 12v7a1 1 0 0 0 1 1h10a1 1 0 0 0 1 -1v-7" />
+    </Icon>
+  )
+}
+
+export function IconTrash(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M4 7h16" />
+      <path d="M10 11v6" />
+      <path d="M14 11v6" />
+      <path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" />
+      <path d="M9 7v-3h6v3" />
     </Icon>
   )
 }

@@ -15,6 +15,8 @@ import {
 interface HudProps {
   snapshot: Snapshot
   sound: boolean
+  /** A key press to call out over the scene; the id restarts the animation on a repeat. */
+  flash: { id: number; text: string } | null
   onToggleSound: () => void
   onPause: () => void
   onMenu: () => void
@@ -28,9 +30,9 @@ const NOTICE_MS = 3200
  */
 function Outlined({ icon: Icon }: { icon: (props: SVGProps<SVGSVGElement>) => ReactNode }) {
   return (
-    <span className="relative inline-flex h-[22px] w-[22px]" aria-hidden="true">
-      <Icon width={22} height={22} className="text-sky absolute inset-0" strokeWidth={6} />
-      <Icon width={22} height={22} className="relative" />
+    <span className="relative inline-flex h-[26px] w-[26px]" aria-hidden="true">
+      <Icon width={26} height={26} className="text-sky absolute inset-0" strokeWidth={6} />
+      <Icon width={26} height={26} className="relative" />
     </span>
   )
 }
@@ -55,13 +57,22 @@ function StageNotice({ stage }: { stage: number }) {
 }
 
 /** The thin layer of chrome over the scene: score, shield, and the two buttons a thumb can reach. */
-export function Hud({ snapshot, sound, onToggleSound, onPause, onMenu }: HudProps) {
+export function Hud({ snapshot, sound, flash, onToggleSound, onPause, onMenu }: HudProps) {
   const playing = snapshot.phase === 'running' && !snapshot.paused
   const countingIn = playing && snapshot.countdown > 0
 
   return (
     <div className="safe-inset pointer-events-none absolute inset-0 z-10 flex flex-col">
       {playing && snapshot.stage > 0 && <StageNotice key={snapshot.stage} stage={snapshot.stage} />}
+      {playing && flash && (
+        <p
+          key={flash.id}
+          className="hud-text animate-flash absolute inset-x-4 top-[46%] text-center text-xl"
+          role="status"
+        >
+          {flash.text}
+        </p>
+      )}
       <div className="flex items-start justify-between gap-3">
         <button
           type="button"
@@ -71,7 +82,9 @@ export function Hud({ snapshot, sound, onToggleSound, onPause, onMenu }: HudProp
           aria-pressed={sound}
           aria-label={sound ? t.hud.soundOff : t.hud.soundOn}
         >
-          {sound ? <IconSoundOn /> : <IconSoundOff />}
+          <span key={String(sound)} className="animate-pop inline-flex">
+            {sound ? <IconSoundOn /> : <IconSoundOff />}
+          </span>
         </button>
 
         {/* Only while the round is live: a card is up otherwise, and it carries the numbers. */}
@@ -84,32 +97,32 @@ export function Hud({ snapshot, sound, onToggleSound, onPause, onMenu }: HudProp
               >
                 {snapshot.score}
               </span>
-              <div className="mt-1.5 flex items-center gap-3">
+              <div className="mt-1.5 flex items-center gap-3.5">
                 {snapshot.newBest && (
                   <span
-                    className="hud-text animate-pop flex items-center gap-1 text-base"
+                    className="hud-text animate-pop flex items-center gap-1 text-lg"
                     style={{ color: 'var(--game-gold)' }}
                   >
                     <Outlined icon={IconTrophy} />
-                    <span>{t.hud.record}</span>
+                    <span className="-translate-y-0.5">{t.hud.record}</span>
                   </span>
                 )}
                 {snapshot.melons > 0 && (
                   <span
-                    className="hud-text flex items-center gap-1 text-base"
+                    className="hud-text flex items-center gap-1 text-lg"
                     style={{ color: 'var(--game-melon)' }}
                   >
                     <Outlined icon={IconMelon} />
-                    <span>{snapshot.melons}</span>
+                    <span className="-translate-y-0.5 tracking-[0.08em]">×{snapshot.melons}</span>
                   </span>
                 )}
                 {snapshot.charges > 0 && (
                   <span
-                    className="hud-text flex items-center gap-1 text-base"
+                    className="hud-text flex items-center gap-1 text-lg"
                     style={{ color: 'var(--game-shield)' }}
                   >
                     <Outlined icon={IconShield} />
-                    <span>{t.hud.shield(snapshot.charges)}</span>
+                    <span className="-translate-y-0.5 tracking-[0.08em]">×{snapshot.charges}</span>
                   </span>
                 )}
               </div>

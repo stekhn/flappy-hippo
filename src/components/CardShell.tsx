@@ -2,7 +2,7 @@ import type { ReactNode } from 'react'
 
 interface CardShellProps {
   children: ReactNode
-  /** Tapping anywhere outside the buttons is itself an input (start, resume, restart). */
+  /** Tapping anywhere outside the buttons is itself an input (start, resume). Absent, a tap does nothing. */
   onBackdropTap?: () => void
   /** 'end' drops the card to the bottom of the screen, leaving the hippo in plain sight. */
   align?: 'center' | 'end'
@@ -10,9 +10,10 @@ interface CardShellProps {
 }
 
 /**
- * Centres one overlay card over the scene and turns a tap on the empty space into an input. No
- * scrim: the glass and the scene's own reaction (the sky falls on a crash) carry the state, and
- * a grey wash would only make the moment dull.
+ * Centres one overlay card over the scene and turns a tap on the empty space into an input, or
+ * swallows it: after a crash the hands are still tapping, and the round's result must not be
+ * skipped by that. No scrim: the glass and the scene's own reaction (the sky falls on a crash)
+ * carry the state, and a grey wash would only make the moment dull.
  */
 export function CardShell({ children, onBackdropTap, align = 'center', labelledBy }: CardShellProps) {
   return (
