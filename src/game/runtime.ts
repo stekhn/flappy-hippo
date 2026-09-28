@@ -254,7 +254,7 @@ export class GameRuntime {
 
   /** Re-fits the play field to the box and rebuilds the backing store at device resolution. */
   measure(): void {
-    const { width, height } = this.options.box.getBoundingClientRect()
+    const { clientWidth: width, clientHeight: height } = this.options.box
     if (width < 1 || height < 1) return
     const dpr = Math.min(window.devicePixelRatio || 1, this.dprCap)
     // Setting a canvas' size clears it and costs a fresh backing store: only for a real change.

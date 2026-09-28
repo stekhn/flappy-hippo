@@ -1,7 +1,7 @@
 {
   "name": "flappy-hippo",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.2.0",
   "description": "A flying hippo, one button, no account: a Flappy game as an installable web app.",
   "license": "MIT",
   "author": "Steffen Kühne",

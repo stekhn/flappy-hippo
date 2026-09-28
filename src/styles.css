@@ -338,6 +338,28 @@ body {
   padding-left: max(0.75rem, env(safe-area-inset-left));
 }
 
+/* Turning the view is the last resort for landscape, and the only one iOS leaves. It applies
+   while the device is upright, so turning the phone itself always wins over the transform. */
+@media (orientation: portrait) {
+  :root[data-rotate='true'] body {
+    position: fixed;
+    top: 0;
+    left: 100dvw;
+    width: 100dvh;
+    height: 100dvw;
+    transform: rotate(90deg);
+    transform-origin: top left;
+  }
+
+  /* The page is a quarter turn clockwise, so each edge now faces the next one round. */
+  :root[data-rotate='true'] .safe-inset {
+    padding-top: max(0.75rem, env(safe-area-inset-right));
+    padding-right: max(0.75rem, env(safe-area-inset-bottom));
+    padding-bottom: max(0.75rem, env(safe-area-inset-left));
+    padding-left: max(0.75rem, env(safe-area-inset-top));
+  }
+}
+
 /* --------------------------------------------------------------------------------------------
    Motion. Cards bounce in the way a toy would; toasts slide up from the bottom edge.
 

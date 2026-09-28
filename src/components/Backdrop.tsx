@@ -134,8 +134,8 @@ export function Backdrop({ box, canvas, dark }: BackdropProps) {
     const board = canvas.current
     if (!target || !boxEl || !board) return
     const paint = () => {
-      const bounds = boxEl.getBoundingClientRect()
-      const rect = board.getBoundingClientRect()
+      const bounds = { width: boxEl.clientWidth, height: boxEl.clientHeight }
+      const rect = { width: board.offsetWidth, height: board.offsetHeight }
       const framed = bounds.width - rect.width > 2 || bounds.height - rect.height > 2
       target.hidden = !framed
       if (!framed) return

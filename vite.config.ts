@@ -40,7 +40,8 @@ export default defineConfig(({ command, isPreview }) => ({
         scope: '.',
         display: 'fullscreen',
         display_override: ['fullscreen', 'standalone'],
-        orientation: 'any',
+        // A landscape game: an installed app opens sideways wherever the platform honours this.
+        orientation: 'landscape',
         background_color: '#e5f0ff',
         theme_color: '#006aff',
         categories: ['games', 'entertainment'],
