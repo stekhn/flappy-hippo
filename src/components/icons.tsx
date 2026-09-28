@@ -138,9 +138,8 @@ export function IconMelon(props: IconProps) {
 export function IconRotate(props: IconProps) {
   return (
     <Icon {...props}>
-      <rect x="8" y="9" width="8" height="12" rx="1.5" />
-      <path d="M4 10a8 8 0 0 1 12 -6.5" />
-      <path d="M13 3.5h3v3" />
+      <path d="M19.9 12a8 8 0 1 0 -2.6 5.9" />
+      <path d="M20 6.5v5.5h-5.5" />
     </Icon>
   )
 }

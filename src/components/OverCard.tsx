@@ -50,13 +50,13 @@ export function OverCard({ snapshot, touch, dark, onRestart }: OverCardProps) {
         {t.over.titles[snapshot.round % t.over.titles.length]}
       </h2>
 
-      <p className="mt-3">
+      <p className="mt-3 flex items-baseline justify-center gap-2">
         <span
-          className={`t-number block text-[3.5rem] ${snapshot.newBest ? 'text-gold-ink' : 'text-brand'}`}
+          className={`t-number text-[3.5rem] leading-none ${snapshot.newBest ? 'text-gold-ink' : 'text-brand'}`}
         >
           {snapshot.score}
         </span>
-        <span className="t-label block">{t.pointsWord(snapshot.score)}</span>
+        <span className="t-label">{t.pointsWord(snapshot.score)}</span>
       </p>
 
       {medal ? (
@@ -88,19 +88,23 @@ export function OverCard({ snapshot, touch, dark, onRestart }: OverCardProps) {
         )}
       </p>
 
-      <button type="button" className="btn-primary mt-4 w-full" onClick={onRestart}>
-        <IconRestart width={22} height={22} />
-        {t.over.again}
-        {!touch && <Keycap />}
-      </button>
-      {shareable && (
-        <div className="mt-3 flex justify-center">
-          <button type="button" className="btn-ghost" onClick={() => void shareScore(snapshot)}>
+      <div className="mt-4 flex gap-2">
+        <button type="button" className="btn-primary flex-1" onClick={onRestart}>
+          <IconRestart width={22} height={22} />
+          {t.over.again}
+          {!touch && <Keycap />}
+        </button>
+        {shareable && (
+          <button
+            type="button"
+            className="btn-secondary w-14 shrink-0 px-0"
+            onClick={() => void shareScore(snapshot)}
+            aria-label={t.over.share}
+          >
             <IconShare width={20} height={20} />
-            {t.over.share}
           </button>
-        </div>
-      )}
+        )}
+      </div>
     </CardShell>
   )
 }

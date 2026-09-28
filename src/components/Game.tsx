@@ -4,6 +4,7 @@ import type { Progress } from '../game/storage.ts'
 import { useGameRuntime } from '../hooks/useGameRuntime.ts'
 import { useInstallPrompt } from '../hooks/useInstallPrompt.ts'
 import { useLandscape } from '../hooks/useLandscape.ts'
+import { useMediaQuery } from '../hooks/useMediaQuery.ts'
 import { useProgress } from '../hooks/useProgress.ts'
 import { useRoom } from '../hooks/useRoom.ts'
 import { useSettings } from '../hooks/useSettings.ts'
@@ -34,12 +35,15 @@ function menuFromUrl(): MenuTab | null {
 }
 
 /** How far the lettering reaches past the board's top edge, so it sits on the board, not above it. */
-const WORDMARK_DIP = 18
+const WORDMARK_DIP = 12
 
 /** Room above the board, in CSS pixels, before the wordmark, its claim, and the shortcut line show. */
 const WORDMARK_MIN = 110
 const CLAIM_MIN = 170
 const SHORTCUTS_MIN = 176
+
+/** A phone held upright: the one case where turning the view shows more of the field ahead. */
+const UPRIGHT_PHONE = '(orientation: portrait) and (hover: none) and (max-width: 640px)'
 
 const DIFFICULTY_KEYS: Record<string, DifficultyId | undefined> = { Digit1: 'easy', Digit2: 'normal', Digit3: 'hard' }
 
@@ -54,6 +58,7 @@ export function Game() {
   const { progress, record, preview, reset, restore } = useProgress()
   const { canInstall, install } = useInstallPrompt()
   const { rotated, toggle: turnView } = useLandscape()
+  const upright = useMediaQuery(UPRIGHT_PHONE)
   const { current: toast, push: showToasts } = useToasts()
   const [menu, setMenu] = useState<MenuTab | null>(menuFromUrl)
   const [touch] = useState(isTouch)
@@ -173,7 +178,10 @@ export function Game() {
           flash={flash}
           onToggleSound={() => update('sound', !settings.sound)}
           onPause={controls.pause}
-          onMenu={() => setMenu('settings')}
+          onMenu={() => setMenu((open) => (open === null ? 'settings' : null))}
+          menuOpen={menu !== null}
+          rotated={rotated}
+          onTurn={upright ? turnView : undefined}
         />
 
         {showStart && (
@@ -183,11 +191,9 @@ export function Game() {
             touch={touch}
             logoAbove={showWordmark}
             dark={resolved === 'dark'}
-            rotated={rotated}
             onDifficulty={(id: DifficultyId) => update('difficulty', id)}
             onStart={controls.flap}
             onOpenMenu={setMenu}
-            onTurn={turnView}
           />
         )}
 

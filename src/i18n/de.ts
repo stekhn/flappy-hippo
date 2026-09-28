@@ -17,9 +17,6 @@ export const de: Messages = {
     play: 'Spielen',
     records: 'Rekorde',
     settings: 'Einstellungen',
-    landscape: 'Quer siehst du weiter voraus.',
-    turn: 'Quer drehen',
-    turnBack: 'Zurück drehen',
     testMode: (pots, movers) => `Testmodus: Stufen bei ${pots} und ${movers} Punkten`,
   },
   pause: { title: 'Pause', resume: 'Weiter', restart: 'Neustart', quit: 'Beenden' },
@@ -53,6 +50,8 @@ export const de: Messages = {
     soundOn: 'Ton einschalten',
     pause: 'Pause',
     openMenu: 'Menü öffnen',
+    turn: 'Quer drehen',
+    turnBack: 'Zurück drehen',
     fly: 'Fliegen',
     notices: { 1: 'Achtung, Bauarbeiten!', 2: 'Achtung, Blumentöpfe!' },
     flash: {

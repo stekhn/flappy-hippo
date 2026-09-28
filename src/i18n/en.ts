@@ -23,9 +23,6 @@ export const en = {
     play: 'Play',
     records: 'Records',
     settings: 'Settings',
-    landscape: 'Sideways you see further ahead.',
-    turn: 'Turn sideways',
-    turnBack: 'Turn back',
     testMode: (pots: number, movers: number) => `Test mode: stages at ${pots} and ${movers} points`,
   },
   pause: { title: 'Paused', resume: 'Resume', restart: 'Restart', quit: 'Quit' },
@@ -59,6 +56,8 @@ export const en = {
     soundOn: 'Turn sound on',
     pause: 'Pause',
     openMenu: 'Open menu',
+    turn: 'Turn sideways',
+    turnBack: 'Turn back',
     fly: 'Fly',
     notices: { 1: 'Watch out, road works!', 2: 'Watch out, flower pots!' } as Record<number, string>,
     /** What a key press calls out over the scene, since the setting itself is out of sight. */

@@ -12,6 +12,7 @@ import { Fill } from '../i18n/Fill.tsx'
 import { formatDate, formatNumber, t } from '../i18n/index.ts'
 import { THEME_PREFS } from '../theme.ts'
 import type { ThemePref } from '../theme.ts'
+import { MENU_TOGGLE_ID } from './Hud.tsx'
 import { EmojiBadge } from './EmojiBadge.tsx'
 import { blurIfPointer } from './focus.ts'
 import { Segmented } from './Segmented.tsx'
@@ -19,7 +20,6 @@ import { Toggle } from './Toggle.tsx'
 import {
   IconChart,
   IconCheck,
-  IconClose,
   IconGear,
   IconHelp,
   IconInstall,
@@ -94,9 +94,11 @@ export function MenuSheet({
         return
       }
       if (event.key !== 'Tab' || !panel.current) return
-      const focusable = panel.current.querySelectorAll<HTMLElement>(
+      const inside = panel.current.querySelectorAll<HTMLElement>(
         'button:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])',
       )
+      const toggle = document.getElementById(MENU_TOGGLE_ID)
+      const focusable = toggle ? [toggle, ...inside] : [...inside]
       if (focusable.length === 0) return
       const first = focusable[0]
       const last = focusable[focusable.length - 1]
@@ -165,12 +167,6 @@ export function MenuSheet({
     </div>
   )
 
-  const close = (
-    <button type="button" className="icon-btn" onClick={onClose} aria-label={t.menu.close}>
-      <IconClose width={20} height={20} />
-    </button>
-  )
-
   // Both layouts are the same dialog; only the shape and where the tabs sit differ.
   const dialog = {
     ref: panel,
@@ -194,7 +190,6 @@ export function MenuSheet({
           className="glass animate-pop flex max-h-full w-full max-w-[44rem] rounded-[1.75rem] outline-none"
         >
           <div className="flex w-44 shrink-0 flex-col p-3">
-            <div className="mb-2">{close}</div>
             <div
               role="tablist"
               aria-label={t.menu.sections}
@@ -217,7 +212,6 @@ export function MenuSheet({
             <div role="tablist" aria-label={t.menu.sections} className="flex min-w-0 flex-1 gap-1">
               {tabs}
             </div>
-            {close}
           </div>
           {content}
         </div>

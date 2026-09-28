@@ -339,8 +339,9 @@ body {
 }
 
 /* Turning the view is the last resort for landscape, and the only one iOS leaves. It applies
-   while the device is upright, so turning the phone itself always wins over the transform. */
-@media (orientation: portrait) {
+   while the device is upright, so turning the phone itself always wins over the transform, and
+   only at the width that shows the button in the HUD, so it can always be undone. */
+@media (orientation: portrait) and (max-width: 639px) {
   :root[data-rotate='true'] body {
     position: fixed;
     top: 0;
