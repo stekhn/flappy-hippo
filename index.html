@@ -6,15 +6,15 @@
     <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png" />
     <link rel="apple-touch-icon" href="apple-touch-icon.png" />
     <link rel="mask-icon" href="mask-icon.svg" color="#006aff" />
-    <!-- viewport-fit=cover lets the game paint behind the notch; the UI keeps clear of it via
-         env(safe-area-inset-*). No user scaling: a double tap must flap, not zoom. -->
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no, maximum-scale=1"
-    />
+    <!-- viewport-fit=cover lets the game paint behind the notch. Pinch zoom stays allowed; a double
+         tap does not zoom because the page sets touch-action. -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="description" content="Flappy Hippo: make the hippo fly and dodge the pipes. Playable offline, no account, no ads." />
     <meta name="application-name" content="Flappy Hippo" />
     <link rel="canonical" href="https://stekhn.github.io/flappy-hippo/" />
+    <link rel="alternate" hreflang="en" href="https://stekhn.github.io/flappy-hippo/?lang=en" />
+    <link rel="alternate" hreflang="de" href="https://stekhn.github.io/flappy-hippo/?lang=de" />
+    <link rel="alternate" hreflang="x-default" href="https://stekhn.github.io/flappy-hippo/" />
     <!-- How a shared link looks in a chat or a feed. -->
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Flappy Hippo" />
@@ -42,6 +42,26 @@
     <link rel="preload" href="fonts/fredoka-latin.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preload" href="fonts/nunito-latin.woff2" as="font" type="font/woff2" crossorigin />
     <title>Flappy Hippo</title>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "VideoGame",
+        "name": "Flappy Hippo",
+        "url": "https://stekhn.github.io/flappy-hippo/",
+        "description": "Make the hippo fly and dodge the pipes. Three difficulties, melons and shields, records, medals and achievements. Playable offline, no account, no ads.",
+        "image": "https://stekhn.github.io/flappy-hippo/preview.jpg",
+        "genre": "Arcade",
+        "playMode": "SinglePlayer",
+        "applicationCategory": "GameApplication",
+        "operatingSystem": "Any",
+        "browserRequirements": "Requires JavaScript and a modern browser",
+        "inLanguage": ["en", "de"],
+        "isAccessibleForFree": true,
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "EUR" },
+        "author": { "@type": "Person", "name": "Steffen Kühne" },
+        "license": "https://github.com/stekhn/flappy-hippo/blob/main/LICENSE"
+      }
+    </script>
     <script>
       // Resolve the theme before first paint to avoid a flash. Mirrors src/theme.ts.
       (function () {
@@ -61,6 +81,13 @@
   </head>
   <body>
     <div id="root"></div>
+    <noscript>
+      <main style="font-family: system-ui, sans-serif; padding: 2rem; max-width: 36rem; margin: 0 auto">
+        <h1>Flappy Hippo</h1>
+        <p>A flying hippo, one button, no account. The game needs JavaScript to run.</p>
+        <p lang="de">Ein fliegendes Nilpferd, ein Knopf, kein Konto. Das Spiel braucht JavaScript.</p>
+      </main>
+    </noscript>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

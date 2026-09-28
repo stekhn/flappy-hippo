@@ -27,12 +27,21 @@ function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max)
 }
 
-/** Fits the play field to a CSS pixel box. Rounded to whole units so outlines stay crisp. */
+/** On a display the board no longer fills: the share of the long side kept clear either side, and the widest field. */
+const DESKTOP_MARGIN = 0.11
+const DESKTOP_ASPECT = 1.9
+
+/** Fits the play field to a CSS pixel box. Past MAX_ZOOM the long side keeps following the box, less a margin. */
 export function fitWorld(cssWidth: number, cssHeight: number): World {
   const safeW = Math.max(cssWidth, 1)
   const safeH = Math.max(cssHeight, 1)
   const aspect = safeW / safeH
-  const stretch = clamp(aspect >= 1 ? aspect : 1 / aspect, 1, MAX_ASPECT)
+  const boxShort = aspect >= 1 ? safeH : safeW
+  const boxLong = aspect >= 1 ? safeW : safeH
+  const framed = boxShort > SHORT_SIDE * MAX_ZOOM
+  const shortPx = Math.min(boxShort, SHORT_SIDE * MAX_ZOOM)
+  const longPx = framed ? boxLong * (1 - DESKTOP_MARGIN * 2) : boxLong
+  const stretch = clamp(longPx / shortPx, 1, framed ? DESKTOP_ASPECT : MAX_ASPECT)
   const long = Math.round(SHORT_SIDE * stretch)
   const width = aspect >= 1 ? long : SHORT_SIDE
   const height = aspect >= 1 ? SHORT_SIDE : long

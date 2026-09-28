@@ -34,7 +34,6 @@
    -------------------------------------------------------------------------------------------- */
 :root {
   --game-brand: #006aff;
-  --game-brand-strong: #0053c7;
   /* The solid "underside" of a pressable button — always darker than the face, in both themes. */
   --game-brand-deep: #0045ad;
   --game-pipe-edge: #00479f;
@@ -47,9 +46,11 @@
   /* Secondary text is a tint of the sky's blue, never a grey — grey reads as disabled. */
   --game-muted: #4f6a96;
   --game-gold: #e8930c;
-  --game-gold-deep: #b86f00;
-  /* The shield's colour, and nothing else's. Likewise the melon's: its rind, not its flesh. */
-  --game-shield: #ad4bf2;
+  /* Gold as text on a card: a deeper cut of the reward colour, still gold, not brown. */
+  --game-gold-ink: #c47c00;
+  /* The shield as text and icon: navy by day, violet by night, the other as the inlay. */
+  --game-shield: #12307f;
+  --game-shield-inlay: #c07cff;
   --game-melon: #178a48;
   --game-melon-flesh: #e8395f;
   /* Every modal — cards, sheet, toasts — shares this one frosted surface. */
@@ -66,7 +67,6 @@
 :root[data-theme='dark'] {
   color-scheme: dark;
   --game-brand: #5b9dff;
-  --game-brand-strong: #7db0ff;
   --game-brand-deep: #2c6ad6;
   --game-pipe-edge: #1f4f9e;
   --game-sky: #111a26;
@@ -77,8 +77,9 @@
   --game-text: #e3eaf5;
   --game-muted: #a6bad9;
   --game-gold: #ffc65c;
-  --game-gold-deep: #c98a1a;
+  --game-gold-ink: #ffc65c;
   --game-shield: #d6a5ff;
+  --game-shield-inlay: #10318f;
   --game-melon: #7fe0a0;
   --game-melon-flesh: #ff7a9a;
   --game-glass: rgb(18 27 40 / 0.82);
@@ -95,19 +96,14 @@
 
 @theme inline {
   --color-brand: var(--game-brand);
-  --color-brand-strong: var(--game-brand-strong);
-  --color-brand-deep: var(--game-brand-deep);
   --color-sky: var(--game-sky);
   --color-frame: var(--game-frame);
   --color-ink: var(--game-text);
   --color-muted: var(--game-muted);
-  --color-gold: var(--game-gold);
-  --color-gold-deep: var(--game-gold-deep);
+  --color-gold-ink: var(--game-gold-ink);
   --color-shield: var(--game-shield);
   --color-melon: var(--game-melon);
-  --color-glass: var(--game-glass);
   --color-glass-edge: var(--game-glass-edge);
-  --color-tile: var(--game-tile);
   --color-tile-edge: var(--game-tile-edge);
   --font-sans: 'Nunito', ui-rounded, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-display: 'Fredoka', 'Nunito', ui-rounded, ui-sans-serif, system-ui, sans-serif;
@@ -292,6 +288,18 @@ body {
   }
 }
 
+/* Set by the governor in src/game/runtime.ts on a device that cannot hold 60 fps at 1x: the
+   blur goes, and the glass turns nearly opaque so what is on it stays readable. */
+:root[data-lite='true'] {
+  --game-glass: rgb(238 245 255 / 0.95);
+}
+:root[data-lite='true'][data-theme='dark'] {
+  --game-glass: rgb(18 27 40 / 0.95);
+}
+:root[data-lite='true'] :is(.glass, .card, .icon-btn) {
+  backdrop-filter: none;
+}
+
 /* Round icon button for the HUD: fixed tap target, glass like the cards. */
 @utility icon-btn {
   @apply inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-ink
@@ -423,6 +431,10 @@ body {
   animation: notice 3.2s ease-out both;
 }
 
+.animate-flash {
+  animation: notice 1.4s ease-out both;
+}
+
 .animate-rise {
   animation: rise-in 280ms cubic-bezier(0.34, 1.4, 0.64, 1) both;
 }
@@ -448,6 +460,7 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .animate-pop,
   .animate-rise,
+  .animate-flash,
   .animate-notice,
   .animate-scrim,
   .animate-toast-in,

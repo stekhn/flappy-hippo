@@ -33,7 +33,7 @@ npm run build        # static bundle in dist/
 npm run preview      # serve the build under /flappy-hippo/
 npm test             # game logic (Node test runner)
 npm run lint         # oxlint
-npm run assets       # src/assets/* → icons, favicon, link preview
+npm run assets       # src/assets/* → icons, favicon, link preview, wordmark
 npm run screenshots  # manifest screenshots from the running app (needs Chrome, see below)
 ```
 
@@ -62,7 +62,9 @@ renders a frame; it receives a snapshot only when something it shows has changed
 The play field keeps a constant short side (320 world units) and lets the long side follow the
 screen, so a gap is the same challenge on a portrait phone and a wide laptop. Still layers of
 the backdrop are baked into bitmaps once and blitted at the scroll offset; only what moves is
-drawn each frame. Resolution is capped at 2x and stepped down if a device cannot hold 60 fps.
+drawn each frame. Resolution is capped at 2x and stepped down while a device cannot hold 60 fps,
+then the frosted blur behind the cards goes; the result is remembered on the device. With
+`?perf` in the URL the console reports every long frame and a summary every five seconds.
 
 The interface follows the browser's first language: German where that is German, English
 otherwise. `?lang=de` or `?lang=en` overrides that and is remembered until `?lang=auto`. Strings
@@ -76,7 +78,7 @@ src/game/render/   canvas drawing: hippo, pipes, backdrop, street, effects
 src/components/    React UI: HUD, cards, menu
 src/hooks/         runtime binding, settings, progress, install prompt
 src/i18n/          message catalogues and locale detection
-src/assets/        icon and poster images for scripts/make-assets.ts
+src/assets/        icon, wordmark and poster images for scripts/make-assets.ts
 src/dev/           pose lab: open /src/dev/poses.html on the dev server
 public/            static files served as they are: icons, screenshots, fonts
 scripts/           asset, screenshot and SVG generation
