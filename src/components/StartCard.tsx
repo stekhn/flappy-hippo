@@ -39,31 +39,45 @@ export function StartCard({
 
   return (
     <CardShell onBackdropTap={onStart} labelledBy="start-title">
-      {!logoAbove && (
-        <img
-          src="wordmark.webp"
-          alt=""
-          width={1600}
-          height={826}
-          decoding="async"
-          className="mx-auto mb-1 block h-auto w-full max-w-[15rem]"
-          style={{ filter: dark ? `brightness(${WORDMARK_NIGHT})` : undefined }}
-        />
-      )}
-      <h2 id="start-title" className={logoAbove ? 't-title text-brand' : 'sr-only'}>
-        {logoAbove ? t.start.title : 'Flappy Hippo'}
-      </h2>
+      {/* The lettering and the record are one block, lit from behind, so the pair reads as the
+          card's head rather than as two things that happen to sit above each other. */}
+      <div
+        className={logoAbove ? undefined : '-mx-2 -mt-2 rounded-[1.25rem] px-2 pt-3 pb-2'}
+        style={
+          logoAbove
+            ? undefined
+            : {
+                background:
+                  'radial-gradient(72% 62% at 50% 42%, color-mix(in srgb, var(--game-brand) 14%, transparent), transparent 72%)',
+              }
+        }
+      >
+        {!logoAbove && (
+          <img
+            src="wordmark.webp"
+            alt=""
+            width={1600}
+            height={772}
+            decoding="async"
+            className="mx-auto block h-auto w-full max-w-[15rem]"
+            style={{ filter: dark ? `brightness(${WORDMARK_NIGHT})` : undefined }}
+          />
+        )}
+        <h2 id="start-title" className={logoAbove ? 't-title text-brand' : 'sr-only'}>
+          {logoAbove ? t.start.title : 'Flappy Hippo'}
+        </h2>
 
-      {best > 0 && (
-        <p className="mt-2">
-          <Stat
-            icon={medal ? <MedalBadge medal={medal} size={21} /> : <IconTrophy width={18} height={18} />}
-            tone="brand"
-          >
-            {t.start.record} <span className="t-number">{best}</span>
-          </Stat>
-        </p>
-      )}
+        {best > 0 && (
+          <p className={logoAbove ? 'mt-2' : 'mt-0.5'}>
+            <Stat
+              icon={medal ? <MedalBadge medal={medal} size={21} /> : <IconTrophy width={18} height={18} />}
+              tone="brand"
+            >
+              {t.start.record} <span className="t-number">{best}</span>
+            </Stat>
+          </p>
+        )}
+      </div>
 
       <div className="mt-5">
         <Segmented

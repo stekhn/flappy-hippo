@@ -271,17 +271,104 @@ await writeFile(join(root, 'public', 'preview.jpg'), preview)
 console.log(`public/preview.jpg (${Math.round(preview.length / 1024)} KB)`)
 await writeFile(join(root, 'public', 'mask-icon.svg'), await asset('mask-icon.svg'))
 
+interface Blue {
+  /** Where the render's own blue lands. */
+  to: string
+  /** Above 1 puts colour back that a flatter blue loses. */
+  sat: number
+  /** Above 1 opens the gap between the lit faces and the shaded ones. */
+  contrast: number
+}
+
+/** Every blue tried, so an earlier look is one name away. */
+const BLUES = {
+  flat: { to: '#0d5cc8', sat: 0.88, contrast: 1 },
+  punchy: { to: '#0d5cc8', sat: 1.15, contrast: 1.4 },
+  deep: { to: '#0a4fb8', sat: 1.25, contrast: 1.6 },
+  darkest: { to: '#0847a8', sat: 1.3, contrast: 1.8 },
+} as const satisfies Record<string, Blue>
+
+const BLUE: Blue = BLUES.darkest
+
+/**
+ * The lettering is modelled in its own blue, a good deal darker than the pipes it hangs among.
+ * Blue pixels are moved onto the pipes' hue, saturation and lightness by the same factors, so the
+ * shading the render gave them survives; the yellow faces and the green rims are left alone.
+ */
+async function matchPipes(png: Buffer, from: string, blue: Blue): Promise<Buffer> {
+  const hex = (h: string): [number, number, number] =>
+    [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16)) as [number, number, number]
+  const toHsl = ([r, g, b]: [number, number, number]): [number, number, number] => {
+    r /= 255
+    g /= 255
+    b /= 255
+    const max = Math.max(r, g, b)
+    const min = Math.min(r, g, b)
+    const l = (max + min) / 2
+    if (max === min) return [0, 0, l]
+    const d = max - min
+    const s = l > 0.5 ? d / (2 - max - min) : d / (max + min)
+    const h = max === r ? (g - b) / d + (g < b ? 6 : 0) : max === g ? (b - r) / d + 2 : (r - g) / d + 4
+    return [h * 60, s, l]
+  }
+  const toRgb = ([h, s, l]: [number, number, number]): [number, number, number] => {
+    const hue = (((h % 360) + 360) % 360) / 360
+    if (s === 0) return [l, l, l].map((v) => Math.round(v * 255)) as [number, number, number]
+    const q = l < 0.5 ? l * (1 + s) : l + s - l * s
+    const p = 2 * l - q
+    const at = (t: number): number => {
+      const u = (t + 1) % 1
+      if (u < 1 / 6) return p + (q - p) * 6 * u
+      if (u < 1 / 2) return q
+      if (u < 2 / 3) return p + (q - p) * (2 / 3 - u) * 6
+      return p
+    }
+    return [at(hue + 1 / 3), at(hue), at(hue - 1 / 3)].map((v) => Math.round(Math.min(1, Math.max(0, v)) * 255)) as [
+      number,
+      number,
+      number,
+    ]
+  }
+
+  const [sh, , sl] = toHsl(hex(from))
+  const [th, , tl] = toHsl(hex(blue.to))
+  const { data, info } = await sharp(png).ensureAlpha().raw().toBuffer({ resolveWithObject: true })
+  for (let p = 0; p < info.width * info.height; p++) {
+    const i = p * 4
+    if (data[i + 3] < 8) continue
+    const r = data[i]
+    const g = data[i + 1]
+    const b = data[i + 2]
+    if (!(b > r + 25 && b > g + 15)) continue
+    const [h, s, l] = toHsl([r, g, b])
+    const [nr, ng, nb] = toRgb([
+      h + (th - sh),
+      Math.min(1, s * blue.sat),
+      Math.min(1, Math.max(0, tl + (l - sl) * blue.contrast)),
+    ])
+    data[i] = nr
+    data[i + 1] = ng
+    data[i + 2] = nb
+  }
+  return sharp(data, { raw: { width: info.width, height: info.height, channels: 4 } })
+    .png()
+    .toBuffer()
+}
+
 // ---- wordmark ---------------------------------------------------------------------------------
-// The poster's lettering for the desktop frame (src/assets/wordmark.png, on white): the white is
-// keyed out the way the icon's blue is, stray specks go, and it is cropped to the lettering at a
-// width a 2x display shows full size.
+// The lettering for the desktop frame (src/assets/wordmark.png, on black): the black is keyed out
+// the way the icon's blue is, stray specks go, the blue is brought onto the pipes' own, and it is
+// cropped to the lettering at a width a 2x display shows full size.
 const mark = await cutout(await asset('wordmark.png'), true)
 const cleaned = await dropSpecks(mark, 1500, 'wordmark')
 const margin = 6
 const [l, t, r, b] = cleaned.box
-const wordmark = await sharp(cleaned.png)
+const cropped = await sharp(cleaned.png)
   .extract({ left: l - margin, top: t - margin, width: r - l + 1 + margin * 2, height: b - t + 1 + margin * 2 })
   .resize({ width: 1600 })
+  .png()
+  .toBuffer()
+const wordmark = await sharp(await matchPipes(cropped, '#0030a0', BLUE))
   .webp({ quality: 88, alphaQuality: 90 })
   .toBuffer()
 await out('wordmark.webp', wordmark)

@@ -34,12 +34,11 @@ function menuFromUrl(): MenuTab | null {
   }
 }
 
-/** How far the lettering reaches past the board's top edge, so it sits on the board, not above it. */
-const WORDMARK_DIP = 12
+/** How far the lettering's lower edge reaches past the board's top edge, clear of the score. */
+const WORDMARK_DIP = 14
 
-/** Room above the board, in CSS pixels, before the wordmark, its claim, and the shortcut line show. */
+/** Room above the board, in CSS pixels, before the wordmark and the shortcut line show. */
 const WORDMARK_MIN = 110
-const CLAIM_MIN = 170
 const SHORTCUTS_MIN = 176
 
 /** A phone held upright: the one case where turning the view shows more of the field ahead. */
@@ -148,10 +147,10 @@ export function Game() {
 
       {showWordmark && (
         <div
-          className="pointer-events-none absolute inset-x-0 top-0 z-[5] flex items-end justify-center"
+          className="pointer-events-none absolute inset-x-0 top-0 z-30 flex items-end justify-center"
           style={{ height: room + WORDMARK_DIP }}
         >
-          <Wordmark height={room} claim={room >= CLAIM_MIN ? t.desktop.claim : null} dark={resolved === 'dark'} />
+          <Wordmark height={room} dark={resolved === 'dark'} />
         </div>
       )}
       {showShortcuts && <ShortcutBar height={room} />}
