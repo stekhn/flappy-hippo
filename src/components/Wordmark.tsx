@@ -13,6 +13,9 @@ export const WORDMARK_NIGHT = 0.72
 /** How much of the room above the board the tilted lettering fills. */
 const FILL = 1.06
 
+/** Past this the lettering starts to dominate the page. */
+const MAX_HEIGHT = 200
+
 /** The tilt the lettering hangs at. */
 const TILT = -10
 
@@ -27,7 +30,7 @@ const GRAIN = { tile: 120, strength: 0.7 }
 export function Wordmark({ height, dark }: WordmarkProps) {
   const [aspect, setAspect] = useState(1600 / 772)
   const rad = (Math.abs(TILT) * Math.PI) / 180
-  const tall = Math.round((height * FILL) / (Math.cos(rad) + aspect * Math.sin(rad)))
+  const tall = Math.min(MAX_HEIGHT, Math.round((height * FILL) / (Math.cos(rad) + aspect * Math.sin(rad))))
 
   const onLoad = useCallback((event: SyntheticEvent<HTMLImageElement>) => {
     const img = event.currentTarget

@@ -87,11 +87,7 @@ const VIEWPORTS = {
   wide: { width: 960, height: 540 },
 }
 
-/**
- * A round deep in the game: a big score, a shield with a spare, a melon to detour for, a pipe
- * under repair swinging ahead, a pot on its balcony and one already falling, and the last
- * milestone's confetti still in the air.
- */
+/** A round deep in the game: a big score, a shield in hand, a melon ahead and pipes to thread. */
 async function flight(page: Page): Promise<void> {
   await page.evaluate(() => {
     const runtime = (window as Window & { __flappyHippo?: { flap(): void; inspect(): { state: any; world: any } } })
@@ -113,56 +109,11 @@ async function flight(page: Page): Promise<void> {
     const ahead = Math.max(world.hippoX + 150, world.width * 0.62)
     state.pipes = [
       { x: ahead, gapY: gap + 8, half: 55, passed: false, baseY: gap + 8, swing: 34, phase: 0.6 },
-      { x: ahead + 220, gapY: gap - 55, half: 55, passed: false, baseY: gap - 55, swing: 0, phase: 0 },
-      { x: ahead + 440, gapY: gap + 25, half: 55, passed: false, baseY: gap + 25, swing: 0, phase: 0 },
+      { x: ahead + 260, gapY: gap - 55, half: 55, passed: false, baseY: gap - 55, swing: 0, phase: 0 },
     ]
-    // The melon hangs between the hippo and the first pipe, in view on every field.
-    state.pickups = [
-      { kind: 'melon', x: world.hippoX + 78, y: gap - 62, taken: false, seed: 1 },
-      { kind: 'shield', x: ahead + 248, y: gap - 55, taken: false, seed: 2 },
-    ]
-    state.pots = [
-      {
-        x: world.hippoX + 40,
-        y: gap - 110,
-        vy: 220,
-        lead: 0.7,
-        falling: true,
-        spin: 0.7,
-        passed: false,
-        smashed: false,
-        seed: 1,
-      },
-      {
-        x: Math.min(ahead + 120, world.width - 32),
-        y: 13.4,
-        vy: 0,
-        lead: 0.8,
-        falling: false,
-        spin: 0.08,
-        passed: false,
-        smashed: false,
-        seed: 2,
-      },
-    ]
-    for (let i = 0; i < 44; i++) {
-      state.confetti.push({
-        x: 20 + ((i * 37) % (world.width - 40)),
-        y: 40 + ((i * 53) % (world.groundY * 0.55)),
-        vx: 0,
-        vy: 30,
-        angle: i,
-        spin: 3,
-        flip: i * 0.7,
-        flipRate: 8,
-        w: 6,
-        h: 3.5,
-        round: i % 4 === 0,
-        tint: i % 3,
-        life: 1.5,
-        seed: i,
-      })
-    }
+    state.pickups = [{ kind: 'melon', x: world.hippoX + 78, y: gap - 62, taken: false, seed: 1 }]
+    state.pots = []
+    state.confetti.length = 0
     state.nextSpawn = state.scrolled + ahead + 660
   })
   await sleep(80)
