@@ -4,6 +4,7 @@ import { SHORT_SIDE } from '../game/constants.ts'
 import { resolvePalette } from '../game/palette.ts'
 import { LayerCache } from '../game/render/layers.ts'
 import { drawStrip, stampCloud } from '../game/render/scenery.ts'
+import { grainTile } from './grain.ts'
 
 interface BackdropProps {
   box: RefObject<HTMLElement | null>
@@ -13,11 +14,12 @@ interface BackdropProps {
 
 const BLUR = 2.2
 const SETTLE_MS = 120
-const GRAIN = { tile: 180, strength: 16 }
 const HAZE = 0.3
+/** How far the page's outermost corners fall off, and the blue they fall toward. */
+const VIGNETTE = { light: 0.32, dark: 0.58, tint: '10, 38, 96' }
 const TINT = { light: '#cfe4ff', dark: '#6b7ba6' }
-/** Props are lit for daylight; at night they sink into the sky instead of glowing on it. */
-const NIGHT_PROPS = 0.5
+/** Props are lit for daylight; at night they are dimmed, not faded, so they keep their edges. */
+const NIGHT_PROPS = 0.55
 
 const NAMES = [
   'pipe-hanging',
@@ -62,9 +64,10 @@ const GROUND: Placement[] = [
   { name: 'daisies', at: 0.69, height: 0.18 },
 ]
 
+/** `up` pulls a pipe past the top edge, so less of it hangs into the page. */
 const HANGING = [
-  { at: 0.15, width: 80 },
-  { at: 0.85, width: 64 },
+  { at: 0.15, width: 80, up: 0 },
+  { at: 0.85, width: 64, up: 0.42 },
 ]
 
 const SKY = [
@@ -77,28 +80,6 @@ const SKY = [
   { at: 0.03, y: 0.42, scale: 0.8, cloud: 6 },
   { at: 0.96, y: 0.48, scale: 0.85, cloud: 1 },
 ]
-
-/**
- * Specks of black and white at low opacity. A blend mode would be the obvious choice, but overlay
- * and soft light both fade out against a sky this pale; plain specks carry over any ground.
- */
-function grainTile(): HTMLCanvasElement {
-  const tile = document.createElement('canvas')
-  tile.width = GRAIN.tile
-  tile.height = GRAIN.tile
-  const ctx = tile.getContext('2d')
-  if (!ctx) return tile
-  const noise = ctx.createImageData(tile.width, tile.height)
-  for (let i = 0; i < noise.data.length; i += 4) {
-    const value = Math.random() < 0.5 ? 0 : 255
-    noise.data[i] = value
-    noise.data[i + 1] = value
-    noise.data[i + 2] = value
-    noise.data[i + 3] = Math.random() * GRAIN.strength
-  }
-  ctx.putImageData(noise, 0, 0)
-  return tile
-}
 
 let pending: Promise<Props> | null = null
 
@@ -188,7 +169,7 @@ export function Backdrop({ box, canvas, dark }: BackdropProps) {
       ctx.globalAlpha = 1
       ctx.restore()
 
-      ctx.globalAlpha = dark ? NIGHT_PROPS : 1
+      ctx.filter = dark ? `brightness(${NIGHT_PROPS})` : 'none'
       for (const { name, at, height } of GROUND) {
         const image = props?.get(name)
         if (!image) continue
@@ -201,19 +182,37 @@ export function Backdrop({ box, canvas, dark }: BackdropProps) {
 
       const pipe = props?.get('pipe-hanging')
       if (pipe) {
-        for (const { at, width: units } of HANGING) {
+        for (const { at, width: units, up } of HANGING) {
           const wide = units * pixel
           const tall = wide * (pipe.naturalHeight / pipe.naturalWidth)
-          ctx.drawImage(pipe, target.width * at - wide / 2, 0, wide, tall)
+          ctx.drawImage(pipe, target.width * at - wide / 2, -tall * up, wide, tall)
         }
       }
-      ctx.globalAlpha = 1
+      ctx.filter = 'none'
 
       ctx.globalCompositeOperation = 'multiply'
       ctx.fillStyle = dark ? TINT.dark : TINT.light
       ctx.fillRect(0, 0, target.width, target.height)
 
       ctx.globalCompositeOperation = 'source-over'
+      const half = Math.hypot(target.width, target.height) / 2
+      const corners = ctx.createRadialGradient(
+        target.width / 2,
+        target.height / 2,
+        0,
+        target.width / 2,
+        target.height / 2,
+        half,
+      )
+      const edge = dark ? VIGNETTE.dark : VIGNETTE.light
+      // Nothing at all until three quarters out, then a short steep falloff.
+      corners.addColorStop(0, `rgba(${VIGNETTE.tint}, 0)`)
+      corners.addColorStop(0.75, `rgba(${VIGNETTE.tint}, 0)`)
+      corners.addColorStop(0.9, `rgba(${VIGNETTE.tint}, ${edge * 0.3})`)
+      corners.addColorStop(1, `rgba(${VIGNETTE.tint}, ${edge})`)
+      ctx.fillStyle = corners
+      ctx.fillRect(0, 0, target.width, target.height)
+
       const pattern = ctx.createPattern(grain.current, 'repeat')
       if (pattern) {
         // One speck to a CSS pixel, so it reads the same on a plain and a retina display.
