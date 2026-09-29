@@ -352,7 +352,7 @@ export class GameRuntime {
     this.countdownUntil = 0
     flap(state, now)
     this.sfx.play('flap')
-    buzz(this.haptics, 6)
+    buzz(this.haptics, 18)
     this.push()
   }
 
@@ -434,7 +434,7 @@ export class GameRuntime {
   /** An achievement just unlocked — the toast is React's, the chime and the buzz are ours. */
   celebrateUnlock(): void {
     this.sfx.play('achievement')
-    buzz(this.haptics, [15, 50, 15])
+    buzz(this.haptics, [25, 50, 25])
   }
 
   /** The live state and field, for tooling that stages a scene (the screenshot script). */
@@ -569,11 +569,11 @@ export class GameRuntime {
         return
       case 'melon':
         this.sfx.play('melon')
-        buzz(this.haptics, 8)
+        buzz(this.haptics, 16)
         return
       case 'shield':
         this.sfx.play('shield')
-        buzz(this.haptics, [8, 30, 8])
+        buzz(this.haptics, [16, 30, 16])
         return
       case 'shield-pop':
         this.sfx.play('pop')
@@ -585,14 +585,14 @@ export class GameRuntime {
       case 'dodge':
         return
       case 'stage':
-        buzz(this.haptics, [10, 30, 10])
+        buzz(this.haptics, [18, 30, 18])
         return
       case 'milestone':
         this.sfx.play('milestone')
         return
       case 'record':
         this.sfx.play('record')
-        buzz(this.haptics, [10, 40, 10, 40, 30])
+        buzz(this.haptics, [18, 40, 18, 40, 30])
         return
       case 'crash':
         // Only a landing counts: hitting a pipe far above the street flattens nothing.

@@ -29,6 +29,7 @@ export type AchievementId =
   | 'hit-bin'
   | 'hit-bench'
   | 'hit-post'
+  | 'crash-pilot'
 
 /** What brings a secret achievement into view; the interface words it. */
 export interface Reveal {
@@ -182,6 +183,12 @@ export const ACHIEVEMENTS: Achievement[] = [
     icon: '🌊',
     reached: (p) => p.stats.movers >= 100,
     reveal: fromScore(STAGE_MOVERS),
+  },
+  {
+    id: 'crash-pilot',
+    icon: '🩹',
+    reached: (p) => p.stats.games >= 100,
+    reveal: { when: () => false },
   },
   {
     id: 'hit-cat',

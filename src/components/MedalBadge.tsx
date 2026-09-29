@@ -11,7 +11,12 @@ export function MedalBadge({ medal, size = 68 }: { medal: Medal; size?: number }
       aria-hidden="true"
     >
       {medal.id === 'diamond' ? (
-        <Gem medal={medal} />
+        <>
+          <Gem medal={medal} />
+          {/* The gem is drawn behind, so this stands in for the other tiers' trophy and keeps the
+              badge's baseline with theirs. Without it the line it sits on grows. */}
+          <span className="relative block" style={{ width: size * 0.4, height: size * 0.4 }} />
+        </>
       ) : (
         <>
           <GlossDisc rim={medal.rim} dark={medal.dark} mid={medal.mid} light={medal.light} />

@@ -96,7 +96,6 @@ export const en = {
   },
   keycap: 'Space bar',
   /** Around the board on a large display. */
-  desktop: { claim: 'Fly until you crash.' },
   menu: {
     label: 'Menu',
     close: 'Close menu',
@@ -198,6 +197,7 @@ export const en = {
     'hit-bin': { label: 'Bin day', hint: 'Land in a bin' },
     'hit-bench': { label: 'Taking a nap', hint: 'Land on a bench' },
     'hit-post': { label: 'Airmail', hint: 'Land on a postbox' },
+    'crash-pilot': { label: 'Crash pilot', hint: 'Crashed 100 times' },
   } satisfies Record<AchievementId, { label: string; hint: string }>,
   reveal: {
     secret: 'Find this one yourself',

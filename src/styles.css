@@ -45,6 +45,8 @@
   --game-text: #1b2a44;
   /* Secondary text is a tint of the sky's blue, never a grey — grey reads as disabled. */
   --game-muted: #4f6a96;
+  /** The count back in: the score's blue by day, the moon's white at night. */
+  --game-countdown: var(--game-brand);
   --game-gold: #e8930c;
   /* Gold as text on a card: a deeper cut of the reward colour, still gold, not brown. */
   --game-gold-ink: #c47c00;
@@ -76,6 +78,7 @@
   --game-ground: #2c3646;
   --game-text: #e3eaf5;
   --game-muted: #a6bad9;
+  --game-countdown: #dfe3ea;
   --game-gold: #ffc65c;
   --game-gold-ink: #ffc65c;
   --game-shield: #d6a5ff;

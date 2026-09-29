@@ -82,7 +82,6 @@ export const de: Messages = {
     offlineReady: 'Läuft jetzt auch offline',
   },
   keycap: 'Leertaste',
-  desktop: { claim: 'Fliegen, bis es kracht!' },
   menu: {
     label: 'Menü',
     close: 'Menü schließen',
@@ -187,6 +186,7 @@ export const de: Messages = {
     'hit-bin': { label: 'Müllabfuhr', hint: 'In einer Mülltonne landen' },
     'hit-bench': { label: 'Nickerchen', hint: 'Auf einer Parkbank landen' },
     'hit-post': { label: 'Luftpost', hint: 'Auf einem Briefkasten landen' },
+    'crash-pilot': { label: 'Bruchpilot', hint: '100 mal abgestürzt' },
   },
   reveal: {
     secret: 'Das findest du selbst heraus',

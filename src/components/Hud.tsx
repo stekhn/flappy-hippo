@@ -168,7 +168,7 @@ export function Hud({ snapshot, sound, flash, rotated, menuOpen, onToggleSound, 
           <span
             key={snapshot.countdown}
             className="hud-text animate-pop text-9xl"
-            style={{ color: 'var(--game-text)' }}
+            style={{ color: 'var(--game-countdown)' }}
           >
             {snapshot.countdown}
           </span>
